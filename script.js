@@ -5,10 +5,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     
     // 1. Link CSV dari Sheet "Katalog Buku"
-    const urlBuku = 'LINK_CSV_BUKU_ANDA_DI_SINI'; 
+    const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?output=csv'; 
     
     // 2. Link CSV dari Sheet "Anggota" (YANG BARU)
-    const urlAnggota = 'LINK_CSV_ANGGOTA_ANDA_DI_SINI'; 
+    const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?output=csv'; 
     
 
     // ===========================================
@@ -191,3 +191,4 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
+
