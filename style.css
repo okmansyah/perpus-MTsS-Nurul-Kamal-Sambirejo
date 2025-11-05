@@ -1,237 +1,106 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-body {
-    font-family: 'Poppins', sans-serif;
-    line-height: 1.6;
-    background-color: #f0f2f5;
-    margin: 0;
-    color: #333;
-    display: flex;
-    min-height: 100vh;
-}
-.app-container {
-    display: flex;
-    width: 100%;
-}
-.sidebar {
-    width: 250px;
-    background-color: #1a202c;
-    color: white;
-    padding: 20px;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-}
-.sidebar-header {
-    text-align: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-.sidebar-logo {
-    max-width: 100px;
-    border-radius: 50%;
-    border: 3px solid #66bb6a;
-    margin-bottom: 10px;
-}
-.sidebar-header h2 {
-    margin: 10px 0 5px;
-    color: #66bb6a;
-    font-size: 1.6em;
-}
-.sidebar-header p {
-    font-size: 0.9em;
-    color: #a0aec0;
-    margin: 0;
-}
-.sidebar-menu {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.menu-item {
-    margin-bottom: 10px;
-}
-.menu-item a {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    color: #cbd5e0;
-    text-decoration: none;
-    font-size: 1.1em;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-.menu-item a i {
-    margin-right: 15px;
-    font-size: 1.2em;
-    color: #66bb6a;
-    transition: color 0.3s ease;
-}
-.menu-item a:hover,
-.menu-item.active a {
-    background-color: #38a169;
-    color: white;
-    box-shadow: 0 4px 10px rgba(0, 128, 0, 0.3);
-}
-.menu-item.active a i {
-    color: white;
-}
-.main-content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-.top-header {
-    background-color: white;
-    padding: 20px 30px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-.top-header h1 {
-    margin: 0;
-    font-size: 1.8em;
-    font-weight: 600;
-}
-.content-area {
-    padding: 30px;
-    flex-grow: 1;
-}
-.content-section {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    display: none;
-}
-.content-section.active {
-    display: block;
-}
-h2 {
-    color: #2d3748;
-    margin-top: 0;
-    margin-bottom: 25px;
-    font-size: 2em;
-    border-bottom: 2px solid #66bb6a;
-    padding-bottom: 10px;
-}
-#filterBuku, #filterAnggota {
-    width: 100%;
-    padding: 15px;
-    margin-bottom: 25px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    box-sizing: border-box;
-    font-size: 1em;
-}
-.tabel-container {
-    overflow-x: auto;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-th, td {
-    padding: 15px 20px;
-    border: 1px solid #ebf4f1;
-    text-align: left;
-    vertical-align: middle;
-}
-thead {
-    background-color: #e6ffed;
-    color: #2d3748;
-}
-tbody tr:nth-child(even) {
-    background-color: #f7fafc;
-}
-tbody tr:hover {
-    background-color: #edf2f7;
-}
-.status {
-    padding: 7px 12px;
-    border-radius: 20px;
-    font-weight: 600;
-    color: white;
-    font-size: 0.85em;
-    display: inline-block;
-}
-.status-tersedia { background-color: #48bb78; }
-.status-dipinjam { background-color: #f56565; }
-.loading {
-    text-align: center;
-    color: #888;
-    font-style: italic;
-    padding: 20px;
-}
-.statistik-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-}
-.card {
-    background-color: white;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    text-align: center;
-}
-.card h3 {
-    margin-top: 0;
-    font-size: 1.2em;
-}
-.card p {
-    font-size: 2.5em;
-    font-weight: 700;
-    margin: 10px 0 0;
-}
-.card.bg-green { background-color: #d1fae5; }
-.card.bg-green p { color: #065f46; }
-.card.bg-blue { background-color: #dbeafe; }
-.card.bg-blue p { color: #1e40af; }
-.card.bg-red { background-color: #fee2e2; }
-.card.bg-red p { color: #991b1b; }
-.form-section {
-    background-color: #f9fafb;
-    padding: 25px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-.form-section label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #4a5568;
-}
-.form-section input[type="text"] {
-    width: 100%;
-    padding: 12px 15px;
-    margin-bottom: 20px;
-    border: 1px solid #cbd5e0;
-    border-radius: 8px;
-    font-size: 1em;
-    box-sizing: border-box;
-}
-.btn {
-    padding: 12px 25px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1em;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-.btn-primary { background-color: #48bb78; color: white; }
-.btn-primary:hover { background-color: #38a169; }
-.btn-warning { background-color: #f6ad55; color: white; }
-.btn-warning:hover { background-color: #ed8936; }
-.btn-info { background-color: #63b3ed; color: white; }
-.btn-info:hover { background-color: #4299e1; }
-.btn-success { background-color: #4299e1; color: white; }
-.btn-success:hover { background-color: #3182ce; }
-.btn-secondary { background-color: #a0aec0; color: white; }
-.btn-secondary:hover { background-color: #718096; }
-.feedback-message {
-    margin-top: 15px;
-    font-weight: 600;
+/* =========================================== */
+/* == KODE RESPONSIVE UNTUK MOBILE == */
+/* (Tambahkan ini di baris paling akhir style.css) */
+/* =========================================== */
+
+/* Kita tentukan 'breakpoint' di 768px (lebar tablet) */
+@media (max-width: 768px) {
+
+    /* 1. Ubah layout utama dari [Sampingan] menjadi [Atas-Bawah] */
+    .app-container {
+        flex-direction: column;
+    }
+
+    /* 2. Jadikan sidebar sebagai 'Top Bar' */
+    .sidebar {
+        width: 100%; /* Buat sidebar jadi full-width */
+        box-sizing: border-box; /* Agar padding tidak merusak lebar */
+        height: auto; /* Biarkan tingginya otomatis */
+    }
+
+    /* 3. Sembunyikan sub-judul, kecilkan logo */
+    .sidebar-header {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        /* (Opsional) Rata kiri */
+        display: flex;
+        align-items: center;
+    }
+
+    .sidebar-logo {
+        max-width: 60px; /* Kecilkan logo */
+        margin-right: 15px;
+        margin-bottom: 0;
+    }
+
+    .sidebar-header p {
+        display: none; /* Sembunyikan 'Perpustakaan Digital' di HP */
+    }
+    .sidebar-header h2 {
+        font-size: 1.2em;
+    }
+
+    /* 4. Ini Kuncinya: Ubah Menu jadi Horizontal dan Bisa Scroll */
+    .sidebar-menu {
+        display: flex;
+        flex-direction: row; /* Jadikan menu horizontal */
+        overflow-x: auto; /* PENTING: Agar bisa di-scroll ke samping */
+        white-space: nowrap; /* Mencegah item menu 'jatuh' ke bawah */
+        border-top: 1px solid rgba(255,255,255,0.1);
+        margin-top: 15px;
+        padding-top: 10px;
+    }
+
+    .menu-item {
+        margin-bottom: 0;
+        margin-right: 5px; /* Jarak antar menu */
+        flex-shrink: 0; /* Mencegah item 'gepeng' */
+    }
+
+    /* 5. Ubah menu (ikon di atas, teks di bawah) agar muat */
+    .menu-item a {
+        flex-direction: column; /* Ikon di atas, teks di bawah */
+        padding: 10px 8px;
+        font-size: 0.8em; /* Kecilkan font menu */
+        text-align: center;
+        min-width: 70px; /* Lebar minimal tiap tombol menu */
+    }
+
+    .menu-item a i {
+        margin-right: 0; /* Hapus margin samping ikon */
+        margin-bottom: 5px; /* Beri jarak bawah ikon */
+        font-size: 1.4em;
+    }
+
+    /* 6. Kurangi padding di konten utama */
+    .content-area {
+        padding: 15px;
+    }
+    .content-section {
+        padding: 20px;
+    }
+
+    /* 7. Kecilkan judul */
+    .top-header {
+        padding: 15px;
+    }
+    .top-header h1 {
+        font-size: 1.4em;
+    }
+    h2 {
+        font-size: 1.5em;
+    }
+
+    /* 8. Buat card statistik jadi 1 kolom */
+    /* (Meskipun kode grid Anda sebenarnya sudah cukup responsif) */
+    .statistik-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* 9. Kurangi padding di tabel agar lebih 'muat' */
+    th, td {
+        padding: 10px 12px;
+        font-size: 0.9em; /* Kecilkan font tabel */
+    }
 }
