@@ -9,6 +9,8 @@
 <body>
 
     <header>
+        <h1>Perpustakaan MTsS Nurul Kamal</h1>
+        
         <nav class="menu-utama">
             <a href="#katalog-buku" class="menu-link active" data-target="katalog-buku">Katalog Buku</a>
             <a href="#anggota" class="menu-link" data-target="anggota">Anggota</a>
@@ -20,7 +22,7 @@
     <main>
         <section id="katalog-buku" class="content-section active">
             <h2>Katalog Buku</h2>
-            <input type="text" id="filterBuku" placeholder="Cari judul, pengarang, atau penerbit...">
+            <input type="text" id="filterBuku" class="filter-input" placeholder="Cari judul, pengarang, atau penerbit...">
             
             <div class="tabel-container">
                 <table>
@@ -41,8 +43,8 @@
         </section>
 
         <section id="anggota" class="content-section">
-            <h2>Data Anggota (WebView)</h2>
-            <input type="text" id="filterAnggota" placeholder="Cari nama, NIS, atau kelas...">
+            <h2>Data Anggota</h2>
+            <input type="text" id="filterAnggota" class="filter-input" placeholder="Cari nama, NIS, atau kelas...">
             
             <div class="tabel-container">
                 <table>
@@ -62,19 +64,23 @@
         </section>
 
         <section id="sirkulasi" class="content-section">
-            <h2>Sirkulasi Buku</h2>
-            <p>Halaman ini bersifat statis.</p>
-            <p>Karena kita menggunakan GitHub Pages (hosting statis), proses **Pinjam** dan **Kembali** tidak bisa dilakukan dari website ini.</p>
-            <p>Petugas perpustakaan (Admin) harus **mengubah kolom "Status" secara manual** langsung di Google Sheet "Katalog Buku" dari "Tersedia" menjadi "Dipinjam" (atau sebaliknya).</p>
+            <h2>Sirkulasi Buku (Manual)</h2>
+            <div class="info-box">
+                <p>Fitur Pinjam dan Kembali adalah proses **manual**.</p>
+                <p>Sebagai petugas, Anda harus membuka Google Sheet <strong>"katalog buku"</strong> dan mengubah kolom <strong>"Status"</strong> secara manual dari "Tersedia" menjadi "Dipinjam" (atau sebaliknya).</p>
+                <p>Website ini akan otomatis ter-update setelah beberapa menit.</p>
+            </div>
         </section>
 
         <section id="pengaturan" class="content-section">
-            <h2>Pengaturan</h2>
-            <p>Halaman ini bersifat statis.</p>
-            <ul>
-                <li><strong>Ganti Logo:</strong> Untuk mengganti logo, Anda harus meng-upload file `logo.png` yang baru ke repository GitHub Anda, menggantikan file yang lama.</li>
-                <li><strong>Upload Data:</strong> Untuk menambah data buku atau siswa, Anda harus mengetiknya langsung di file Google Sheet Anda.</li>
-            </ul>
+            <h2>Pengaturan (Manual)</h2>
+            <div class="info-box">
+                <p>Semua pengaturan dilakukan secara manual:</p>
+                <ul>
+                    <li><strong>Upload Data:</strong> Buka file Google Sheet Anda dan ketik data baru di baris baru.</li>
+                    <li><strong>Upload Logo:</strong> Upload file logo (misal `logo.png`) ke repository GitHub Anda, menggantikan file yang lama.</li>
+                </ul>
+            </div>
         </section>
     </main>
 
