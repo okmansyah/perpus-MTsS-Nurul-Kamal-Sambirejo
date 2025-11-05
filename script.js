@@ -203,6 +203,7 @@ document.addEventListener("DOMContentLoaded", function() {
             action: "pinjamBuku",
             noInventaris: noInventaris,
             nis: nis
+            password: adminPassword // <-- TAMBAHKAN INI
         };
         
         const response = await kirimDataKeBackend(dataKirim);
@@ -239,6 +240,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const dataKirim = {
             action: "kembalikanBuku",
             noInventaris: noInventaris
+            password: adminPassword // <-- TAMBAHKAN INI
         };
         
         const response = await kirimDataKeBackend(dataKirim);
@@ -282,4 +284,5 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
+
 
