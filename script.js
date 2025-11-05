@@ -1,158 +1,89 @@
-<script>
-// Logika untuk menavigasi antar halaman
 document.addEventListener("DOMContentLoaded", function() {
-  const navItems = document.querySelectorAll('.nav-item');
-  const mainContent = document.getElementById('main-content');
-  const loader = document.getElementById('loader');
+    
+    // !!! PENTING: Ganti dengan link .csv Anda dari Google Sheets !!!
+    const urlDatabase = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?output=csv'; 
+    
+    const tabelBody = document.getElementById('tabel-buku');
+    const filterInput = document.getElementById('filterInput');
+    let dataBuku = []; // Untuk menyimpan data asli
 
-  function showLoader() { loader.style.display = 'flex'; }
-  function hideLoader() { loader.style.display = 'none'; }
-  
-  function loadPage(page) {
-    showLoader();
-    mainContent.innerHTML = ''; // Kosongkan konten
-    navItems.forEach(item => item.classList.remove('active'));
-    document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+    // Fungsi untuk mengambil data dari Google Sheets
+    async function ambilData() {
+        try {
+            const respons = await fetch(urlDatabase);
+            if (!respons.ok) {
+                throw new Error('Gagal memuat data');
+            }
+            const dataCsv = await respons.text();
+            
+            // Mengubah data CSV mentah menjadi array yang bisa dipakai
+            // split('\n') memecah per baris, slice(1) membuang baris header (JudulBuku, dll)
+            dataBuku = dataCsv.split('\n').slice(1).map(baris => {
+                // Split per koma. Hati-hati jika ada koma di dalam judul
+                const kolom = baris.split(',');
+                return {
+                    noInventaris: kolom[0] || '',
+                    judul: kolom[1] || '',
+                    pengarang: kolom[2] || '',
+                    penerbit: kolom[3] || '',
+                    status: kolom[4] ? kolom[4].trim() : '' // .trim() untuk hapus spasi
+                };
+            });
+            
+            tampilkanData(dataBuku);
 
-    if (page === 'dashboard') {
-      loadDashboard();
-    } else if (page === 'books') {
-      loadBooksPage();
-    } else if (page === 'members') {
-      loadMembersPage();
-    } else if (page === 'circulation') {
-      loadCirculationPage();
-    } else if (page === 'settings') {
-      loadSettingsPage();
+        } catch (error) {
+            console.error('Error:', error);
+            tabelBody.innerHTML = '<tr><td colspan="5" class="loading" style="color: red;">Gagal mengambil data dari database. Periksa link CSV.</td></tr>';
+        }
     }
-  }
 
-  // Event listener untuk navigasi
-  navItems.forEach(item => {
-    item.addEventListener('click', function(e) {
-      e.preventDefault();
-      const page = this.getAttribute('data-page');
-      loadPage(page);
-    });
-  });
+    // Fungsi untuk menampilkan data ke tabel HTML
+    function tampilkanData(data) {
+        tabelBody.innerHTML = ''; // Kosongkan tabel dulu
+        
+        if (data.length === 0) {
+            tabelBody.innerHTML = '<tr><td colspan="5" class="loading">Tidak ada data buku.</td></tr>';
+            return;
+        }
 
-  // Fungsi untuk memuat Dasbor
-  function loadDashboard() {
-     google.script.run.withSuccessHandler(stats => {
-       mainContent.innerHTML = `
-         <h1>📊 Dasbor</h1>
-         <div class="stats-grid">
-           <div class="stat-card"><h3>Total Judul Buku</h3><p>${stats.totalTitles}</p></div>
-           <div class="stat-card"><h3>Total Eksemplar</h3><p>${stats.totalCopies}</p></div>
-           <div class="stat-card"><h3>Anggota Aktif</h3><p>${stats.activeMembers}</p></div>
-           <div class="stat-card"><h3>Buku Dipinjam</h3><p>${stats.onLoan}</p></div>
-         </div>
-         <h2>Jatuh Tempo Mendatang</h2>
-         <div id="due-list"></div>
-       `;
-       const dueList = document.getElementById('due-list');
-       if(stats.upcomingDue.length > 0){
-          let table = '<table><thead><tr><th>Judul Buku</th><th>Peminjam</th><th>Tgl Jatuh Tempo</th></tr></thead><tbody>';
-          stats.upcomingDue.forEach(item => {
-             table += `<tr><td>${item.title}</td><td>${item.member}</td><td>${item.dueDate}</td></tr>`;
-          });
-          table += '</tbody></table>';
-          dueList.innerHTML = table;
-       } else {
-          dueList.innerHTML = '<p>Tidak ada buku yang akan jatuh tempo dalam 3 hari ke depan.</p>';
-       }
-       hideLoader();
-     }).withFailureHandler(err => {
-        alert("Gagal memuat statistik: " + err.message);
-        hideLoader();
-     }).getDashboardStats();
-  }
-  
-  // Fungsi untuk memuat Halaman Buku
-  function loadBooksPage() {
-    google.script.run.withSuccessHandler(books => {
-        // Logika untuk menampilkan daftar buku
-        // ... (Ini akan sangat panjang, untuk sekarang kita buat placeholder)
-        mainContent.innerHTML = '<h1>📚 Halaman Katalog Buku</h1><p>Fitur daftar buku akan ditampilkan di sini.</p>';
-        hideLoader();
-    }).getBooks();
-  }
-  
-  // Fungsi untuk memuat Halaman Anggota
-  function loadMembersPage() {
-    mainContent.innerHTML = '<h1>👥 Halaman Anggota</h1><p>Fitur daftar anggota akan ditampilkan di sini.</p>';
-    hideLoader();
-  }
+        data.forEach(buku => {
+            // Tentukan style CSS berdasarkan status
+            let statusClass = '';
+            if (buku.status.toLowerCase() === 'tersedia') {
+                statusClass = 'status-tersedia';
+            } else if (buku.status.toLowerCase() === 'dipinjam') {
+                statusClass = 'status-dipinjam';
+            }
 
-  // Fungsi untuk memuat Halaman Sirkulasi
-  function loadCirculationPage() {
-    mainContent.innerHTML = `
-        <h1>🔄 Halaman Sirkulasi</h1>
-        <div class="circulation-container">
-            <div class="circulation-form">
-                <h2>Peminjaman Buku</h2>
-                <form id="loan-form">
-                    <label for="loan-member-id">ID Anggota</label>
-                    <input type="text" id="loan-member-id" required>
-                    <label for="loan-book-id">ID Buku</label>
-                    <input type="text" id="loan-book-id" required>
-                    <button type="submit">Proses Pinjam</button>
-                </form>
-            </div>
-            <div class="circulation-form">
-                <h2>Pengembalian Buku</h2>
-                <form id="return-form">
-                    <label for="return-book-id">ID Buku</label>
-                    <input type="text" id="return-book-id" required>
-                    <button type="submit">Proses Kembali</button>
-                </form>
-            </div>
-        </div>
-    `;
-    // Tambahkan event listener untuk form
-    document.getElementById('loan-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        showLoader();
-        const loanData = {
-            memberId: document.getElementById('loan-member-id').value,
-            bookId: document.getElementById('loan-book-id').value,
-        };
-        google.script.run.withSuccessHandler(response => {
-            alert(response);
-            hideLoader();
-            loadPage('circulation'); // Reload
-        }).withFailureHandler(err => {
-             alert("Error: " + err.message);
-             hideLoader();
-        }).processLoan(loanData);
+            const barisHtml = `
+                <tr>
+                    <td>${buku.noInventaris}</td>
+                    <td>${buku.judul}</td>
+                    <td>${buku.pengarang}</td>
+                    <td>${buku.penerbit}</td>
+                    <td><span class="status ${statusClass}">${buku.status}</span></td>
+                </tr>
+            `;
+            tabelBody.innerHTML += barisHtml;
+        });
+    }
+
+    // Fungsi untuk filter/pencarian
+    filterInput.addEventListener('keyup', function() {
+        const kataKunci = filterInput.value.toLowerCase();
+        
+        const dataFilter = dataBuku.filter(buku => {
+            return (
+                buku.judul.toLowerCase().includes(kataKunci) ||
+                buku.pengarang.toLowerCase().includes(kataKunci) ||
+                buku.penerbit.toLowerCase().includes(kataKunci)
+            );
+        });
+        
+        tampilkanData(dataFilter);
     });
 
-    document.getElementById('return-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        showLoader();
-        const bookId = document.getElementById('return-book-id').value;
-        google.script.run.withSuccessHandler(response => {
-            alert(response.message + "\\nDenda: Rp " + response.denda);
-            hideLoader();
-            loadPage('circulation'); // Reload
-        }).withFailureHandler(err => {
-             alert("Error: " + err.message);
-             hideLoader();
-        }).processReturn(bookId);
-    });
-
-    hideLoader();
-  }
-  
-  // Fungsi untuk memuat Halaman Pengaturan
-  function loadSettingsPage() {
-     mainContent.innerHTML = '<h1>⚙️ Halaman Pengaturan</h1><p>Fitur pengaturan akan ditampilkan di sini.</p>';
-     hideLoader();
-  }
-
-
-  // Muat halaman default saat aplikasi dibuka
-  loadPage('dashboard');
+    // Panggil fungsi utama untuk mengambil data saat halaman dibuka
+    ambilData();
 });
-
-</script>
