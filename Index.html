@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SIPRUS</title>
+    <?!= include('Style.css'); ?>
+  </head>
+  <body>
+    <div class="app-container">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h3>📚 SIPRUS</h3>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#" class="nav-item active" data-page="dashboard">📊 Dasbor</a>
+          <a href="#" class="nav-item" data-page="books">📚 Katalog Buku</a>
+          <a href="#" class="nav-item" data-page="members">👥 Anggota</a>
+          <a href="#" class="nav-item" data-page="circulation">🔄 Sirkulasi</a>
+          <a href="#" class="nav-item" data-page="settings">⚙️ Pengaturan</a>
+        </nav>
+      </aside>
+
+      <main class="main-content" id="main-content">
+        </main>
+    </div>
+    
+    <div id="loader" class="loader-overlay" style="display: none;">
+      <div class="loader"></div>
+    </div>
+
+    <?!= include('JavaScript'); ?>
+  </body>
+</html>

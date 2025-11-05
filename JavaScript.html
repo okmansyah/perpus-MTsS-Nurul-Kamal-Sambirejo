@@ -1,0 +1,157 @@
+<script>
+// Logika untuk menavigasi antar halaman
+document.addEventListener("DOMContentLoaded", function() {
+  const navItems = document.querySelectorAll('.nav-item');
+  const mainContent = document.getElementById('main-content');
+  const loader = document.getElementById('loader');
+
+  function showLoader() { loader.style.display = 'flex'; }
+  function hideLoader() { loader.style.display = 'none'; }
+  
+  function loadPage(page) {
+    showLoader();
+    mainContent.innerHTML = ''; // Kosongkan konten
+    navItems.forEach(item => item.classList.remove('active'));
+    document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+
+    if (page === 'dashboard') {
+      loadDashboard();
+    } else if (page === 'books') {
+      loadBooksPage();
+    } else if (page === 'members') {
+      loadMembersPage();
+    } else if (page === 'circulation') {
+      loadCirculationPage();
+    } else if (page === 'settings') {
+      loadSettingsPage();
+    }
+  }
+
+  // Event listener untuk navigasi
+  navItems.forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      const page = this.getAttribute('data-page');
+      loadPage(page);
+    });
+  });
+
+  // Fungsi untuk memuat Dasbor
+  function loadDashboard() {
+     google.script.run.withSuccessHandler(stats => {
+       mainContent.innerHTML = `
+         <h1>📊 Dasbor</h1>
+         <div class="stats-grid">
+           <div class="stat-card"><h3>Total Judul Buku</h3><p>${stats.totalTitles}</p></div>
+           <div class="stat-card"><h3>Total Eksemplar</h3><p>${stats.totalCopies}</p></div>
+           <div class="stat-card"><h3>Anggota Aktif</h3><p>${stats.activeMembers}</p></div>
+           <div class="stat-card"><h3>Buku Dipinjam</h3><p>${stats.onLoan}</p></div>
+         </div>
+         <h2>Jatuh Tempo Mendatang</h2>
+         <div id="due-list"></div>
+       `;
+       const dueList = document.getElementById('due-list');
+       if(stats.upcomingDue.length > 0){
+          let table = '<table><thead><tr><th>Judul Buku</th><th>Peminjam</th><th>Tgl Jatuh Tempo</th></tr></thead><tbody>';
+          stats.upcomingDue.forEach(item => {
+             table += `<tr><td>${item.title}</td><td>${item.member}</td><td>${item.dueDate}</td></tr>`;
+          });
+          table += '</tbody></table>';
+          dueList.innerHTML = table;
+       } else {
+          dueList.innerHTML = '<p>Tidak ada buku yang akan jatuh tempo dalam 3 hari ke depan.</p>';
+       }
+       hideLoader();
+     }).withFailureHandler(err => {
+        alert("Gagal memuat statistik: " + err.message);
+        hideLoader();
+     }).getDashboardStats();
+  }
+  
+  // Fungsi untuk memuat Halaman Buku
+  function loadBooksPage() {
+    google.script.run.withSuccessHandler(books => {
+        // Logika untuk menampilkan daftar buku
+        // ... (Ini akan sangat panjang, untuk sekarang kita buat placeholder)
+        mainContent.innerHTML = '<h1>📚 Halaman Katalog Buku</h1><p>Fitur daftar buku akan ditampilkan di sini.</p>';
+        hideLoader();
+    }).getBooks();
+  }
+  
+  // Fungsi untuk memuat Halaman Anggota
+  function loadMembersPage() {
+    mainContent.innerHTML = '<h1>👥 Halaman Anggota</h1><p>Fitur daftar anggota akan ditampilkan di sini.</p>';
+    hideLoader();
+  }
+
+  // Fungsi untuk memuat Halaman Sirkulasi
+  function loadCirculationPage() {
+    mainContent.innerHTML = `
+        <h1>🔄 Halaman Sirkulasi</h1>
+        <div class="circulation-container">
+            <div class="circulation-form">
+                <h2>Peminjaman Buku</h2>
+                <form id="loan-form">
+                    <label for="loan-member-id">ID Anggota</label>
+                    <input type="text" id="loan-member-id" required>
+                    <label for="loan-book-id">ID Buku</label>
+                    <input type="text" id="loan-book-id" required>
+                    <button type="submit">Proses Pinjam</button>
+                </form>
+            </div>
+            <div class="circulation-form">
+                <h2>Pengembalian Buku</h2>
+                <form id="return-form">
+                    <label for="return-book-id">ID Buku</label>
+                    <input type="text" id="return-book-id" required>
+                    <button type="submit">Proses Kembali</button>
+                </form>
+            </div>
+        </div>
+    `;
+    // Tambahkan event listener untuk form
+    document.getElementById('loan-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showLoader();
+        const loanData = {
+            memberId: document.getElementById('loan-member-id').value,
+            bookId: document.getElementById('loan-book-id').value,
+        };
+        google.script.run.withSuccessHandler(response => {
+            alert(response);
+            hideLoader();
+            loadPage('circulation'); // Reload
+        }).withFailureHandler(err => {
+             alert("Error: " + err.message);
+             hideLoader();
+        }).processLoan(loanData);
+    });
+
+    document.getElementById('return-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showLoader();
+        const bookId = document.getElementById('return-book-id').value;
+        google.script.run.withSuccessHandler(response => {
+            alert(response.message + "\\nDenda: Rp " + response.denda);
+            hideLoader();
+            loadPage('circulation'); // Reload
+        }).withFailureHandler(err => {
+             alert("Error: " + err.message);
+             hideLoader();
+        }).processReturn(bookId);
+    });
+
+    hideLoader();
+  }
+  
+  // Fungsi untuk memuat Halaman Pengaturan
+  function loadSettingsPage() {
+     mainContent.innerHTML = '<h1>⚙️ Halaman Pengaturan</h1><p>Fitur pengaturan akan ditampilkan di sini.</p>';
+     hideLoader();
+  }
+
+
+  // Muat halaman default saat aplikasi dibuka
+  loadPage('dashboard');
+});
+</script>
