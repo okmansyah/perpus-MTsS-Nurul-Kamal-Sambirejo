@@ -1,13 +1,13 @@
 document.addEventListener("DOMContentLoaded", function() {
     
-    // ===========================================
-    // PASANG 2 LINK CSV ANDA DI SINI
-    // ===========================================
+    // ==========================================================
+    // ⚠️ PERHATIAN: GANTI DUA LINK DI BAWAH INI
+    // ==========================================================
     
-    // 1. Link CSV dari Sheet "Katalog Buku"
+    // 1. Ganti dengan Link .csv dari Sheet "katalog buku"
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?output=csv'; 
     
-    // 2. Link CSV dari Sheet "Anggota" (YANG BARU)
+    // 2. Ganti dengan Link .csv dari Sheet "anggota"
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?output=csv'; 
     
 
@@ -17,12 +17,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const menuLinks = document.querySelectorAll('.menu-link');
     const contentSections = document.querySelectorAll('.content-section');
     
-    // Variabel untuk Katalog Buku
+    // Variabel Katalog Buku
     const tabelBuku = document.getElementById('tabel-buku');
     const filterBuku = document.getElementById('filterBuku');
     let dataBuku = []; // Penyimpan data buku
 
-    // Variabel untuk Data Anggota
+    // Variabel Data Anggota
     const tabelAnggota = document.getElementById('tabel-anggota');
     const filterAnggota = document.getElementById('filterAnggota');
     let dataAnggota = []; // Penyimpan data anggota
@@ -59,7 +59,8 @@ document.addEventListener("DOMContentLoaded", function() {
     // Fungsi Generik untuk Ambil Data CSV
     async function fetchData(url) {
         try {
-            const respons = await fetch(url);
+            // Tambahkan parameter cache-busting agar data selalu baru
+            const respons = await fetch(`${url}&timestamp=${new Date().getTime()}`);
             if (!respons.ok) {
                 throw new Error(`Gagal memuat data (Status: ${respons.status})`);
             }
@@ -67,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Ubah CSV jadi array, buang baris header (slice(1)) dan baris kosong
             return dataCsv.split('\n').slice(1).filter(baris => baris.trim() !== '');
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error fetching data dari URL:', url, error);
             return null; // Kembalikan null jika gagal
         }
     }
@@ -76,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function() {
     async function muatDataBuku() {
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) {
-            tabelBuku.innerHTML = '<tr><td colspan="5" class="loading" style="color: red;">Gagal mengambil data buku. Periksa link CSV Anda.</td></tr>';
+            tabelBuku.innerHTML = '<tr><td colspan="5" class="loading" style="color: red;">Gagal mengambil data buku. Pastikan Link CSV "katalog buku" Anda benar.</td></tr>';
             return;
         }
 
@@ -91,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function() {
             };
         });
         
-        tampilkanDataBuku(dataBuku); // Tampilkan semua data saat pertama kali dimuat
+        tampilkanDataBuku(dataBuku);
     }
 
     function tampilkanDataBuku(data) {
@@ -101,14 +102,17 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
         data.forEach(buku => {
-            const statusClass = buku.status.toLowerCase() === 'tersedia' ? 'status-tersedia' : 'status-dipinjam';
+            // Perbaiki status agar selalu huruf pertama kapital
+            const statusTeks = buku.status.charAt(0).toUpperCase() + buku.status.slice(1).toLowerCase();
+            const statusClass = statusTeks.toLowerCase() === 'tersedia' ? 'status-tersedia' : 'status-dipinjam';
+            
             const barisHtml = `
                 <tr>
                     <td>${buku.noInventaris}</td>
                     <td>${buku.judul}</td>
                     <td>${buku.pengarang}</td>
                     <td>${buku.penerbit}</td>
-                    <td><span class="status ${statusClass}">${buku.status}</span></td>
+                    <td><span class="status ${statusClass}">${statusTeks}</span></td>
                 </tr>
             `;
             tabelBuku.innerHTML += barisHtml;
@@ -119,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function() {
     async function muatDataAnggota() {
         const dataCsv = await fetchData(urlAnggota);
         if (!dataCsv) {
-            tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading" style="color: red;">Gagal mengambil data anggota. Periksa link CSV Anda.</td></tr>';
+            tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading" style="color: red;">Gagal mengambil data anggota. Pastikan Link CSV "anggota" Anda benar.</td></tr>';
             return;
         }
 
@@ -133,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function() {
             };
         });
         
-        tampilkanDataAnggota(dataAnggota); // Tampilkan semua data saat pertama kali dimuat
+        tampilkanDataAnggota(dataAnggota);
     }
 
     function tampilkanDataAnggota(data) {
@@ -191,4 +195,3 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
-
