@@ -1,193 +1,280 @@
 document.addEventListener("DOMContentLoaded", function() {
     
     // ==========================================================
-    // ⚠️ PERHATIAN: GANTI DUA LINK DI BAWAH INI
+    // == PENGATURAN UTAMA ==
+    // ==========================================================
+
+    // 1. LINK CSV (UNTUK BACA DATA / WEBVIEW)
+    const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; // <-- Ganti dengan link CSV sheet "Katalog Buku"
+    const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; // <-- Ganti dengan link CSV sheet "Anggota"
+
+    // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
+    // PASTE URL APLIKASI WEB ANDA DARI HASIL DEPLOY APPS SCRIPT
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbyeoIbVg-ZSuDKk-6zweHTlXSjEMbsXBx2GP5XdqJNQyBGc5EzlsLCf0Ick-5BgOMP5/exec'; // <-- GANTI INI
+
+    // ==========================================================
+    // == Variabel Global & Elemen ==
     // ==========================================================
     
-    // 1. Ganti dengan Link .csv dari Sheet "katalog buku"
-    const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
-    
-    // 2. Ganti dengan Link .csv dari Sheet "anggota"
-    const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
-    
+    // Data Penyimpanan
+    let dataBuku = [];
+    let dataAnggota = [];
 
-    // ===========================================
-    // Variabel Global
-    // ===========================================
-    const menuLinks = document.querySelectorAll('.menu-link');
+    // Elemen Navigasi
+    const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
     const contentSections = document.querySelectorAll('.content-section');
-    
-    // Variabel Katalog Buku
+
+    // Elemen Halaman Katalog Buku
     const tabelBuku = document.getElementById('tabel-buku');
     const filterBuku = document.getElementById('filterBuku');
-    let dataBuku = []; // Penyimpan data buku
 
-    // Variabel Data Anggota
+    // Elemen Halaman Anggota
     const tabelAnggota = document.getElementById('tabel-anggota');
     const filterAnggota = document.getElementById('filterAnggota');
-    let dataAnggota = []; // Penyimpan data anggota
-
     
-    // ===========================================
-    // Logika Menu Klik (Navigasi)
-    // ===========================================
-    menuLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault(); // Hentikan link agar tidak pindah halaman
-            
-            const targetId = this.getAttribute('data-target');
+    // Elemen Halaman Dashboard
+    const totalJudulBukuElement = document.getElementById('total-judul-buku');
+    const bukuTersediaElement = document.getElementById('buku-tersedia');
+    const bukuDipinjamElement = document.getElementById('buku-dipinjam');
 
-            // 1. Atur 'active' di menu
-            menuLinks.forEach(item => item.classList.remove('active'));
-            this.classList.add('active');
+    // Elemen Form Pinjam
+    const btnProsesPinjam = document.getElementById('btn-proses-pinjam');
+    const inputPinjamInv = document.getElementById('pinjam-no-inventaris');
+    const inputPinjamNIS = document.getElementById('pinjam-nis');
+    const pinjamFeedback = document.getElementById('pinjam-feedback');
+    
+    // Elemen Form Kembali
+    const btnProsesKembali = document.getElementById('btn-proses-kembali');
+    const inputKembaliInv = document.getElementById('kembali-no-inventaris');
+    const kembaliFeedback = document.getElementById('kembali-feedback');
+
+    // ===========================================
+    // Logika Navigasi Menu Sidebar
+    // ===========================================
+    menuItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.querySelector('a').getAttribute('data-target');
             
-            // 2. Tampilkan/Sembunyikan Konten
-            contentSections.forEach(section => {
-                if (section.id === targetId) {
-                    section.classList.add('active');
-                } else {
-                    section.classList.remove('active');
-                }
-            });
+            menuItems.forEach(i => i.classList.remove('active'));
+            contentSections.forEach(s => s.classList.remove('active'));
+
+            this.classList.add('active');
+            document.getElementById(targetId).classList.add('active');
         });
     });
 
     // ===========================================
-    // Fungsi untuk mengambil data (Fetch)
+    // Fungsi Baca Data (Fetch CSV)
     // ===========================================
-
-    // Fungsi Generik untuk Ambil Data CSV
+    
     async function fetchData(url) {
         try {
-            // Tambahkan parameter cache-busting agar data selalu baru
-            const respons = await fetch(`${url}&timestamp=${new Date().getTime()}`);
-            if (!respons.ok) {
-                throw new Error(`Gagal memuat data (Status: ${respons.status})`);
-            }
+            const respons = await fetch(url);
+            if (!respons.ok) throw new Error('Gagal memuat data');
             const dataCsv = await respons.text();
-            // Ubah CSV jadi array, buang baris header (slice(1)) dan baris kosong
             return dataCsv.split('\n').slice(1).filter(baris => baris.trim() !== '');
         } catch (error) {
-            console.error('Error fetching data dari URL:', url, error);
-            return null; // Kembalikan null jika gagal
+            console.error('Error:', error);
+            return null;
         }
     }
-
-    // --- 1. Ambil dan Tampilkan Data BUKU ---
+    
     async function muatDataBuku() {
+        tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) {
-            tabelBuku.innerHTML = '<tr><td colspan="5" class="loading" style="color: red;">Gagal mengambil data buku. Pastikan Link CSV "katalog buku" Anda benar.</td></tr>';
+            tabelBuku.innerHTML = '<tr><td colspan="5" class="loading" style="color:red;">Gagal mengambil data buku.</td></tr>';
             return;
         }
-
         dataBuku = dataCsv.map(baris => {
-            const kolom = baris.split(',');
-            return {
-                noInventaris: (kolom[0] || '').trim(),
-                judul: (kolom[1] || '').trim(),
-                pengarang: (kolom[2] || '').trim(),
-                penerbit: (kolom[3] || '').trim(),
-                status: (kolom[4] || '').trim()
-            };
+            const k = baris.split(',');
+            return { noInventaris: (k[0]||'').trim(), judul: (k[1]||'').trim(), pengarang: (k[2]||'').trim(), penerbit: (k[3]||'').trim(), status: (k[4]||'').trim() };
         });
-        
         tampilkanDataBuku(dataBuku);
+        updateDashboardStats();
     }
 
     function tampilkanDataBuku(data) {
-        tabelBuku.innerHTML = ''; // Kosongkan tabel
+        tabelBuku.innerHTML = '';
         if (data.length === 0) {
             tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Data tidak ditemukan.</td></tr>';
             return;
         }
         data.forEach(buku => {
-            // Perbaiki status agar selalu huruf pertama kapital
-            const statusTeks = buku.status.charAt(0).toUpperCase() + buku.status.slice(1).toLowerCase();
-            const statusClass = statusTeks.toLowerCase() === 'tersedia' ? 'status-tersedia' : 'status-dipinjam';
-            
-            const barisHtml = `
+            const statusClass = buku.status.toLowerCase() === 'tersedia' ? 'status-tersedia' : 'status-dipinjam';
+            tabelBuku.innerHTML += `
                 <tr>
                     <td>${buku.noInventaris}</td>
                     <td>${buku.judul}</td>
                     <td>${buku.pengarang}</td>
                     <td>${buku.penerbit}</td>
-                    <td><span class="status ${statusClass}">${statusTeks}</span></td>
-                </tr>
-            `;
-            tabelBuku.innerHTML += barisHtml;
+                    <td><span class="status ${statusClass}">${buku.status}</span></td>
+                </tr>`;
         });
     }
 
-    // --- 2. Ambil dan Tampilkan Data ANGGOTA ---
     async function muatDataAnggota() {
+        tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
         const dataCsv = await fetchData(urlAnggota);
         if (!dataCsv) {
-            tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading" style="color: red;">Gagal mengambil data anggota. Pastikan Link CSV "anggota" Anda benar.</td></tr>';
+            tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading" style="color:red;">Gagal mengambil data anggota.</td></tr>';
             return;
         }
-
         dataAnggota = dataCsv.map(baris => {
-            const kolom = baris.split(',');
-            return {
-                nis: (kolom[0] || '').trim(),
-                nama: (kolom[1] || '').trim(),
-                kelas: (kolom[2] || '').trim(),
-                status: (kolom[3] || '').trim()
-            };
+            const k = baris.split(',');
+            return { nis: (k[0]||'').trim(), nama: (k[1]||'').trim(), kelas: (k[2]||'').trim(), status: (k[3]||'').trim() };
         });
-        
         tampilkanDataAnggota(dataAnggota);
     }
-
+    
     function tampilkanDataAnggota(data) {
-        tabelAnggota.innerHTML = ''; // Kosongkan tabel
+        tabelAnggota.innerHTML = '';
         if (data.length === 0) {
             tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Data tidak ditemukan.</td></tr>';
             return;
         }
         data.forEach(anggota => {
-            const barisHtml = `
+            tabelAnggota.innerHTML += `
                 <tr>
                     <td>${anggota.nis}</td>
                     <td>${anggota.nama}</td>
                     <td>${anggota.kelas}</td>
                     <td>${anggota.status}</td>
-                </tr>
-            `;
-            tabelAnggota.innerHTML += barisHtml;
+                </tr>`;
         });
+    }
+    
+    function updateDashboardStats() {
+        const totalJudul = dataBuku.length;
+        const bukuTersedia = dataBuku.filter(buku => buku.status.toLowerCase() === 'tersedia').length;
+        const bukuDipinjam = totalJudul - bukuTersedia;
+
+        totalJudulBukuElement.textContent = totalJudul;
+        bukuTersediaElement.textContent = bukuTersedia;
+        bukuDipinjamElement.textContent = bukuDipinjam;
     }
 
     // ===========================================
-    // Logika Filter (Pencarian)
+    // Logika Filter Pencarian
     // ===========================================
-    
-    // Filter untuk BUKU
-    filterBuku.addEventListener('keyup', function() {
+    filterBuku.addEventListener('keyup', () => {
         const kataKunci = filterBuku.value.toLowerCase();
-        const dataFilter = dataBuku.filter(buku => {
-            return (
-                buku.judul.toLowerCase().includes(kataKunci) ||
-                buku.pengarang.toLowerCase().includes(kataKunci) ||
-                buku.penerbit.toLowerCase().includes(kataKunci)
-            );
-        });
+        const dataFilter = dataBuku.filter(buku => 
+            buku.judul.toLowerCase().includes(kataKunci) ||
+            buku.pengarang.toLowerCase().includes(kataKunci) ||
+            buku.penerbit.toLowerCase().includes(kataKunci)
+        );
         tampilkanDataBuku(dataFilter);
     });
-
-    // Filter untuk ANGGOTA
-    filterAnggota.addEventListener('keyup', function() {
+    
+    filterAnggota.addEventListener('keyup', () => {
         const kataKunci = filterAnggota.value.toLowerCase();
-        const dataFilter = dataAnggota.filter(anggota => {
-            return (
-                anggota.nama.toLowerCase().includes(kataKunci) ||
-                anggota.nis.toLowerCase().includes(kataKunci) ||
-                anggota.kelas.toLowerCase().includes(kataKunci)
-            );
-        });
+        const dataFilter = dataAnggota.filter(anggota => 
+            anggota.nama.toLowerCase().includes(kataKunci) ||
+            anggota.nis.toLowerCase().includes(kataKunci) ||
+            anggota.kelas.toLowerCase().includes(kataKunci)
+        );
         tampilkanDataAnggota(dataFilter);
     });
+
+    // ===========================================
+    // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
+    // ===========================================
+    
+    // --- Proses PINJAM BUKU ---
+    btnProsesPinjam.addEventListener('click', async function() {
+        const noInventaris = inputPinjamInv.value.trim();
+        const nis = inputPinjamNIS.value.trim();
+        
+        if (!noInventaris || !nis) {
+            pinjamFeedback.textContent = "Mohon isi No. Inventaris dan NIS.";
+            pinjamFeedback.style.color = "red";
+            return;
+        }
+        
+        // Tampilkan loading
+        this.disabled = true;
+        this.textContent = "Memproses...";
+        pinjamFeedback.textContent = "Menghubungi server...";
+        pinjamFeedback.style.color = "blue";
+        
+        const dataKirim = {
+            action: "pinjamBuku",
+            noInventaris: noInventaris,
+            nis: nis
+        };
+        
+        const response = await kirimDataKeBackend(dataKirim);
+        
+        // Tampilkan hasil
+        pinjamFeedback.textContent = response.message;
+        pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
+        
+        if (response.status === "success") {
+            inputPinjamInv.value = ""; // Kosongkan form
+            inputPinjamNIS.value = "";
+            muatDataBuku(); // Refresh tabel buku
+        }
+        
+        this.disabled = false;
+        this.textContent = "Proses Peminjaman";
+    });
+
+    // --- Proses KEMBALIKAN BUKU ---
+    btnProsesKembali.addEventListener('click', async function() {
+        const noInventaris = inputKembaliInv.value.trim();
+        
+        if (!noInventaris) {
+            kembaliFeedback.textContent = "Mohon isi No. Inventaris.";
+            kembaliFeedback.style.color = "red";
+            return;
+        }
+        
+        this.disabled = true;
+        this.textContent = "Memproses...";
+        kembaliFeedback.textContent = "Menghubungi server...";
+        kembaliFeedback.style.color = "blue";
+        
+        const dataKirim = {
+            action: "kembalikanBuku",
+            noInventaris: noInventaris
+        };
+        
+        const response = await kirimDataKeBackend(dataKirim);
+        
+        kembaliFeedback.textContent = response.message;
+        kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
+        
+        if (response.status === "success") {
+            inputKembaliInv.value = ""; // Kosongkan form
+            muatDataBuku(); // Refresh tabel buku
+        }
+        
+        this.disabled = false;
+        this.textContent = "Proses Pengembalian";
+    });
+
+    // Fungsi inti untuk mengirim data ke Google Apps Script
+    async function kirimDataKeBackend(data) {
+        try {
+            const res = await fetch(urlWebApp, {
+                method: "POST",
+                body: JSON.stringify(data),
+                headers: { "Content-Type": "application/json" }
+            });
+            
+            if (!res.ok) {
+                throw new Error("Respon jaringan tidak OK");
+            }
+            
+            return await res.json(); // Mengambil balasan JSON dari Apps Script
+            
+        } catch (error) {
+            console.error("Error saat mengirim data:", error);
+            return { status: "error", message: "Gagal terhubung ke server. " + error.message };
+        }
+    }
 
     // ===========================================
     // Jalankan Fungsi Saat Halaman Dimuat
@@ -195,6 +282,3 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
-
-
-
