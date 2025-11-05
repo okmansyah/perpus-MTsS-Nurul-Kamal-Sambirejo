@@ -1,34 +1,139 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>SIPRUS</title>
-    <?!= include('Style.css'); ?>
-  </head>
-  <body>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perpustakaan MTsS Nurul Kamal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
     <div class="app-container">
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <h3>📚 SIPRUS</h3>
-        </div>
-        <nav class="sidebar-nav">
-          <a href="#" class="nav-item active" data-page="dashboard">📊 Dasbor</a>
-          <a href="#" class="nav-item" data-page="books">📚 Katalog Buku</a>
-          <a href="#" class="nav-item" data-page="members">👥 Anggota</a>
-          <a href="#" class="nav-item" data-page="circulation">🔄 Sirkulasi</a>
-          <a href="#" class="nav-item" data-page="settings">⚙️ Pengaturan</a>
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <img src="logo.png" alt="Logo MTsS Nurul Kamal" class="sidebar-logo">
+                <h2>MTsS Nurul Kamal</h2>
+                <p>Perpustakaan Digital</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active">
+                    <a href="#katalog-buku" data-target="katalog-buku">
+                        <i class="fas fa-book"></i> Katalog Buku
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#dashboard-statistik" data-target="dashboard-statistik">
+                        <i class="fas fa-chart-line"></i> Dashboard Statistik
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#pinjam-buku" data-target="pinjam-buku">
+                        <i class="fas fa-sign-out-alt"></i> Pinjam Buku
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#pengembalian-buku" data-target="pengembalian-buku">
+                        <i class="fas fa-sign-in-alt"></i> Pengembalian Buku
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#admin-pengaturan" data-target="admin-pengaturan">
+                        <i class="fas fa-cog"></i> Admin & Pengaturan
+                    </a>
+                </li>
+            </ul>
         </nav>
-      </aside>
 
-      <main class="main-content" id="main-content">
-        </main>
-    </div>
-    
-    <div id="loader" class="loader-overlay" style="display: none;">
-      <div class="loader"></div>
+        <div class="main-content">
+            <header class="top-header">
+                <h1>Selamat Datang di Sistem Perpustakaan</h1>
+                <div class="header-actions">
+                    </div>
+            </header>
+
+            <main class="content-area">
+                <section id="katalog-buku" class="content-section active">
+                    <h2>Katalog Buku</h2>
+                    <input type="text" id="filterInput" placeholder="Cari judul, pengarang, atau penerbit...">
+                    <div class="tabel-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No. Inventaris</th>
+                                    <th>Judul Buku</th>
+                                    <th>Pengarang</th>
+                                    <th>Penerbit</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-buku">
+                                <tr>
+                                    <td colspan="5" class="loading">Memuat data buku...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="dashboard-statistik" class="content-section">
+                    <h2>Dashboard Statistik</h2>
+                    <div class="statistik-grid">
+                        <div class="card bg-green">
+                            <h3>Total Judul Buku</h3>
+                            <p id="total-judul-buku">0</p>
+                        </div>
+                        <div class="card bg-blue">
+                            <h3>Buku Tersedia</h3>
+                            <p id="buku-tersedia">0</p>
+                        </div>
+                        <div class="card bg-red">
+                            <h3>Buku Dipinjam</h3>
+                            <p id="buku-dipinjam">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="pinjam-buku" class="content-section">
+                    <h2>Pinjam Buku</h2>
+                    <p>Fungsi peminjaman buku akan diimplementasikan di sini. Karena keterbatasan GitHub Pages (tanpa server-side), fitur ini memerlukan sistem backend terpisah.</p>
+                    <div class="form-section">
+                        <label for="inputNISSiswa">NIS Siswa:</label>
+                        <input type="text" id="inputNISSiswa" placeholder="Scan atau Masukkan NIS Siswa">
+                        <label for="inputNoInventarisPinjam">No. Inventaris Buku:</label>
+                        <input type="text" id="inputNoInventarisPinjam" placeholder="Scan atau Masukkan No. Inventaris Buku">
+                        <button class="btn btn-primary">Proses Peminjaman</button>
+                    </div>
+                </section>
+
+                <section id="pengembalian-buku" class="content-section">
+                    <h2>Pengembalian Buku</h2>
+                    <p>Fungsi pengembalian buku akan diimplementasikan di sini. Memerlukan sistem backend untuk update status dan denda.</p>
+                    <div class="form-section">
+                        <label for="inputNoInventarisKembali">No. Inventaris Buku:</label>
+                        <input type="text" id="inputNoInventarisKembali" placeholder="Scan atau Masukkan No. Inventaris Buku">
+                        <button class="btn btn-warning">Proses Pengembalian</button>
+                    </div>
+                </section>
+
+                <section id="admin-pengaturan" class="content-section">
+                    <h2>Admin & Pengaturan</h2>
+                    <p>Area ini untuk manajemen data buku, siswa, upload massal, dan pengaturan umum. Memerlukan sistem backend dan database.</p>
+                    <div class="pengaturan-grid">
+                        <button class="btn btn-info">Kelola Data Buku</button>
+                        <button class="btn btn-info">Kelola Data Anggota</button>
+                        <button class="btn btn-success">Upload Data Excel</button>
+                        <button class="btn btn-secondary">Upload Logo</button>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="main-footer">
+                <p>&copy; 2025 MTsS Nurul Kamal Sambirejo</p>
+            </footer>
+        </div>
     </div>
 
-    <?!= include('JavaScript'); ?>
-  </body>
+    <script src="script.js"></script>
+</body>
 </html>
