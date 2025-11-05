@@ -41,11 +41,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const btnProsesPinjam = document.getElementById('btn-proses-pinjam');
     const inputPinjamInv = document.getElementById('pinjam-no-inventaris');
     const inputPinjamNIS = document.getElementById('pinjam-nis');
+    const inputPinjamPass = document.getElementById('pinjam-password'); // <-- Variabel password baru
     const pinjamFeedback = document.getElementById('pinjam-feedback');
     
     // Elemen Form Kembali
     const btnProsesKembali = document.getElementById('btn-proses-kembali');
     const inputKembaliInv = document.getElementById('kembali-no-inventaris');
+    const inputKembaliPass = document.getElementById('kembali-password'); // <-- Variabel password baru
     const kembaliFeedback = document.getElementById('kembali-feedback');
 
     // ===========================================
@@ -186,9 +188,10 @@ document.addEventListener("DOMContentLoaded", function() {
     btnProsesPinjam.addEventListener('click', async function() {
         const noInventaris = inputPinjamInv.value.trim();
         const nis = inputPinjamNIS.value.trim();
+        const adminPassword = inputPinjamPass.value.trim(); // <-- Mengambil nilai password
         
-        if (!noInventaris || !nis) {
-            pinjamFeedback.textContent = "Mohon isi No. Inventaris dan NIS.";
+        if (!noInventaris || !nis || !adminPassword) { // <-- Menambahkan cek password
+            pinjamFeedback.textContent = "Mohon isi No. Inventaris, NIS, dan Password Admin.";
             pinjamFeedback.style.color = "red";
             return;
         }
@@ -202,8 +205,8 @@ document.addEventListener("DOMContentLoaded", function() {
         const dataKirim = {
             action: "pinjamBuku",
             noInventaris: noInventaris,
-            nis: nis
-            password: adminPassword // <-- TAMBAHKAN INI
+            nis: nis,
+            password: adminPassword // <-- Mengirim password ke Apps Script
         };
         
         const response = await kirimDataKeBackend(dataKirim);
@@ -215,6 +218,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (response.status === "success") {
             inputPinjamInv.value = ""; // Kosongkan form
             inputPinjamNIS.value = "";
+            inputPinjamPass.value = "";
             muatDataBuku(); // Refresh tabel buku
         }
         
@@ -225,9 +229,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- Proses KEMBALIKAN BUKU ---
     btnProsesKembali.addEventListener('click', async function() {
         const noInventaris = inputKembaliInv.value.trim();
+        const adminPassword = inputKembaliPass.value.trim(); // <-- Mengambil nilai password
         
-        if (!noInventaris) {
-            kembaliFeedback.textContent = "Mohon isi No. Inventaris.";
+        if (!noInventaris || !adminPassword) { // <-- Menambahkan cek password
+            kembaliFeedback.textContent = "Mohon isi No. Inventaris dan Password Admin.";
             kembaliFeedback.style.color = "red";
             return;
         }
@@ -239,8 +244,8 @@ document.addEventListener("DOMContentLoaded", function() {
         
         const dataKirim = {
             action: "kembalikanBuku",
-            noInventaris: noInventaris
-            password: adminPassword // <-- TAMBAHKAN INI
+            noInventaris: noInventaris,
+            password: adminPassword // <-- Mengirim password ke Apps Script
         };
         
         const response = await kirimDataKeBackend(dataKirim);
@@ -250,6 +255,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
         if (response.status === "success") {
             inputKembaliInv.value = ""; // Kosongkan form
+            inputKembaliPass.value = "";
             muatDataBuku(); // Refresh tabel buku
         }
         
@@ -284,7 +290,3 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
-
-
-
-
