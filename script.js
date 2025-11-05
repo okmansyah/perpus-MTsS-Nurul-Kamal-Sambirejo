@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
     // PASTE URL APLIKASI WEB ANDA DARI HASIL DEPLOY APPS SCRIPT
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbyeoIbVg-ZSuDKk-6zweHTlXSjEMbsXBx2GP5XdqJNQyBGc5EzlsLCf0Ick-5BgOMP5/exec'; // <-- GANTI INI
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbxR7Vk7vzPdT9Rp_fA6O3nyE30QRVT0A2C1Y0VDr6_DNvtReV04vWb77bfQzpQVLaJk/exec'; // <-- GANTI INI
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -290,5 +290,6 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
+
 
 
