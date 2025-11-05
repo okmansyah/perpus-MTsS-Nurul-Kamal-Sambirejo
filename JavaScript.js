@@ -154,4 +154,5 @@ document.addEventListener("DOMContentLoaded", function() {
   // Muat halaman default saat aplikasi dibuka
   loadPage('dashboard');
 });
+
 </script>
