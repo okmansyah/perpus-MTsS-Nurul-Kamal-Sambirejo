@@ -206,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function() {
             action: "pinjamBuku",
             noInventaris: noInventaris,
             nis: nis,
-            password: adminPassword // <-- Mengirim password ke Apps Script
+            //password: adminPassword // <-- Mengirim password ke Apps Script
         };
         
         const response = await kirimDataKeBackend(dataKirim);
@@ -245,7 +245,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const dataKirim = {
             action: "kembalikanBuku",
             noInventaris: noInventaris,
-            password: adminPassword // <-- Mengirim password ke Apps Script
+            //password: adminPassword // <-- Mengirim password ke Apps Script
         };
         
         const response = await kirimDataKeBackend(dataKirim);
@@ -290,3 +290,4 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
+
