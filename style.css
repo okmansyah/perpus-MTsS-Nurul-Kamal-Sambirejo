@@ -11,7 +11,6 @@ body {
     background-color: #f0f2f5;
     margin: 0;
     color: #333;
-    /* Hapus 'display: flex' dari sini */
     min-height: 100vh;
 }
 
@@ -125,11 +124,11 @@ body {
     font-weight: 600;
 }
 
-/* KUNCI SCROLL: Area konten yang bisa bergulir */
+/* Area konten utama yang bisa di-scroll (untuk pindah antar section) */
 .content-area {
     padding: 30px;
     flex-grow: 1;
-    overflow-y: auto; /* HANYA area ini yang akan scroll */
+    overflow-y: auto; /* Scrollbar vertikal utama */
 }
 
 .content-section {
@@ -138,7 +137,7 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     display: none; /* Sembunyikan semua section */
-    margin-bottom: 30px; /* Jarak antar section jika dibutuhkan */
+    margin-bottom: 30px;
 }
 
 .content-section.active {
@@ -152,10 +151,18 @@ h2 {
     font-size: 2em;
     border-bottom: 2px solid #66bb6a;
     padding-bottom: 10px;
+    /* (Opsional) Jika Anda ingin H2 dan Searchbar juga lengket: */
+    /*
+    position: sticky;
+    top: -30px; 
+    background: white;
+    z-index: 20;
+    padding-top: 20px; 
+    */
 }
 
 /* =========================================== */
-/* == ELEMEN FORM & TABEL == */
+/* == ELEMEN FORM & TABEL (INI YANG BERUBAH) == */
 /* =========================================== */
 
 #filterBuku, #filterAnggota {
@@ -166,14 +173,44 @@ h2 {
     border-radius: 8px;
     box-sizing: border-box;
     font-size: 1em;
+    /* (Opsional) Jika Anda ingin Searchbar juga lengket: */
+    /*
+    position: sticky;
+    top: 70px; 
+    background: white;
+    z-index: 20;
+    */
 }
 
+/* ==== KODE BARU DIMULAI DI SINI ==== */
+
+/* 1. Kita beri tinggi maksimal pada container tabel agar ia punya scrollbar sendiri */
 .tabel-container {
+    /* Tentukan tinggi maksimal, misal 60% dari tinggi layar */
+    max-height: 60vh; 
+    overflow-y: auto; /* Tambahkan scrollbar vertikal HANYA di container ini */
+    
+    /* Sisa styling lama: */
     overflow-x: auto;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
+    position: relative; /* Dibutuhkan agar sticky berfungsi */
 }
 
+/* 2. Kita buat header tabel "lengket" di atas */
+thead th {
+    position: sticky; /* Kunci 'header' tabel */
+    top: -1px; /* Posisi 'lengket' di bagian atas (sedikit trik untuk border) */
+    
+    /* PENTING: Beri background agar data di bawahnya tidak tembus */
+    background-color: #e6ffed; 
+    
+    z-index: 10; /* Pastikan di atas data body */
+    /* (Opsional) Beri shadow tipis agar terlihat rapi */
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 3. Kita pindahkan style background dari 'thead' ke 'thead th' */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -186,10 +223,13 @@ th, td {
     vertical-align: middle;
 }
 
+/* Hapus background dari sini */
 thead {
-    background-color: #e6ffed;
     color: #2d3748;
 }
+
+/* ==== KODE BARU SELESAI DI SINI ==== */
+
 
 tbody tr:nth-child(even) {
     background-color: #f7fafc;
@@ -360,51 +400,4 @@ tbody tr:hover {
     .menu-item {
         margin-bottom: 0;
         margin-right: 5px;
-        flex-shrink: 0;
-    }
-
-    /* Ubah menu (ikon di atas, teks di bawah) */
-    .menu-item a {
-        flex-direction: column;
-        padding: 10px 8px;
-        font-size: 0.8em;
-        text-align: center;
-        min-width: 70px;
-    }
-
-    .menu-item a i {
-        margin-right: 0;
-        margin-bottom: 5px;
-        font-size: 1.4em;
-    }
-
-    /* Kurangi padding di konten utama */
-    .content-area {
-        padding: 15px;
-    }
-    .content-section {
-        padding: 20px;
-    }
-
-    /* Kecilkan judul */
-    .top-header {
-        padding: 15px;
-    }
-    .top-header h1 {
-        font-size: 1.4em;
-    }
-    h2 {
-        font-size: 1.5em;
-    }
-
-    /* Buat card statistik jadi 1 kolom */
-    .statistik-grid {
-        grid-template-columns: 1fr;
-    }
-
-    /* Kurangi padding di tabel */
-    th, td {
-        padding: 10px 12px;
-        font-size: 0.9em;
-    }
-}
+        flex-shrink:
