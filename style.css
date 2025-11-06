@@ -438,4 +438,12 @@ tbody tr:hover {
     thead th {
         position: static; 
     }
+    select,
+    input [type="text"],
+    input [type=password"] {
+        width: 100%;
+        max-width: 100%;
+        box-sizing:border-box;
+    }
 }
+
