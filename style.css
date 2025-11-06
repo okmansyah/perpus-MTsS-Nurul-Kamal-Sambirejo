@@ -441,5 +441,16 @@ tbody tr:hover {
     thead th {
         position: static; 
     }
+    .form-section {
+        padding: 15px !important;
+    }
+    .form-section input[type="text"],
+    .form-section input[type="password"],
+    form-section select {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
 }
+
 
