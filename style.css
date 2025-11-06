@@ -8,7 +8,8 @@
 body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.6;
-    background-color: #eef2f7; /* Latar belakang utama (biru-keabuan) */
+    /* PERUBAHAN 6: Latar belakang gelap (bingkai) */
+    background-color: #37474f; 
     margin: 0;
     color: #333;
     min-height: 100vh;
@@ -27,7 +28,7 @@ body {
 /* =========================================== */
 .sidebar {
     width: 250px;
-    background-color: #1a202c; /* Gelap, kontras */
+    background-color: #1a202c; /* Tetap gelap, kontras */
     color: white;
     padding: 20px;
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
@@ -112,15 +113,18 @@ body {
 }
 
 .top-header {
-    background-color: #f7fafc; /* <-- WARNA BARU (Bukan putih) */
-    padding: 20px 30px;
+    /* PERUBAHAN 1: Latar berani & lebih tipis */
+    background-color: #00695c; /* Hijau-teal kuat */
+    color: white;
+    padding: 10px 30px; /* Dibuat lebih tipis (compact) */
+    
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     flex-shrink: 0; 
 }
 
 .top-header h1 {
     margin: 0;
-    font-size: 1.8em;
+    font-size: 1.5em; /* Dikecilkan agar 'compact' */
     font-weight: 600;
 }
 
@@ -129,11 +133,13 @@ body {
     padding: 30px;
     flex-grow: 1;
     overflow-y: auto; 
+    /* PERUBAHAN 6: Latar belakang konten (di dalam bingkai) */
+    background-color: #eef2f7; /* Biru-keabuan muda (menyatu dgn body lama) */
 }
 
 .content-section {
-    background: #f7fafc; /* <-- WARNA BARU (Bukan putih) */
-    padding: 30px;
+    background: #ffffff; /* Kartu konten tetap putih bersih */
+    padding: 25px; /* Sedikit lebih 'compact' */
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     display: none; 
@@ -145,12 +151,13 @@ body {
 }
 
 h2 {
-    color: #2d3748;
+    /* PERUBAHAN 2: Judul section lebih 'compact' */
+    color: #00695c; /* Warna berani (konsisten dgn header) */
     margin-top: 0;
-    margin-bottom: 25px;
-    font-size: 2em;
-    border-bottom: 2px solid #66bb6a;
-    padding-bottom: 10px;
+    margin-bottom: 20px; /* Dirapatkan */
+    font-size: 1.6em; /* Dikecilkan */
+    border-bottom: 2px solid #00695c;
+    padding-bottom: 8px; /* Dirapatkan */
 }
 
 /* =========================================== */
@@ -158,13 +165,14 @@ h2 {
 /* =========================================== */
 
 #filterBuku, #filterAnggota {
+    /* PERUBAHAN 3: Kolom pencarian lebih 'compact' */
     width: 100%;
-    padding: 15px;
-    margin-bottom: 25px;
-    border: 1px solid #e2e8f0;
+    padding: 10px 15px; /* Dibuat lebih tipis */
+    margin-bottom: 20px; /* Dirapatkan */
+    border: 2px solid #00695c; /* Border berani */
     border-radius: 8px;
     box-sizing: border-box;
-    font-size: 1em;
+    font-size: 0.9em; /* Dikecilkan */
 }
 
 /* Container tabel dengan scroll internal */
@@ -179,12 +187,15 @@ h2 {
 
 /* Header tabel 'lengket' */
 thead th {
+    /* PERUBAHAN 4: Judul kolom lebih 'compact' & berani */
     position: sticky; 
     top: -1px; 
-    background-color: #66bb6a; /* Hijau berani */
-    color: #ffffff; /* Teks putih */
+    background-color: #004d40; /* Hijau sangat gelap (berani) */
+    color: #ffffff; 
+    padding: 12px 15px; /* Dibuat lebih tipis */
     z-index: 10; 
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+    font-size: 0.9em; /* Dikecilkan */
 }
 
 table {
@@ -193,7 +204,7 @@ table {
 }
 
 th, td {
-    padding: 15px 20px;
+    padding: 12px 15px; /* Dibuat lebih tipis */
     border: 1px solid #ebf4f1;
     text-align: left;
     vertical-align: middle;
@@ -203,14 +214,13 @@ thead {
     /* (Kosong) */
 }
 
-/* Zebra stripes */
+/* PERUBAHAN 5: Warna tabel lebih berani */
 tbody tr:nth-child(even) {
-    background-color: #f0f9f3; /* Hijau sangat muda */
+    background-color: #e0f2f1; /* Hijau-teal muda (lebih terlihat) */
 }
 
-/* Hover di tabel */
 tbody tr:hover {
-    background-color: #e6ffed; /* <-- WARNA BARU: Hijau lebih jelas saat hover */
+    background-color: #b2dfdb; /* Hijau-teal saat hover */
 }
 
 .status {
@@ -239,7 +249,7 @@ tbody tr:hover {
 }
 
 .card {
-    background-color: #f7fafc; /* <-- WARNA BARU (Bukan putih) */
+    background-color: #ffffff;
     padding: 25px;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
@@ -263,7 +273,7 @@ tbody tr:hover {
 
 /* Form Sirkulasi */
 .form-section {
-    background-color: #f7fafc; /* <-- WARNA BARU (Bukan #f9fafb) */
+    background-color: #f9fafb;
     padding: 25px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
@@ -316,7 +326,10 @@ tbody tr:hover {
 
 @media (max-width: 768px) {
 
-    /* Ubah layout utama jadi Atas-Bawah */
+    body {
+        background-color: #eef2f7; /* Di HP, kembalikan ke latar terang */
+    }
+
     .app-container {
         flex-direction: column;
         height: 100%; 
@@ -328,6 +341,7 @@ tbody tr:hover {
     }
     .content-area {
         overflow-y: visible; 
+        background-color: #eef2f7; /* Latar terang di HP */
     }
 
     /* Jadikan sidebar sebagai 'Top Bar' */
@@ -422,6 +436,6 @@ tbody tr:hover {
     }
 
     thead th {
-        position: static; /* Kembalikan ke posisi normal */
+        position: static; 
     }
 }
