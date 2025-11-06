@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const res = await fetch(urlWebApp, {
                 method: "POST",
                 body: JSON.stringify(data),
-                headers: { "Content-Type": "application/json" }
+                headers: { "Content-Type": "text/plain" }
             });
             
             if (!res.ok) {
@@ -304,5 +304,6 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
+
 
 
