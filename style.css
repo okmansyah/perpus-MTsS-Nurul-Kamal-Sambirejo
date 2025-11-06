@@ -1,144 +1,441 @@
-/* ==============================================
-   PALET WARNA & PENGATURAN DASAR
-   ============================================== */
+/* Import Font dari Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-/* Menerapkan box-sizing ke semua elemen. Ini adalah kunci
-   agar 'width: 100%' tidak menyebabkan overflow/melebar! */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* =========================================== */
+/* == PENGATURAN DASAR & LAYOUT UTAMA == */
+/* =========================================== */
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #F4F7F6; /* Abu-abu muda untuk latar belakang */
-  color: #333333;
-  line-height: 1.6;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    /* PERUBAHAN 6: Latar belakang gelap (bingkai) */
+    background-color: #37474f; 
+    margin: 0;
+    color: #333;
+    min-height: 100vh;
 }
 
-/* ==============================================
-   HEADER (Bilah Hijau di Atas)
-   ============================================== */
-
-/* Ganti .header-perpustakaan dengan class yang Anda gunakan */
-.header-perpustakaan {
-  background-color: #007B7A; /* Warna Primer: Teal Modern */
-  color: white;
-  padding: 1rem 1.5rem;
-  font-size: 1.25rem;
-  font-weight: bold;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+/* APP CONTAINER - Mengunci tinggi ke layar */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100vh; 
+    overflow: hidden; 
 }
 
-/* ==============================================
-   WADAH FORMULIR (Form Container)
-   ============================================== */
-
-/* Class ini untuk membungkus seluruh formulir Anda */
-.form-peminjaman-container {
-  max-width: 700px; /* Lebar maksimum di desktop */
-  margin: 2rem auto; /* Otomatis di tengah */
-  padding: 2rem;
-  background-color: #FFFFFF; /* Putih bersih */
-  border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
-  border-top: 6px solid #007B7A; /* Aksen warna primer */
+/* =========================================== */
+/* == SIDEBAR (MENU KIRI) == */
+/* =========================================== */
+.sidebar {
+    width: 250px;
+    background-color: #1a202c; /* Tetap gelap, kontras */
+    color: white;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; 
 }
 
-/* Judul "Form Peminjaman Buku" */
-.form-peminjaman-container h2 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #007B7A; /* Warna primer */
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid #EEEEEE;
-  padding-bottom: 0.75rem;
+.sidebar-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-/* ==============================================
-   INPUT, LABEL, DAN DROPDOWN (INTI PERBAIKAN)
-   ============================================== */
-
-/* Class untuk membungkus tiap grup (Label + Input) */
-.form-group {
-  margin-bottom: 1.25rem;
+.sidebar-logo {
+    max-width: 100px;
+    border-radius: 50%;
+    border: 3px solid #66bb6a; 
+    margin-bottom: 10px;
 }
 
-.form-group label {
-  display: block; /* Membuat label ada di atas input */
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #555555;
+.sidebar-header h2 {
+    margin: 10px 0 5px;
+    color: #66bb6a;
+    font-size: 1.6em;
 }
 
-/* INI BAGIAN TERPENTING:
-   Menargetkan semua input dan select agar seragam */
-input[type="text"],
-input[type="password"],
-select {
-  width: 100%; /* <-- KUNCI: Buat lebar 100% dari container */
-  max-width: 100%; /* Mencegah overflow */
-  padding: 0.8rem;
-  font-size: 1rem;
-  color: #333;
-  border: 1px solid #CCCCCC;
-  border-radius: 6px;
-  background-color: #FAFAFA; /* Sedikit abu-abu agar tidak silau */
-  
-  /* Transisi untuk efek 'focus' yang mulus */
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.sidebar-header p {
+    font-size: 0.9em;
+    color: #a0aec0;
+    margin: 0;
 }
 
-/* Efek 'Focus': Tampil saat input atau dropdown di-klik */
-input[type="text"]:focus,
-input[type="password"]:focus,
-select:focus {
-  outline: none; /* Hilangkan outline default */
-  border-color: #007B7A; /* Ganti warna border */
-  background-color: #FFFFFF;
-  box-shadow: 0 0 0 4px rgba(0, 123, 122, 0.15); /* Efek 'glow' keren */
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-/* Styling untuk input 'readonly' (seperti NIS Otomatis) */
-input[readonly] {
-  background-color: #EEEEEE; /* Warna abu-abu */
-  color: #777777;
-  font-style: italic;
-  cursor: default; /* Ganti kursor agar terlihat tidak bisa di-edit */
+.menu-item {
+    margin-bottom: 10px;
 }
 
-input[readonly]:focus {
-  border-color: #CCCCCC; /* Jaga border tetap abu-abu */
-  box-shadow: none; /* Hilangkan 'glow' */
+.menu-item a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: #cbd5e0;
+    text-decoration: none;
+    font-size: 1.1em;
+    border-radius: 8px;
+    transition: all 0.3s ease;
 }
 
-/* ==============================================
-   TOMBOL "Proses Peminjaman"
-   ============================================== */
-
-/* Gunakan class .btn-submit pada tombol Anda */
-.btn-submit {
-  display: block;
-  width: 100%;
-  padding: 0.85rem;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #FFFFFF;
-  background-color: #007B7A; /* Warna primer */
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+.menu-item a i {
+    margin-right: 15px;
+    font-size: 1.2em;
+    color: #66bb6a;
+    transition: color 0.3s ease;
 }
 
-/* Efek saat kursor mouse di atas tombol */
-.btn-submit:hover {
-  background-color: #005A59; /* Warna primer sedikit lebih gelap */
+.menu-item a:hover,
+.menu-item.active a {
+    background-color: #38a169;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 128, 0, 0.3);
 }
 
-/* Efek saat tombol ditekan */
-.btn-submit:active {
-  transform: scale(0.99); /* Efek 'ditekan' */
+.menu-item.active a i {
+    color: white;
+}
+
+/* =========================================== */
+/* == KONTEN UTAMA (KANAN) == */
+/* =========================================== */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+}
+
+.top-header {
+    /* PERUBAHAN 1: Latar berani & lebih tipis */
+    background-color: #00695c; /* Hijau-teal kuat */
+    color: white;
+    padding: 10px 30px; /* Dibuat lebih tipis (compact) */
+    
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    flex-shrink: 0; 
+}
+
+.top-header h1 {
+    margin: 0;
+    font-size: 1.5em; /* Dikecilkan agar 'compact' */
+    font-weight: 600;
+}
+
+/* Area konten utama yang bisa di-scroll */
+.content-area {
+    padding: 30px;
+    flex-grow: 1;
+    overflow-y: auto; 
+    /* PERUBAHAN 6: Latar belakang konten (di dalam bingkai) */
+    background-color: #eef2f7; /* Biru-keabuan muda (menyatu dgn body lama) */
+}
+
+.content-section {
+    background: #ffffff; /* Kartu konten tetap putih bersih */
+    padding: 25px; /* Sedikit lebih 'compact' */
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: none; 
+    margin-bottom: 30px;
+}
+
+.content-section.active {
+    display: block; 
+}
+
+h2 {
+    /* PERUBAHAN 2: Judul section lebih 'compact' */
+    color: #00695c; /* Warna berani (konsisten dgn header) */
+    margin-top: 0;
+    margin-bottom: 20px; /* Dirapatkan */
+    font-size: 1.6em; /* Dikecilkan */
+    border-bottom: 2px solid #00695c;
+    padding-bottom: 8px; /* Dirapatkan */
+}
+
+/* =========================================== */
+/* == ELEMEN FORM & TABEL == */
+/* =========================================== */
+
+#filterBuku, #filterAnggota {
+    /* PERUBAHAN 3: Kolom pencarian lebih 'compact' */
+    width: 100%;
+    padding: 10px 15px; /* Dibuat lebih tipis */
+    margin-bottom: 20px; /* Dirapatkan */
+    border: 2px solid #00695c; /* Border berani */
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 0.9em; /* Dikecilkan */
+}
+
+/* Container tabel dengan scroll internal */
+.tabel-container {
+    max-height: 60vh; 
+    overflow-y: auto; 
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    position: relative; 
+}
+
+/* Header tabel 'lengket' */
+thead th {
+    /* PERUBAHAN 4: Judul kolom lebih 'compact' & berani */
+    position: sticky; 
+    top: -1px; 
+    background-color: #004d40; /* Hijau sangat gelap (berani) */
+    color: #ffffff; 
+    padding: 12px 15px; /* Dibuat lebih tipis */
+    z-index: 10; 
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+    font-size: 0.9em; /* Dikecilkan */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px 15px; /* Dibuat lebih tipis */
+    border: 1px solid #ebf4f1;
+    text-align: left;
+    vertical-align: middle;
+}
+
+thead {
+    /* (Kosong) */
+}
+
+/* PERUBAHAN 5: Warna tabel lebih berani */
+tbody tr:nth-child(even) {
+    background-color: #e0f2f1; /* Hijau-teal muda (lebih terlihat) */
+}
+
+tbody tr:hover {
+    background-color: #b2dfdb; /* Hijau-teal saat hover */
+}
+
+.status {
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    color: white;
+    font-size: 0.85em;
+    display: inline-block;
+}
+.status-tersedia { background-color: #48bb78; }
+.status-dipinjam { background-color: #f56565; }
+
+.loading {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Kartu Dashboard */
+.statistik-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    text-align: center;
+}
+.card h3 {
+    margin-top: 0;
+    font-size: 1.2em;
+}
+.card p {
+    font-size: 2.5em;
+    font-weight: 700;
+    margin: 10px 0 0;
+}
+.card.bg-green { background-color: #d1fae5; }
+.card.bg-green p { color: #065f46; }
+.card.bg-blue { background-color: #dbeafe; }
+.card.bg-blue p { color: #1e40af; }
+.card.bg-red { background-color: #fee2e2; }
+.card.bg-red p { color: #991b1b; }
+
+/* Form Sirkulasi */
+.form-section {
+    background-color: #f9fafb;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+.form-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #4a5568;
+}
+.form-section input[type="text"],
+.form-section input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+.btn-primary { background-color: #48bb78; color: white; }
+.btn-primary:hover { background-color: #38a169; }
+.btn-warning { background-color: #f6ad55; color: white; }
+.btn-warning:hover { background-color: #ed8936; }
+.btn-info { background-color: #63b3ed; color: white; }
+.btn-info:hover { background-color: #4299e1; }
+.btn-success { background-color: #4299e1; color: white; }
+.btn-success:hover { background-color: #3182ce; }
+.btn-secondary { background-color: #a0aec0; color: white; }
+.btn-secondary:hover { background-color: #718096; }
+
+.feedback-message {
+    margin-top: 15px;
+    font-weight: 600;
+}
+
+/* =========================================== */
+/* == KODE RESPONSIVE UNTUK MOBILE == */
+/* =========================================== */
+
+@media (max-width: 768px) {
+
+    body {
+        background-color: #eef2f7; /* Di HP, kembalikan ke latar terang */
+    }
+
+    .app-container {
+        flex-direction: column;
+        height: 100%; 
+        overflow: auto; 
+    }
+    
+    .main-content {
+        overflow: visible;
+    }
+    .content-area {
+        overflow-y: visible; 
+        background-color: #eef2f7; /* Latar terang di HP */
+    }
+
+    /* Jadikan sidebar sebagai 'Top Bar' */
+    .sidebar {
+        width: 100%;
+        box-sizing: border-box;
+        height: auto;
+    }
+
+    .sidebar-header {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .sidebar-logo {
+        max-width: 60px;
+        margin-right: 15px;
+        margin-bottom: 0;
+    }
+
+    .sidebar-header p {
+        display: none; 
+    }
+    .sidebar-header h2 {
+        font-size: 1.2em;
+    }
+
+    /* Ubah Menu jadi Horizontal dan Bisa Scroll */
+    .sidebar-menu {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto; 
+        white-space: nowrap;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        margin-top: 15px;
+        padding-top: 10px;
+    }
+
+    .menu-item {
+        margin-bottom: 0;
+        margin-right: 5px;
+        flex-shrink: 0;
+    }
+
+    .menu-item a {
+        flex-direction: column;
+        padding: 10px 8px;
+        font-size: 0.8em;
+        text-align: center;
+        min-width: 70px;
+    }
+
+    .menu-item a i {
+        margin-right: 0;
+        margin-bottom: 5px;
+        font-size: 1.4em;
+    }
+
+    .content-area {
+        padding: 15px;
+    }
+    .content-section {
+        padding: 20px;
+    }
+
+    .top-header {
+        padding: 15px;
+    }
+    .top-header h1 {
+        font-size: 1.4em;
+    }
+    h2 {
+        font-size: 1.5em;
+    }
+
+    .statistik-grid {
+        grid-template-columns: 1fr;
+    }
+
+    th, td {
+        padding: 10px 12px;
+        font-size: 0.9em;
+    }
+
+    /* Matikan 'max-height' dan 'sticky' di HP */
+    .tabel-container {
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    thead th {
+        position: static; 
+    }
 }
