@@ -9,7 +9,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
 
     // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbzxuBshv8RETcQByR3X4zW7QCE9b8ulKgw4pS0FdnpVTEs0AMf70G60R-eDGhCAr4jH/exec';
+    // PASTIKAN INI ADALAH URL DEPLOYMENT TERBARU ANDA
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbwM1VqMNd4WbL36c1aXNO6KfI3Vz0a459I22UX2NjJZck-UVRqssIeEKK6opOImPF9R/exec';
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -30,14 +31,18 @@ document.addEventListener("DOMContentLoaded", function() {
     const bukuTersediaElement = document.getElementById('buku-tersedia');
     const bukuDipinjamElement = document.getElementById('buku-dipinjam');
 
+    // Elemen Form Pinjam (Sudah diubah ke <select>)
     const btnProsesPinjam = document.getElementById('btn-proses-pinjam');
-    const inputPinjamInv = document.getElementById('pinjam-no-inventaris');
+    const selectPinjamInv = document.getElementById('pinjam-no-inventaris');
+    const selectPinjamKelas = document.getElementById('pinjam-kelas');
+    const selectPinjamNama = document.getElementById('pinjam-nama');
     const inputPinjamNIS = document.getElementById('pinjam-nis');
     const inputPinjamPass = document.getElementById('pinjam-password'); 
     const pinjamFeedback = document.getElementById('pinjam-feedback');
     
+    // Elemen Form Kembali (Sudah diubah ke <select>)
     const btnProsesKembali = document.getElementById('btn-proses-kembali');
-    const inputKembaliInv = document.getElementById('kembali-no-inventaris');
+    const selectKembaliInv = document.getElementById('kembali-no-inventaris');
     const inputKembaliPass = document.getElementById('kembali-password'); 
     const kembaliFeedback = document.getElementById('kembali-feedback');
 
@@ -77,11 +82,13 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     async function muatDataBuku() {
-        if (!tabelBuku) return;
-        tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
+        if (!tabelBuku && !selectPinjamInv) return; // Cek jika elemen ada
+
+        if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
+        
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) {
-            tabelBuku.innerHTML = '<tr><td colspan="5" class="loading" style="color:red;">Gagal mengambil data buku.</td></tr>';
+            if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading" style="color:red;">Gagal mengambil data buku.</td></tr>';
             return;
         }
         dataBuku = dataCsv.map(baris => {
@@ -94,8 +101,16 @@ document.addEventListener("DOMContentLoaded", function() {
                 status: (k[4]||'').trim() 
             };
         });
-        tampilkanDataBuku(dataBuku);
-        updateDashboardStats();
+
+        if (tabelBuku) {
+            tampilkanDataBuku(dataBuku);
+        }
+        if (totalJudulBukuElement) {
+            updateDashboardStats();
+        }
+        
+        // Panggil fungsi untuk mengisi dropdown buku
+        populateBukuDropdowns();
     }
 
     function tampilkanDataBuku(data) {
@@ -119,11 +134,13 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     async function muatDataAnggota() {
-        if (!tabelAnggota) return;
-        tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
+        if (!tabelAnggota && !selectPinjamKelas) return; // Cek jika elemen ada
+
+        if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
+        
         const dataCsv = await fetchData(urlAnggota);
         if (!dataCsv) {
-            tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading" style="color:red;">Gagal mengambil data anggota.</td></tr>';
+            if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading" style="color:red;">Gagal mengambil data anggota.</td></tr>';
             return;
         }
         dataAnggota = dataCsv.map(baris => {
@@ -135,7 +152,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 status: (k[3]||'').trim() 
             };
         });
-        tampilkanDataAnggota(dataAnggota);
+        
+        if (tabelAnggota) {
+            tampilkanDataAnggota(dataAnggota);
+        }
+
+        // Panggil fungsi untuk mengisi dropdown kelas
+        populateKelasSelect();
     }
     
     function tampilkanDataAnggota(data) {
@@ -165,6 +188,82 @@ document.addEventListener("DOMContentLoaded", function() {
         totalJudulBukuElement.textContent = totalJudul;
         bukuTersediaElement.textContent = bukuTersedia;
         bukuDipinjamElement.textContent = bukuDipinjam;
+    }
+
+    // ===========================================
+    // == FUNGSI BARU UNTUK DROPDOWN SIRKULASI ==
+    // ===========================================
+
+    function populateBukuDropdowns() {
+        if (!selectPinjamInv || !selectKembaliInv) return;
+
+        // Kosongkan dulu
+        selectPinjamInv.innerHTML = '<option value="">-- Pilih Buku (Tersedia) --</option>';
+        selectKembaliInv.innerHTML = '<option value="">-- Pilih Buku (Dipinjam) --</option>';
+
+        // Urutkan buku berdasarkan No. Inventaris
+        const sortedData = [...dataBuku].sort((a, b) => a.noInventaris.localeCompare(b.noInventaris, undefined, { numeric: true }));
+
+        sortedData.forEach(buku => {
+            const optionText = `${buku.noInventaris} - ${buku.judul}`;
+            
+            if ((buku.status || "").toLowerCase() === 'tersedia') {
+                // Tambahkan ke dropdown Pinjam
+                selectPinjamInv.innerHTML += `<option value="${buku.noInventaris}">${optionText}</option>`;
+            } else {
+                // Tambahkan ke dropdown Kembali
+                selectKembaliInv.innerHTML += `<option value="${buku.noInventaris}">${optionText}</option>`;
+            }
+        });
+    }
+
+    function populateKelasSelect() {
+        if (!selectPinjamKelas) return;
+
+        // Dapatkan semua kelas unik dari dataAnggota
+        const semuaKelas = dataAnggota.map(anggota => anggota.kelas);
+        const kelasUnik = [...new Set(semuaKelas)].sort(); // Urutkan kelas
+
+        selectPinjamKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+        kelasUnik.forEach(kelas => {
+            if (kelas) { // Hindari jika ada kelas kosong
+                selectPinjamKelas.innerHTML += `<option value="${kelas}">${kelas}</option>`;
+            }
+        });
+    }
+
+    // --- Tambahkan Event Listener untuk Dropdown Bertingkat ---
+    if (selectPinjamKelas) {
+        selectPinjamKelas.addEventListener('change', function() {
+            const kelasTerpilih = this.value;
+            
+            // Kosongkan dropdown nama dan NIS
+            selectPinjamNama.innerHTML = '<option value="">-- Pilih Nama --</option>';
+            inputPinjamNIS.value = ""; // Pastikan input NIS dikosongkan
+
+            if (!kelasTerpilih) return; // Jika memilih "-- Pilih Kelas --"
+
+            // Filter anggota berdasarkan kelas terpilih
+            const anggotaDiKelas = dataAnggota
+                .filter(anggota => anggota.kelas === kelasTerpilih)
+                .sort((a, b) => a.nama.localeCompare(b.nama)); // Urutkan nama
+
+            if (anggotaDiKelas.length === 0) {
+                selectPinjamNama.innerHTML = '<option value="">-- Tidak ada siswa di kelas ini --</option>';
+            } else {
+                anggotaDiKelas.forEach(siswa => {
+                    // Value dari option ini adalah NIS-nya
+                    selectPinjamNama.innerHTML += `<option value="${siswa.nis}">${siswa.nama}</option>`;
+                });
+            }
+        });
+    }
+
+    if (selectPinjamNama) {
+        selectPinjamNama.addEventListener('change', function() {
+            // Tampilkan NIS di input readonly
+            inputPinjamNIS.value = this.value;
+        });
     }
 
     // ===========================================
@@ -200,12 +299,12 @@ document.addEventListener("DOMContentLoaded", function() {
     
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
-            const noInventaris = inputPinjamInv.value.trim();
-            const nis = inputPinjamNIS.value.trim();
+            const noInventaris = selectPinjamInv.value; // Diambil dari <select>
+            const nis = inputPinjamNIS.value.trim();    // Diambil dari input (readonly)
             const adminPassword = inputPinjamPass.value.trim();
             
             if (!noInventaris || !nis || !adminPassword) {
-                pinjamFeedback.textContent = "Mohon isi No. Inventaris, NIS, dan Password Admin.";
+                pinjamFeedback.textContent = "Mohon lengkapi pilihan Buku, Peminjam, dan Password Admin.";
                 pinjamFeedback.style.color = "red";
                 return;
             }
@@ -228,9 +327,13 @@ document.addEventListener("DOMContentLoaded", function() {
             pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
             
             if (response.status === "success") {
-                inputPinjamInv.value = "";
+                // Reset form
+                selectPinjamInv.value = "";
+                selectPinjamKelas.value = "";
+                selectPinjamNama.innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                 inputPinjamNIS.value = "";
                 inputPinjamPass.value = "";
+                // Muat ulang data agar dropdown buku juga ter-update
                 await muatDataBuku(); 
             }
             
@@ -241,12 +344,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (btnProsesKembali) {
         btnProsesKembali.addEventListener('click', async function() {
-            const noInventaris = inputKembaliInv.value.trim();
-            // ===== INI ADALAH BARIS YANG DIPERBAIKI =====
+            const noInventaris = selectKembaliInv.value; // Diambil dari <select>
             const adminPassword = inputKembaliPass.value.trim(); 
             
             if (!noInventaris || !adminPassword) {
-                kembaliFeedback.textContent = "Mohon isi No. Inventaris dan Password Admin.";
+                kembaliFeedback.textContent = "Mohon pilih Buku dan isi Password Admin.";
                 kembaliFeedback.style.color = "red";
                 return;
             }
@@ -268,8 +370,10 @@ document.addEventListener("DOMContentLoaded", function() {
             kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
             
             if (response.status === "success") {
-                inputKembaliInv.value = "";
+                // Reset form
+                selectKembaliInv.value = "";
                 inputKembaliPass.value = "";
+                // Muat ulang data agar dropdown buku juga ter-update
                 await muatDataBuku(); 
             }
             
@@ -282,8 +386,8 @@ document.addEventListener("DOMContentLoaded", function() {
         try {
             const res = await fetch(urlWebApp, {
                 method: "POST",
-                body: JSON.stringify(data),
-                headers: { "Content-Type": "text/plain" }
+                body: JSON.stringify(data)
+                // PERBAIKAN 'FAILED TO FETCH': Header 'Content-Type' dihapus
             });
             
             if (!res.ok) {
@@ -294,7 +398,8 @@ document.addEventListener("DOMContentLoaded", function() {
             
         } catch (error) {
             console.error("Error saat mengirim data:", error);
-            return { status: "error", message: "Gagal terhubung ke server. " + error.message };
+            // Ini adalah pesan error jika server (Google) mati atau URL salah
+            return { status: "error", message: "Gagal terhubung ke server. Pastikan URL Web App benar dan server di-deploy." };
         }
     }
 
@@ -304,6 +409,3 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
-
-
-
