@@ -441,9 +441,10 @@ tbody tr:hover {
     select,
     input [type="text"],
     input [type=password"] {
-        width: 100%;
-        max-width: 100%;
-        box-sizing:border-box;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing:border-box !important;
     }
 }
+
 
