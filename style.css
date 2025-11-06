@@ -285,13 +285,16 @@ tbody tr:hover {
     color: #4a5568;
 }
 .form-section input[type="text"],
-.form-section input[type="password"] {
+.form-section input[type="password"],
+.form-section select {
     width: 100%;
     padding: 12px 15px;
     margin-bottom: 20px;
     border: 1px solid #cbd5e0;
     border-radius: 8px;
     font-size: 1em;
+    font-family: inherit;
+    background-color: #fff;
     box-sizing: border-box;
 }
 
@@ -439,3 +442,4 @@ tbody tr:hover {
         position: static; 
     }
 }
+
