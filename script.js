@@ -5,12 +5,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // ==========================================================
 
     // 1. LINK CSV (UNTUK BACA DATA / WEBVIEW)
-    // Ganti dengan link Anda
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
 
     // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
-    // Ganti dengan link Anda
     const urlWebApp = 'https://script.google.com/macros/s/AKfycbyeoIbVg-ZSuDKk-6zweHTlXSjEMbsXBx2GP5XdqJNQyBGc5EzlsLCf0Ick-5BgOMP5/exec';
 
     // ==========================================================
