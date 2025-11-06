@@ -8,7 +8,7 @@
 body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.6;
-    background-color: #eef2f7; /* <-- WARNA BARU: Biru-keabuan muda */
+    background-color: #eef2f7; /* Latar belakang utama (biru-keabuan) */
     margin: 0;
     color: #333;
     min-height: 100vh;
@@ -27,7 +27,7 @@ body {
 /* =========================================== */
 .sidebar {
     width: 250px;
-    background-color: #1a202c; /* Biarkan gelap agar 'berani' */
+    background-color: #1a202c; /* Gelap, kontras */
     color: white;
     padding: 20px;
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
@@ -112,7 +112,7 @@ body {
 }
 
 .top-header {
-    background-color: white; /* Tetap putih agar terlihat seperti kartu */
+    background-color: #f7fafc; /* <-- WARNA BARU (Bukan putih) */
     padding: 20px 30px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     flex-shrink: 0; 
@@ -132,7 +132,7 @@ body {
 }
 
 .content-section {
-    background: white; /* Tetap putih agar 'nyaman dibaca' */
+    background: #f7fafc; /* <-- WARNA BARU (Bukan putih) */
     padding: 30px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -154,7 +154,7 @@ h2 {
 }
 
 /* =========================================== */
-/* == ELEMEN FORM & TABEL (PERUBAHAN WARNA) == */
+/* == ELEMEN FORM & TABEL == */
 /* =========================================== */
 
 #filterBuku, #filterAnggota {
@@ -181,8 +181,8 @@ h2 {
 thead th {
     position: sticky; 
     top: -1px; 
-    background-color: #66bb6a; /* <-- WARNA BARU: Hijau berani */
-    color: #ffffff; /* <-- WARNA BARU: Teks putih */
+    background-color: #66bb6a; /* Hijau berani */
+    color: #ffffff; /* Teks putih */
     z-index: 10; 
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
 }
@@ -199,18 +199,18 @@ th, td {
     vertical-align: middle;
 }
 
-/* Hapus warna dari thead karena sudah di thead th */
 thead {
     /* (Kosong) */
 }
 
-/* Zebra stripes baru */
+/* Zebra stripes */
 tbody tr:nth-child(even) {
-    background-color: #f0f9f3; /* <-- WARNA BARU: Hijau sangat muda */
+    background-color: #f0f9f3; /* Hijau sangat muda */
 }
 
+/* Hover di tabel */
 tbody tr:hover {
-    background-color: #edf2f7;
+    background-color: #e6ffed; /* <-- WARNA BARU: Hijau lebih jelas saat hover */
 }
 
 .status {
@@ -239,7 +239,7 @@ tbody tr:hover {
 }
 
 .card {
-    background-color: white;
+    background-color: #f7fafc; /* <-- WARNA BARU (Bukan putih) */
     padding: 25px;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
@@ -263,7 +263,7 @@ tbody tr:hover {
 
 /* Form Sirkulasi */
 .form-section {
-    background-color: #f9fafb;
+    background-color: #f7fafc; /* <-- WARNA BARU (Bukan #f9fafb) */
     padding: 25px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
