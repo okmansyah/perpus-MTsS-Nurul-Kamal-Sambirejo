@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // ==========================================================
 
     // 1. LINK CSV (UNTUK BACA DATA / WEBVIEW)
+    // PASTIKAN LINK INI BENAR DAN SUDAH "PUBLISH TO THE WEB"
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
 
@@ -49,21 +50,27 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     // Logika Navigasi Menu Sidebar
     // ===========================================
-    menuItems.forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.querySelector('a').getAttribute('data-target');
-            
-            menuItems.forEach(i => i.classList.remove('active'));
-            contentSections.forEach(s => s.classList.remove('active'));
+    // Kode ini WAJIB berjalan agar menu bisa diklik
+    if (menuItems.length > 0 && contentSections.length > 0) {
+        menuItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.querySelector('a').getAttribute('data-target');
+                
+                menuItems.forEach(i => i.classList.remove('active'));
+                contentSections.forEach(s => s.classList.remove('active'));
 
-            this.classList.add('active');
-            const targetElement = document.getElementById(targetId);
-            if (targetElement) {
-                targetElement.classList.add('active');
-            }
+                this.classList.add('active');
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    targetElement.classList.add('active');
+                }
+            });
         });
-    });
+    } else {
+        console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
+    }
+
 
     // ===========================================
     // Fungsi Baca Data (Fetch CSV)
@@ -72,11 +79,17 @@ document.addEventListener("DOMContentLoaded", function() {
     async function fetchData(url) {
         try {
             const respons = await fetch(url);
-            if (!respons.ok) throw new Error('Gagal memuat data');
+            if (!respons.ok) {
+                 // Ganti error 404 generik menjadi pesan spesifik
+                 throw new Error(`Gagal memuat data dari URL: ${url}. Status: ${respons.status} (Not Found)`);
+            }
             const dataCsv = await respons.text();
             return dataCsv.split('\n').slice(1).filter(baris => baris.trim() !== '');
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error di fungsi fetchData:', error);
+            // Tampilkan error di tabel agar pengguna tahu
+            if(tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="5" class="loading" style="color:red;">Error: ${error.message}. Cek link CSV.</td></tr>`;
+            if(tabelAnggota) tabelAnggota.innerHTML = `<tr><td colspan="4" class="loading" style="color:red;">Error: ${error.message}. Cek link CSV.</td></tr>`;
             return null;
         }
     }
@@ -88,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) {
-            if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading" style="color:red;">Gagal mengambil data buku.</td></tr>';
+            // Pesan error sudah ditangani di dalam fetchData
             return;
         }
         dataBuku = dataCsv.map(baris => {
@@ -140,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
         const dataCsv = await fetchData(urlAnggota);
         if (!dataCsv) {
-            if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading" style="color:red;">Gagal mengambil data anggota.</td></tr>';
+            // Pesan error sudah ditangani di dalam fetchData
             return;
         }
         dataAnggota = dataCsv.map(baris => {
@@ -409,4 +422,3 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
-
