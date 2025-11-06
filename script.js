@@ -55,7 +55,10 @@ document.addEventListener("DOMContentLoaded", function() {
             contentSections.forEach(s => s.classList.remove('active'));
 
             this.classList.add('active');
-            document.getElementById(targetId).classList.add('active');
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.classList.add('active');
+            }
         });
     });
 
@@ -68,7 +71,6 @@ document.addEventListener("DOMContentLoaded", function() {
             const respons = await fetch(url);
             if (!respons.ok) throw new Error('Gagal memuat data');
             const dataCsv = await respons.text();
-            // Filter baris kosong DARI AWAL
             return dataCsv.split('\n').slice(1).filter(baris => baris.trim() !== '');
         } catch (error) {
             console.error('Error:', error);
@@ -77,6 +79,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     async function muatDataBuku() {
+        if (!tabelBuku) return;
         tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) {
@@ -98,6 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function tampilkanDataBuku(data) {
+        if (!tabelBuku) return;
         tabelBuku.innerHTML = '';
         if (data.length === 0) {
             tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Data tidak ditemukan.</td></tr>';
@@ -117,6 +121,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     async function muatDataAnggota() {
+        if (!tabelAnggota) return;
         tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
         const dataCsv = await fetchData(urlAnggota);
         if (!dataCsv) {
@@ -136,6 +141,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     function tampilkanDataAnggota(data) {
+        if (!tabelAnggota) return;
         tabelAnggota.innerHTML = '';
         if (data.length === 0) {
             tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Data tidak ditemukan.</td></tr>';
@@ -153,6 +159,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     function updateDashboardStats() {
+        if (!totalJudulBukuElement) return;
         const totalJudul = dataBuku.length;
         const bukuTersedia = dataBuku.filter(buku => (buku.status || "").toLowerCase() === 'tersedia').length;
         const bukuDipinjam = totalJudul - bukuTersedia;
@@ -165,106 +172,113 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     // Logika Filter Pencarian
     // ===========================================
-    filterBuku.addEventListener('keyup', () => {
-        const kataKunci = filterBuku.value.toLowerCase();
-        const dataFilter = dataBuku.filter(buku => 
-            (buku.judul || "").toLowerCase().includes(kataKunci) ||
-            (buku.pengarang || "").toLowerCase().includes(kataKunci) ||
-            (buku.penerbit || "").toLowerCase().includes(kataKunci)
-        );
-        tampilkanDataBuku(dataFilter);
-    });
+    if (filterBuku) {
+        filterBuku.addEventListener('keyup', () => {
+            const kataKunci = filterBuku.value.toLowerCase();
+            const dataFilter = dataBuku.filter(buku => 
+                (buku.judul || "").toLowerCase().includes(kataKunci) ||
+                (buku.pengarang || "").toLowerCase().includes(kataKunci) ||
+                (buku.penerbit || "").toLowerCase().includes(kataKunci)
+            );
+            tampilkanDataBuku(dataFilter);
+        });
+    }
     
-    filterAnggota.addEventListener('keyup', () => {
-        const kataKunci = filterAnggota.value.toLowerCase();
-        const dataFilter = dataAnggota.filter(anggota => 
-            (anggota.nama || "").toLowerCase().includes(kataKunci) ||
-            (anggota.nis || "").toLowerCase().includes(kataKunci) ||
-            (anggota.kelas || "").toLowerCase().includes(kataKunci)
-        );
-        tampilkanDataAnggota(dataFilter);
-    });
+    if (filterAnggota) {
+        filterAnggota.addEventListener('keyup', () => {
+            const kataKunci = filterAnggota.value.toLowerCase();
+            const dataFilter = dataAnggota.filter(anggota => 
+                (anggota.nama || "").toLowerCase().includes(kataKunci) ||
+                (anggota.nis || "").toLowerCase().includes(kataKunci) ||
+                (anggota.kelas || "").toLowerCase().includes(kataKunci)
+            );
+            tampilkanDataAnggota(dataFilter);
+        });
+    }
 
     // ===========================================
     // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
     // ===========================================
     
-    btnProsesPinjam.addEventListener('click', async function() {
-        const noInventaris = inputPinjamInv.value.trim();
-        const nis = inputPinjamNIS.value.trim();
-        const adminPassword = inputPinjamPass.value.trim();
-        
-        if (!noInventaris || !nis || !adminPassword) {
-            pinjamFeedback.textContent = "Mohon isi No. Inventaris, NIS, dan Password Admin.";
-            pinjamFeedback.style.color = "red";
-            return;
-        }
-        
-        this.disabled = true;
-        this.textContent = "Memproses...";
-        pinjamFeedback.textContent = "Menghubungi server...";
-        pinjamFeedback.style.color = "blue";
-        
-        const dataKirim = {
-            action: "pinjamBuku",
-            noInventaris: noInventaris,
-            nis: nis,
-            password: adminPassword
-        };
-        
-        const response = await kirimDataKeBackend(dataKirim);
-        
-        pinjamFeedback.textContent = response.message;
-        pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
-        
-        if (response.status === "success") {
-            inputPinjamInv.value = "";
-            inputPinjamNIS.value = "";
-            inputPinjamPass.value = "";
-            // Segarkan data setelah berhasil
-            await muatDataBuku(); 
-        }
-        
-        this.disabled = false;
-        this.textContent = "Proses Peminjaman";
-    });
+    if (btnProsesPinjam) {
+        btnProsesPinjam.addEventListener('click', async function() {
+            const noInventaris = inputPinjamInv.value.trim();
+            const nis = inputPinjamNIS.value.trim();
+            const adminPassword = inputPinjamPass.value.trim();
+            
+            if (!noInventaris || !nis || !adminPassword) {
+                pinjamFeedback.textContent = "Mohon isi No. Inventaris, NIS, dan Password Admin.";
+                pinjamFeedback.style.color = "red";
+                return;
+            }
+            
+            this.disabled = true;
+            this.textContent = "Memproses...";
+            pinjamFeedback.textContent = "Menghubungi server...";
+            pinjamFeedback.style.color = "blue";
+            
+            const dataKirim = {
+                action: "pinjamBuku",
+                noInventaris: noInventaris,
+                nis: nis,
+                password: adminPassword
+            };
+            
+            const response = await kirimDataKeBackend(dataKirim);
+            
+            pinjamFeedback.textContent = response.message;
+            pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
+            
+            if (response.status === "success") {
+                inputPinjamInv.value = "";
+                inputPinjamNIS.value = "";
+                inputPinjamPass.value = "";
+                await muatDataBuku(); 
+            }
+            
+            this.disabled = false;
+            this.textContent = "Proses Peminjaman";
+        });
+    }
 
-    btnProsesKembali.addEventListener('click', async function() {
-        const noInventaris = inputKembaliInv.value.trim();
-        const adminPassword = inputKembaliPass.value. (trim);
-        
-        if (!noInventaris || !adminPassword) {
-            kembaliFeedback.textContent = "Mohon isi No. Inventaris dan Password Admin.";
-            kembaliFeedback.style.color = "red";
-            return;
-        }
-        
-        this.disabled = true;
-        this.textContent = "Memproses...";
-        kembaliFeedback.textContent = "Menghubungi server...";
-        kembaliFeedback.style.color = "blue";
-        
-        const dataKirim = {
-            action: "kembalikanBuku",
-            noInventaris: noInventaris,
-            password: adminPassword
-        };
-        
-        const response = await kirimDataKeBackend(dataKirim);
-        
-        kembaliFeedback.textContent = response.message;
-        kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
-        
-        if (response.status === "success") {
-            inputKembaliInv.value = "";
-            inputKembaliPass.value = "";
-            // Segarkan data setelah berhasil
-            await muatDataBuku(); 
-        }
-        
-        this.disabled = false;
-        this.textContent = "Proses Pengembalian";
-    });
+    if (btnProsesKembali) {
+        btnProsesKembali.addEventListener('click', async function() {
+            const noInventaris = inputKembaliInv.value.trim();
+            // ===== INI ADALAH BARIS YANG DIPERBAIKI =====
+            const adminPassword = inputKembaliPass.value.trim(); 
+            
+            if (!noInventaris || !adminPassword) {
+                kembaliFeedback.textContent = "Mohon isi No. Inventaris dan Password Admin.";
+                kembaliFeedback.style.color = "red";
+                return;
+            }
+            
+            this.disabled = true;
+            this.textContent = "Memproses...";
+            kembaliFeedback.textContent = "Menghubungi server...";
+            kembaliFeedback.style.color = "blue";
+            
+            const dataKirim = {
+                action: "kembalikanBuku",
+                noInventaris: noInventaris,
+                password: adminPassword
+            };
+            
+            const response = await kirimDataKeBackend(dataKirim);
+            
+            kembaliFeedback.textContent = response.message;
+            kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
+            
+            if (response.status === "success") {
+                inputKembaliInv.value = "";
+                inputKembaliPass.value = "";
+                await muatDataBuku(); 
+            }
+            
+            this.disabled = false;
+            this.textContent = "Proses Pengembalian";
+        });
+    }
 
     async function kirimDataKeBackend(data) {
         try {
@@ -292,4 +306,3 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
-
