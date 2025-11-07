@@ -187,7 +187,8 @@
                             <li class="sub-nav-item active" data-sub-target="sub-denda"><i class="fas fa-sliders-h"></i> Pengaturan Denda</li>
                             <li class="sub-nav-item" data-sub-target="sub-tambah-buku"><i class="fas fa-plus-circle"></i> Tambah Buku</li>
                             <li class="sub-nav-item" data-sub-target="sub-tambah-anggota"><i class="fas fa-user-plus"></i> Tambah Anggota</li>
-                            <li class="sub-nav-item" data-sub-target="sub-edit-anggota"><i class="fas fa-edit"></i> Edit/Hapus Anggota</li>
+                            <li class="sub-nav-item" data-sub-target="sub-edit-buku"><i class="fas fa-book-medical"></i> Manajemen Buku</li>
+                            <li class="sub-nav-item" data-sub-target="sub-edit-anggota"><i class="fas fa-edit"></i> Manajemen Anggota</li>
                         </ul>
                     </div>
                     <div id="sub-denda" class="sub-content-section active">
@@ -239,7 +240,35 @@
                             <p id="anggota-feedback" class="feedback-message"></p>
                         </div>
                     </div>
+                    
+                    <div id="sub-edit-buku" class="sub-content-section">
+                        <p>Pilih buku berdasarkan No. Inventaris unik untuk mengubah atau menghapus datanya.</p>
+                        <div class="form-section">
+                            <label for="select-edit-buku">1. Pilih Buku (berdasarkan No. Inventaris):</label>
+                            <select id="select-edit-buku">
+                                <option value="">-- Memuat data buku... --</option>
+                            </select>
 
+                            <label for="edit-buku-inventaris">No. Inventaris (Kunci Utama - Tidak bisa diubah):</label>
+                            <input type="text" id="edit-buku-inventaris" readonly style="background-color: #eee;">
+                    
+                            <label for="edit-buku-judul">Judul Buku:</label>
+                            <input type="text" id="edit-buku-judul" placeholder="Judul akan muncul di sini...">
+
+                            <label for="edit-buku-pengarang">Pengarang:</label>
+                            <input type="text" id="edit-buku-pengarang" placeholder="Pengarang akan muncul di sini...">
+
+                            <label for="edit-buku-penerbit">Penerbit:</label>
+                            <input type="text" id="edit-buku-penerbit" placeholder="Penerbit akan muncul di sini...">
+                            
+                            <label for="edit-buku-password">Password Admin (Wajib):</label>
+                            <input type="password" id="edit-buku-password" placeholder="Masukkan password admin...">
+                            
+                            <button id="btn-update-buku" class="btn btn-success">Update Buku</button>
+                            <button id="btn-hapus-buku" class="btn btn-danger" style="margin-left: 10px;">Hapus Buku</button>
+                            <p id="edit-buku-feedback" class="feedback-message"></p>
+                        </div>
+                    </div>
                     <div id="sub-edit-anggota" class="sub-content-section">
                         <p>Pilih anggota dari daftar untuk mengubah atau menghapus data.</p>
                         <div class="form-section">
@@ -247,29 +276,25 @@
                             <select id="select-edit-anggota">
                                 <option value="">-- Memuat data anggota... --</option>
                             </select>
-
                             <label for="edit-anggota-nis">NIS (Kunci Utama - Tidak bisa diubah):</label>
                             <input type="text" id="edit-anggota-nis" readonly style="background-color: #eee;">
-                    
                             <label for="edit-anggota-nama">Nama Lengkap:</label>
                             <input type="text" id="edit-anggota-nama" placeholder="Nama akan muncul di sini...">
-
                             <label for="edit-anggota-kelas">Kelas:</label>
                             <input type="text" id="edit-anggota-kelas" placeholder="Kelas akan muncul di sini...">
-
                             <label for="edit-anggota-status">Status:</label>
                             <input type="text" id="edit-anggota-status" placeholder="Status akan muncul di sini...">
-                            
                             <label for="edit-anggota-password">Password Admin (Wajib):</label>
                             <input type="password" id="edit-anggota-password" placeholder="Masukkan password admin...">
-                            
                             <button id="btn-update-anggota" class="btn btn-success">Update Anggota</button>
                             <button id="btn-hapus-anggota" class="btn btn-danger" style="margin-left: 10px;">Hapus Anggota</button>
                             <p id="edit-anggota-feedback" class="feedback-message"></p>
                         </div>
                     </div>
-                    </section>
-                </main>
+
+                </section>
+
+            </main>
         </div>
     </div>
 
