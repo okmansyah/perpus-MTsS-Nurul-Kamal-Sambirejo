@@ -15,9 +15,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // 2. LINK BACKEND
     const urlWebApp = 'https://script.google.com/macros/s/AKfycbwWiOus2vKJj9H8DUxoSyLyapStIet3-DQgTxGw5jtoLQlGkOBdZhC3wyGPz4Stj4Lb/exec';
 
-    // 3. PENGATURAN DENDA (Dihapus, diganti appSettings)
-    // const LAMA_PINJAM_HARI_JS = 7; // <-- DIHAPUS
-
     // ==========================================================
     // == Variabel Global & Elemen ==
     // ==========================================================
@@ -25,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let dataBuku = [];
     let dataAnggota = [];
     let dataHistory = [];
-    let appSettings = {}; // <-- Variabel BARU untuk menyimpan settings
+    let appSettings = {}; 
 
     // (Elemen Menu & Tabel)
     const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
@@ -57,36 +54,70 @@ document.addEventListener("DOMContentLoaded", function() {
     const kembaliFeedback = document.getElementById('kembali-feedback');
     const kembaliDenda = document.getElementById('kembali-denda'); 
 
-    // === ELEMEN BARU (Form Pengaturan) ===
+    // (Elemen Form Pengaturan)
     const inputSettingHari = document.getElementById('setting-hari');
     const inputSettingDenda = document.getElementById('setting-denda');
     const inputSettingPass = document.getElementById('setting-password');
     const btnSimpanPengaturan = document.getElementById('btn-simpan-pengaturan');
     const settingFeedback = document.getElementById('setting-feedback');
-    // === AKHIR ELEMEN BARU ===
 
 
     // ===========================================
-    // Logika Navigasi Menu Sidebar
-    // (Tidak ada perubahan di sini)
+    // == MODIFIKASI: Logika Navigasi Menu Sidebar ==
     // ===========================================
+    
+    // Fungsi baru untuk mengaktifkan section
+    function activateSection(targetId) {
+        // 1. Hapus 'active' dari semua menu dan section
+        menuItems.forEach(i => i.classList.remove('active'));
+        contentSections.forEach(s => s.classList.remove('active'));
+
+        // 2. Cari menu dan section yang sesuai dengan targetId
+        const targetMenuItem = document.querySelector(`.menu-item a[data-target="${targetId}"]`);
+        const targetElement = document.getElementById(targetId);
+
+        // 3. Cek jika targetnya valid
+        if (targetMenuItem && targetElement) {
+            // Aktifkan menu
+            targetMenuItem.parentElement.classList.add('active');
+            // Tampilkan section
+            targetElement.classList.add('active');
+        } else {
+            // 4. Fallback jika hash tidak valid, kembali ke katalog
+            document.querySelector('.menu-item a[data-target="katalog-buku"]').parentElement.classList.add('active');
+            document.getElementById('katalog-buku').classList.add('active');
+        }
+    }
+
     if (menuItems.length > 0 && contentSections.length > 0) {
+        
+        // (A) Atur event klik untuk semua menu
         menuItems.forEach(item => {
             item.addEventListener('click', function(e) {
-                e.preventDefault();
+                e.preventDefault(); 
                 const targetId = this.querySelector('a').getAttribute('data-target');
-                menuItems.forEach(i => i.classList.remove('active'));
-                contentSections.forEach(s => s.classList.remove('active'));
-                this.classList.add('active');
-                const targetElement = document.getElementById(targetId);
-                if (targetElement) {
-                    targetElement.classList.add('active');
-                }
+                
+                // Panggil fungsi aktivasi
+                activateSection(targetId);
+                
+                // Simpan status ke URL hash
+                window.location.hash = targetId;
             });
         });
+
+        // (B) Cek URL hash saat halaman pertama kali dimuat
+        const currentHash = window.location.hash.substring(1); // Ambil hash, hapus #
+        if (currentHash) {
+            activateSection(currentHash); // Aktifkan section dari hash
+        } else {
+            // Jika tidak ada hash, aktifkan default (katalog-buku)
+            activateSection("katalog-buku");
+        }
+        
     } else {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
+    // === AKHIR MODIFIKASI NAVIGASI ===
 
 
     // ===========================================
@@ -239,7 +270,28 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // (updateDashboardStats, populateBukuDropdowns, populateKelasSelect, dropdown bertingkat, dan filter - Tidak ada perubahan)
+    // (muatDataPengaturan - Tidak ada perubahan)
+    async function muatDataPengaturan() {
+        if (urlSettings === 'PASTE_LINK_CSV_SETTINGS_ANDA_DI_SINI' || !urlSettings) {
+             if (settingFeedback) settingFeedback.textContent = "URL CSV Settings belum diisi di script.js";
+             appSettings = { LamaPinjamHari: "7", DendaPerHari: "1000" };
+             return;
+        }
+        const dataCsv = await fetchData(urlSettings);
+        if (!dataCsv) return;
+        dataCsv.forEach(baris => {
+            const k = baris.split(',');
+            const key = (k[0]||'').trim();
+            const value = (k[1]||'').trim();
+            if (key) {
+                appSettings[key] = value;
+            }
+        });
+        if (inputSettingHari) inputSettingHari.value = appSettings.LamaPinjamHari || 7;
+        if (inputSettingDenda) inputSettingDenda.value = appSettings.DendaPerHari || 1000;
+    }
+    
+    // (Fungsi helper lainnya - Tidak ada perubahan)
     function updateDashboardStats() {
         if (!totalJudulBukuElement) return;
         const totalJudul = dataBuku.length;
@@ -321,89 +373,46 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // === FUNGSI BARU: Muat Pengaturan ===
-    async function muatDataPengaturan() {
-        if (urlSettings === 'PASTE_LINK_CSV_SETTINGS_ANDA_DI_SINI' || !urlSettings) {
-             if (settingFeedback) settingFeedback.textContent = "URL CSV Settings belum diisi di script.js";
-             // Set fallback default
-             appSettings = { LamaPinjamHari: "7", DendaPerHari: "1000" };
-             return;
-        }
-
-        const dataCsv = await fetchData(urlSettings);
-        if (!dataCsv) return;
-
-        // Ubah data CSV (array) menjadi objek 'appSettings'
-        dataCsv.forEach(baris => {
-            const k = baris.split(',');
-            const key = (k[0]||'').trim();
-            const value = (k[1]||'').trim();
-            if (key) {
-                appSettings[key] = value;
-            }
-        });
-
-        // Masukkan nilai yang ada ke dalam form
-        if (inputSettingHari) inputSettingHari.value = appSettings.LamaPinjamHari || 7;
-        if (inputSettingDenda) inputSettingDenda.value = appSettings.DendaPerHari || 1000;
-    }
-    // === AKHIR FUNGSI BARU ===
-
-    // ===========================================
-    // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
-    // ===========================================
-    
+    // (CRUD Functions: Pinjam, Kembali, Simpan Pengaturan - Tidak ada perubahan)
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
             if (kembaliDenda) kembaliDenda.value = "";
             if (kembaliFeedback) kembaliFeedback.textContent = "";
-
             const noInventaris = selectPinjamInv.value; 
             const nis = inputPinjamNIS.value.trim();    
             const adminPassword = inputPinjamPass.value.trim();
-            
             if (!noInventaris || !nis || !adminPassword) {
                 pinjamFeedback.textContent = "Mohon lengkapi pilihan Buku, Peminjam, dan Password Admin.";
                 pinjamFeedback.style.color = "red";
                 return;
             }
-            
             this.disabled = true;
             this.textContent = "Memproses...";
             pinjamFeedback.textContent = "Menghubungi server...";
             pinjamFeedback.style.color = "blue";
-            
             const dataKirim = {
                 action: "pinjamBuku",
                 noInventaris: noInventaris,
                 nis: nis,
                 password: adminPassword
             };
-            
             const response = await kirimDataKeBackend(dataKirim);
-            
             pinjamFeedback.textContent = response.message;
             pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
-            
             if (response.status === "success") {
-                // --- UPDATE INSTAN (MODIFIKASI) ---
                 const bukuYangDipinjam = dataBuku.find(b => b.noInventaris === noInventaris);
                 const siswaPeminjam = dataAnggota.find(a => a.nis === nis);
                 const namaSiswa = siswaPeminjam ? siswaPeminjam.nama : nis;
-                
-                // --- MODIFIKASI: Ambil lama pinjam dari appSettings ---
-                const lamaPinjam = parseInt(appSettings.LamaPinjamHari) || 7; // Fallback 7 hari
+                const lamaPinjam = parseInt(appSettings.LamaPinjamHari) || 7; 
                 const tglJatuhTempo = new Date();
                 tglJatuhTempo.setDate(tglJatuhTempo.getDate() + lamaPinjam);
                 const tglJatuhTempoString = tglJatuhTempo.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
                 if (bukuYangDipinjam) {
                     bukuYangDipinjam.status = "Dipinjam";
                     bukuYangDipinjam.peminjamNis = nis;
                     bukuYangDipinjam.tglPinjam = "Baru Saja"; 
                     bukuYangDipinjam.jatuhTempo = tglJatuhTempoString; 
                 }
-                
                 const newHistoryEntry = {
                     timestamp: "Baru Saja",
                     noInv: noInventaris,
@@ -413,75 +422,60 @@ document.addEventListener("DOMContentLoaded", function() {
                     aksi: "Dipinjam"
                 };
                 dataHistory.push(newHistoryEntry); 
-                
                 tampilkanDataBuku(dataBuku); 
                 populateBukuDropdowns(); 
                 updateDashboardStats(); 
                 tampilkanDataHistory(dataHistory); 
-                
                 selectPinjamInv.value = "";
                 selectPinjamKelas.value = "";
                 selectPinjamNama.innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                 inputPinjamNIS.value = "";
                 inputPinjamPass.value = "";
             }
-            
             this.disabled = false;
             this.textContent = "Proses Peminjaman";
         });
     }
-
     if (btnProsesKembali) {
         btnProsesKembali.addEventListener('click', async function() {
             kembaliDenda.value = "";
             kembaliFeedback.textContent = "";
             if (pinjamFeedback) pinjamFeedback.textContent = "";
-            
             const noInventaris = selectKembaliInv.value; 
             const adminPassword = inputKembaliPass.value.trim(); 
-            
             if (!noInventaris || !adminPassword) {
                 kembaliFeedback.textContent = "Mohon pilih Buku dan isi Password Admin.";
                 kembaliFeedback.style.color = "red";
                 return;
             }
-            
             this.disabled = true;
             this.textContent = "Memproses...";
             kembaliFeedback.textContent = "Menghubungi server... (menghitung denda)";
             kembaliFeedback.style.color = "blue";
-            
             const dataKirim = {
                 action: "kembalikanBuku",
                 noInventaris: noInventaris,
                 password: adminPassword
             };
-            
             const response = await kirimDataKeBackend(dataKirim);
-            
             kembaliFeedback.textContent = response.message;
             kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
-
             if (response.status === "success") {
                 if (response.denda > 0) {
                     kembaliDenda.value = "Rp " + response.denda;
                 } else {
                     kembaliDenda.value = "Rp 0";
                 }
-
-                // --- UPDATE INSTAN ---
                 const bukuYangDikembalikan = dataBuku.find(b => b.noInventaris === noInventaris);
                 const nisSiswa = bukuYangDikembalikan ? bukuYangDikembalikan.peminjamNis : "N/A";
                 const siswaPeminjam = dataAnggota.find(a => a.nis === nisSiswa);
                 const namaSiswa = siswaPeminjam ? siswaPeminjam.nama : nisSiswa;
-                
                 if (bukuYangDikembalikan) {
                     bukuYangDikembalikan.status = "Tersedia";
                     bukuYangDikembalikan.peminjamNis = "";
                     bukuYangDikembalikan.tglPinjam = "";
                     bukuYangDikembalikan.jatuhTempo = ""; 
                 }
-                
                 const newHistoryEntry = {
                     timestamp: "Baru Saja",
                     noInv: noInventaris,
@@ -491,39 +485,31 @@ document.addEventListener("DOMContentLoaded", function() {
                     aksi: "Dikembalikan"
                 };
                 dataHistory.push(newHistoryEntry);
-                
                 tampilkanDataBuku(dataBuku); 
                 populateBukuDropdowns(); 
                 updateDashboardStats(); 
                 tampilkanDataHistory(dataHistory); 
-                
                 selectKembaliInv.value = "";
                 inputKembaliPass.value = "";
             }
-            
             this.disabled = false;
             this.textContent = "Proses Pengembalian";
         });
     }
-
-    // === EVENT LISTENER BARU (Simpan Pengaturan) ===
     if (btnSimpanPengaturan) {
         btnSimpanPengaturan.addEventListener('click', async function() {
             const lamaPinjam = inputSettingHari.value.trim();
             const denda = inputSettingDenda.value.trim();
             const adminPassword = inputSettingPass.value.trim();
-
             if (!lamaPinjam || !denda || !adminPassword) {
                 settingFeedback.textContent = "Mohon lengkapi semua field dan password admin.";
                 settingFeedback.style.color = "red";
                 return;
             }
-
             this.disabled = true;
             this.textContent = "Menyimpan...";
             settingFeedback.textContent = "Menghubungi server...";
             settingFeedback.style.color = "blue";
-
             const dataKirim = {
                 action: "simpanPengaturan",
                 password: adminPassword,
@@ -532,26 +518,18 @@ document.addEventListener("DOMContentLoaded", function() {
                     denda: denda
                 }
             };
-
             const response = await kirimDataKeBackend(dataKirim);
-
             settingFeedback.textContent = response.message;
             settingFeedback.style.color = (response.status === "success") ? "green" : "red";
-
             if (response.status === "success") {
-                // Update data di 'appSettings' agar instant
                 appSettings.LamaPinjamHari = lamaPinjam;
                 appSettings.DendaPerHari = denda;
-                inputSettingPass.value = ""; // Kosongkan password
+                inputSettingPass.value = ""; 
             }
-
             this.disabled = false;
             this.textContent = "Simpan Pengaturan";
         });
     }
-    // === AKHIR EVENT LISTENER BARU ===
-
-
     async function kirimDataKeBackend(data) {
         try {
             const res = await fetch(urlWebApp, {
@@ -570,9 +548,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // Jalankan Fungsi Saat Halaman Dimuat
-    // ===========================================
+    // =G==========================================
     muatDataBuku();
     muatDataAnggota();
     muatDataHistory(); 
-    muatDataPengaturan(); // <-- PANGGILAN BARU
+    muatDataPengaturan(); 
 });
