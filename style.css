@@ -1,6 +1,8 @@
 /* Import Font dari Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
+/* ... (SEMUA KODE CSS DARI ATAS SAMPAI .content-section hr) ... */
+
 /* =========================================== */
 /* == PENGATURAN DASAR & LAYOUT UTAMA == */
 /* =========================================== */
@@ -301,9 +303,7 @@ tbody tr:hover {
     font-weight: 600;
 }
 
-/* =========================================== */
-/* == MODIFIKASI STYLE UNTUK SUB-MENU == */
-/* =========================================== */
+/* === STYLE UNTUK SUB-MENU === */
 .sub-nav {
     width: 100%;
     border-bottom: 2px solid #e2e8f0;
@@ -312,27 +312,27 @@ tbody tr:hover {
 
 .sub-nav ul {
     display: flex;
-    flex-wrap: nowrap; /* LEBIH RAPAT: Paksa agar tidak wrap */
-    overflow-x: auto;  /* LEBIH RAPAT: Tambahkan scroll jika masih tidak muat */
+    flex-wrap: nowrap; 
+    overflow-x: auto;  
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
 .sub-nav-item {
-    padding: 10px 12px; /* LEBIH RAPAT: Padding kiri/kanan (dari 20px) */
+    padding: 10px 12px; 
     font-weight: 600;
     cursor: pointer;
     color: #718096; 
     border-bottom: 3px solid transparent;
     margin-bottom: -2px; 
     transition: all 0.3s ease;
-    font-size: 0.9em; /* LEBIH RAPAT: Ukuran font dikecilkan */
-    white-space: nowrap; /* LEBIH RAPAT: Pastikan teks tidak pindah baris */
+    font-size: 0.9em; 
+    white-space: nowrap; 
 }
 
 .sub-nav-item i {
-    margin-right: 5px; /* LEBIH RAPAT: Jarak ikon ke teks (dari 8px) */
+    margin-right: 5px; 
 }
 
 .sub-nav-item:hover {
@@ -355,7 +355,15 @@ tbody tr:hover {
 .content-section hr {
     display: none;
 }
-/* === AKHIR STYLE SUB-MENU === */
+
+/* Wrapper untuk tombol edit/hapus di DESKTOP */
+/* (Kita biarkan default saja, inline-block) */
+.button-group .btn {
+    margin: 0; /* Hapus margin atas default */
+}
+.button-group .btn-danger {
+    margin-left: 10px; /* Beri jarak di desktop */
+}
 
 
 /* =========================================== */
@@ -364,16 +372,15 @@ tbody tr:hover {
 
 @media (max-width: 768px) {
 
+    /* ... (semua kode responsive .sidebar, .content-area, dll SAMA) ... */
     body {
         background-color: #eef2f7; 
     }
-
     .app-container {
         flex-direction: column;
         height: 100%; 
         overflow: auto; 
     }
-    
     .main-content {
         overflow: visible;
     }
@@ -382,14 +389,12 @@ tbody tr:hover {
         background-color: #eef2f7; 
         padding: 15px; 
     }
-
     .sidebar {
         width: 100%;
         box-sizing: border-box;
         height: auto;
         padding: 10px 15px; 
     }
-
     .sidebar-header {
         border-bottom: none;
         margin-bottom: 0;
@@ -397,13 +402,11 @@ tbody tr:hover {
         display: flex;
         align-items: center;
     }
-
     .sidebar-logo {
         max-width: 60px; 
         margin-right: 15px;
         margin-bottom: 0;
     }
-
     .sidebar-header p,
     .sidebar-header h2:nth-child(3) { 
         display: none; 
@@ -412,7 +415,6 @@ tbody tr:hover {
         font-size: 1.2em;
         margin: 0; 
     }
-
     .sidebar-menu {
         display: flex;
         flex-direction: row;
@@ -422,13 +424,11 @@ tbody tr:hover {
         margin-top: 10px; 
         padding-top: 10px;
     }
-
     .menu-item {
         margin-bottom: 0;
         margin-right: 5px;
         flex-shrink: 0;
     }
-
     .menu-item a {
         flex-direction: column;
         padding: 10px 8px;
@@ -436,17 +436,14 @@ tbody tr:hover {
         text-align: center;
         min-width: 70px;
     }
-
     .menu-item a i {
         margin-right: 0;
         margin-bottom: 5px;
         font-size: 1.4em; 
     }
-
     .content-section {
         padding: 15px; 
     }
-
     .top-header {
         padding: 15px;
     }
@@ -456,27 +453,23 @@ tbody tr:hover {
     h2 {
         font-size: 1.5em;
     }
-
     .statistik-grid {
         grid-template-columns: 1fr;
     }
-
     th, td {
         padding: 10px 12px;
         font-size: 0.9em;
     }
-
     .tabel-container {
         max-height: none;
         overflow-y: visible;
     }
-
     thead th {
         position: static; 
     }
     
     .sub-nav ul {
-        flex-wrap: wrap; /* Di HP, biarkan wrap jika tidak muat */
+        flex-wrap: wrap; 
     }
     .sub-nav-item {
         padding: 10px 15px;
@@ -495,4 +488,19 @@ tbody tr:hover {
         max-width: 100% !important;
         box-sizing: border-box;
     }
+
+    /* === MODIFIKASI: Tombol Simetris di HP === */
+    .button-group {
+        display: flex; /* Aktifkan flexbox */
+        justify-content: space-between; /* Dorong ke tepi */
+        gap: 10px; /* Beri jarak 10px antar tombol */
+    }
+    .button-group .btn {
+        flex-grow: 1; /* Biarkan kedua tombol tumbuh sama besar */
+        width: 48%; /* Beri lebar dasar (membantu kalkulasi flex) */
+        margin: 0 !important; /* Hapus semua margin, termasuk inline-style */
+        padding: 8px 10px; /* Kecilkan padding agar muat */
+    }
+    /* === AKHIR MODIFIKASI === */
+
 }
