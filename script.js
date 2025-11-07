@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlSettings = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=1547395606&single=true&output=csv';
 
     // 2. LINK BACKEND
-        const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec'; 
+        const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec';  
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -25,11 +25,10 @@ document.addEventListener("DOMContentLoaded", function() {
     let dataHistory = [];
     let appSettings = {};
     
-    // === Variabel Global untuk Grafik ===
     let dataGrafikBulanan = {}; 
     let dataGrafikTahunan = {}; 
     let dataGrafikAkuisisi = {}; 
-    let sudahRenderGrafik = false; // Flag agar tidak render berulang
+    let sudahRenderGrafik = false; // Flag
     
     let chartBulanan = null; 
     let chartTahunan = null; 
@@ -49,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const bukuTersediaElement = document.getElementById('buku-tersedia');
     const bukuDipinjamElement = document.getElementById('buku-dipinjam');
 
-    // (Elemen Grafik)
+    // (Elemen Grafik) - Sekarang akan ditemukan karena index.html sudah benar
     const ctxGrafikBulanan = document.getElementById('grafikBulanan')?.getContext('2d');
     const ctxGrafikTahunan = document.getElementById('grafikTahunan')?.getContext('2d');
     const ctxGrafikAkuisisi = document.getElementById('grafikAkuisisiBuku')?.getContext('2d');
@@ -125,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // == Logika Navigasi Menu & Sub-Menu ==
-    // === MODIFIKASI: Memanggil renderSemuaGrafik() ===
+    // === PERBAIKAN LOGIKA GRAFIK ===
     // ===========================================
     function activateSection(targetId) {
         menuItems.forEach(i => i.classList.remove('active'));
@@ -138,8 +137,7 @@ document.addEventListener("DOMContentLoaded", function() {
             targetElement.classList.add('active');
             
             // --- INI PERBAIKANNYA ---
-            // Hanya panggil render grafik JIKA tab dashboard yang diklik
-            if (targetId === 'dashboard-statistik') {
+            if (targetId === 'dashboard-statistik' && !sudahRenderGrafik) {
                 renderSemuaGrafik();
             }
             // --- AKHIR PERBAIKAN ---
@@ -159,18 +157,15 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
         
-        // Cek hash saat load (untuk refresh)
         const currentHash = window.location.hash.substring(1); 
         if (currentHash) {
             activateSection(currentHash); 
-            // (Logika untuk merender saat refresh ada di bagian paling bawah)
         } else {
             activateSection("katalog-buku");
         }
     } else {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
-    // (Logika Sub-Nav - Tidak berubah)
     if (subNavItems.length > 0 && subContentSections.length > 0) {
         subNavItems.forEach(item => {
             item.addEventListener('click', function() {
@@ -183,11 +178,10 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // (Filter Tahun Grafik - Tidak berubah)
     if(filterTahunGrafik) {
         filterTahunGrafik.addEventListener('change', function() {
             const tahunTerpilih = this.value;
-            renderGrafikBulanan(tahunTerpilih);
+            renderGrafikBulanan(tahunTerpilih); 
         });
     }
 
@@ -243,7 +237,7 @@ document.addEventListener("DOMContentLoaded", function() {
         populateBukuDropdowns();
         populateEditBukuSelect();
         
-        prosesGrafikBuku(dataBuku); // Memproses data buku untuk grafik
+        prosesGrafikBuku(dataBuku); // (Hanya proses data)
     }
     
     function tampilkanDataBukuAgregat(data) {
@@ -336,13 +330,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 timestamp: (k[0]||'').trim(), 
                 noInv: (k[1]||'').trim(), 
                 judul: (k[2]||'').trim(), 
-                nis: (k[3]||'').trim(), // (Perbaikan typo 'trim')
+                nis: (k[3]||'').trim(), // <-- PERBAIKAN TYPO
                 nama: (k[4]||'').trim(),
                 aksi: (k[5]||'').trim()
             };
         });
         tampilkanDataHistory(dataHistory);
-        prosesDataGrafik(dataHistory); // Memproses data riwayat untuk grafik
+        prosesDataGrafik(dataHistory); // (Hanya proses data)
     }
     
     function tampilkanDataHistory(data) {
@@ -509,7 +503,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     
     // 1. Proses data Peminjaman (dari History)
-    // (MODIFIKASI: HANYA memproses, tidak mengisi filter, tidak merender)
     function prosesDataGrafik(historyData) {
         const pinjamPerTahun = {};
         const pinjamPerBulan = {};
@@ -601,11 +594,17 @@ document.addEventListener("DOMContentLoaded", function() {
         if (filterTahunGrafik) {
             const tahunSorted = [...setTahun].sort((a, b) => b - a); 
             filterTahunGrafik.innerHTML = '';
-            tahunSorted.forEach(tahun => {
+            
+            // Tambahkan juga tahun-tahun dari data peminjaman
+            Object.keys(dataGrafikTahunan).forEach(tahun => setTahun.add(tahun));
+
+            const semuaTahunSorted = [...setTahun].sort((a, b) => b - a);
+
+            semuaTahunSorted.forEach(tahun => {
                 filterTahunGrafik.innerHTML += `<option value="${tahun}" ${parseInt(tahun) === tahunSekarang ? 'selected' : ''}>${tahun}</option>`;
             });
-            // Jika tidak ada data buku sama sekali
-            if(tahunSorted.length === 0) {
+            // Jika tidak ada data sama sekali
+            if(semuaTahunSorted.length === 0) {
                  filterTahunGrafik.innerHTML += `<option value="${tahunSekarang}">${tahunSekarang}</option>`;
             }
         }
@@ -637,21 +636,24 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // 6. FUNGSI BARU: MASTER RENDER GRAFIK
     function renderSemuaGrafik() {
-        // Cek jika elemen ada, dan belum pernah dirender
         if (!ctxGrafikBulanan || sudahRenderGrafik) return; 
 
-        // Pastikan data sudah ada (tidak kosong)
-        if (Object.keys(dataGrafikTahunan).length > 0) {
-            renderGrafikTahunan(dataGrafikTahunan);
+        try {
+            if (Object.keys(dataGrafikTahunan).length > 0) {
+                renderGrafikTahunan(dataGrafikTahunan);
+            }
+            if (Object.keys(dataGrafikBulanan).length > 0 || filterTahunGrafik.value) {
+                renderGrafikBulanan(filterTahunGrafik.value);
+            }
+            if (Object.keys(dataGrafikAkuisisi).length > 0) {
+                renderGrafikAkuisisi(dataGrafikAkuisisi);
+            }
+            
+            sudahRenderGrafik = true; // Tandai sudah dirender
+        } catch (e) {
+            console.error("Gagal merender grafik:", e);
+            // Tambahkan pesan error di UI jika perlu
         }
-        if (Object.keys(dataGrafikBulanan).length > 0 || filterTahunGrafik.value) {
-            renderGrafikBulanan(filterTahunGrafik.value);
-        }
-        if (Object.keys(dataGrafikAkuisisi).length > 0) {
-            renderGrafikAkuisisi(dataGrafikAkuisisi);
-        }
-        
-        sudahRenderGrafik = true; // Tandai sudah dirender
     }
     
     
@@ -1071,6 +1073,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // Jalankan Fungsi Saat Halaman Dimuat
+    // === MODIFIKASI: Menangani Refresh di Tab Grafik ===
     // ===========================================
     
     async function inisialisasiAplikasi() {
