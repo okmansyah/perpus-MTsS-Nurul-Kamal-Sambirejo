@@ -7,12 +7,13 @@ document.addEventListener("DOMContentLoaded", function() {
     // 1. LINK CSV (UNTUK BACA DATA / WEBVIEW)
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
-
-    // === TAMBAHAN BARU: PASTE LINK CSV "History" ANDA DI SINI ===
-    const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; 
+    const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; // <-- PASTIKAN INI SUDAH BENAR
 
     // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbwAryp3i9flEKWAtqqBIX4RwuuqFVnqlhVvJDTa1L7P_TUppvQ1_epb2NmS4p6-1EUB/exec';
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbwWiOus2vKJj9H8DUxoSyLyapStIet3-DQgTxGw5jtoLQlGkOBdZhC3wyGPz4Stj4Lb/exec';
+
+    // 3. PENGATURAN DENDA (Harus sama dengan di script.gs)
+    const LAMA_PINJAM_HARI_JS = 7; // Untuk logika instant-update
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -20,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     let dataBuku = [];
     let dataAnggota = [];
-    let dataHistory = []; // <-- TAMBAHAN BARU
+    let dataHistory = []; 
 
     const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
     const contentSections = document.querySelectorAll('.content-section');
@@ -29,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const filterBuku = document.getElementById('filterBuku');
     const tabelAnggota = document.getElementById('tabel-anggota');
     const filterAnggota = document.getElementById('filterAnggota');
-    const tabelHistory = document.getElementById('tabel-history'); // <-- TAMBAHAN BARU
+    const tabelHistory = document.getElementById('tabel-history'); 
     
     const totalJudulBukuElement = document.getElementById('total-judul-buku');
     const bukuTersediaElement = document.getElementById('buku-tersedia');
@@ -49,10 +50,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const selectKembaliInv = document.getElementById('kembali-no-inventaris');
     const inputKembaliPass = document.getElementById('kembali-password'); 
     const kembaliFeedback = document.getElementById('kembali-feedback');
+    const kembaliDenda = document.getElementById('kembali-denda'); // <-- TAMBAHAN BARU
 
     // ===========================================
     // Logika Navigasi Menu Sidebar
-    // (Kode ini sudah benar, tidak perlu diubah)
+    // (Tidak ada perubahan di sini)
     // ===========================================
     if (menuItems.length > 0 && contentSections.length > 0) {
         menuItems.forEach(item => {
@@ -88,7 +90,8 @@ document.addEventListener("DOMContentLoaded", function() {
         } catch (error) {
             console.error('Error di fungsi fetchData:', error);
             const errorMsg = `Error: ${error.message}. Cek link CSV.`;
-            if (url === urlBuku && tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="7" class="loading" style="color:red;">${errorMsg}</td></tr>`;
+            // --- MODIFIKASI (colspan 8) ---
+            if (url === urlBuku && tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="8" class="loading" style="color:red;">${errorMsg}</td></tr>`;
             if (url === urlAnggota && tabelAnggota) tabelAnggota.innerHTML = `<tr><td colspan="4" class="loading" style="color:red;">${errorMsg}</td></tr>`;
             if (url === urlHistory && tabelHistory) tabelHistory.innerHTML = `<tr><td colspan="6" class="loading" style="color:red;">${errorMsg}</td></tr>`;
             return null;
@@ -97,11 +100,13 @@ document.addEventListener("DOMContentLoaded", function() {
     
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
-        if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="7" class="loading">Memuat data buku...</td></tr>';
+        // --- MODIFIKASI (colspan 8) ---
+        if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="8" class="loading">Memuat data buku...</td></tr>';
         
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) return;
 
+        // --- MODIFIKASI (Membaca 8 kolom) ---
         dataBuku = dataCsv.map(baris => {
             const k = baris.split(',');
             return { 
@@ -111,9 +116,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 penerbit: (k[3]||'').trim(), 
                 status: (k[4]||'').trim(),
                 peminjamNis: (k[5]||'').trim(),
-                tglPinjam: (k[6]||'').trim()
+                tglPinjam: (k[6]||'').trim(),
+                jatuhTempo: (k[7]||'').trim() // <-- Kolom baru
             };
         });
+        // --- AKHIR MODIFIKASI ---
 
         if (tabelBuku) tampilkanDataBuku(dataBuku);
         if (totalJudulBukuElement) updateDashboardStats();
@@ -124,11 +131,14 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!tabelBuku) return;
         tabelBuku.innerHTML = '';
         if (data.length === 0) {
-            tabelBuku.innerHTML = '<tr><td colspan="7" class="loading">Data tidak ditemukan.</td></tr>';
+            // --- MODIFIKASI (colspan 8) ---
+            tabelBuku.innerHTML = '<tr><td colspan="8" class="loading">Data tidak ditemukan.</td></tr>';
             return;
         }
         data.forEach(buku => {
             const statusClass = (buku.status || "").toLowerCase() === 'tersedia' ? 'status-tersedia' : 'status-dipinjam';
+            
+            // --- MODIFIKASI (Menampilkan 8 kolom) ---
             tabelBuku.innerHTML += `
                 <tr>
                     <td>${buku.noInventaris}</td>
@@ -138,17 +148,18 @@ document.addEventListener("DOMContentLoaded", function() {
                     <td><span class="status ${statusClass}">${buku.status}</span></td>
                     <td>${buku.peminjamNis}</td>
                     <td>${buku.tglPinjam}</td>
+                    <td>${buku.jatuhTempo}</td>
                 </tr>`;
+            // --- AKHIR MODIFIKASI ---
         });
     }
 
+    // (Tidak ada perubahan di muatDataAnggota & tampilkanDataAnggota)
     async function muatDataAnggota() {
         if (!tabelAnggota && !selectPinjamKelas) return; 
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
-        
         const dataCsv = await fetchData(urlAnggota);
         if (!dataCsv) return;
-
         dataAnggota = dataCsv.map(baris => {
             const k = baris.split(',');
             return { 
@@ -158,11 +169,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 status: (k[3]||'').trim() 
             };
         });
-        
         if (tabelAnggota) tampilkanDataAnggota(dataAnggota);
         populateKelasSelect();
     }
-    
     function tampilkanDataAnggota(data) {
         if (!tabelAnggota) return;
         tabelAnggota.innerHTML = '';
@@ -181,18 +190,16 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // === FUNGSI BARU UNTUK HISTORY ===
+    // (Tidak ada perubahan di muatDataHistory & tampilkanDataHistory)
     async function muatDataHistory() {
         if (!tabelHistory) return;
-        if (urlHistory === 'LINK_CSV_HISTORY_ANDA_DI_SINI') {
+        if (urlHistory === 'PASTE_LINK_CSV_HISTORY_ANDA_DI_SINI' || !urlHistory) {
             tabelHistory.innerHTML = '<tr><td colspan="6" class="loading" style="color:orange;">Harap masukkan URL CSV Sheet "History" di dalam file script.js</td></tr>';
             return;
         }
-
         tabelHistory.innerHTML = '<tr><td colspan="6" class="loading">Memuat riwayat...</td></tr>';
         const dataCsv = await fetchData(urlHistory);
         if (!dataCsv) return;
-
         dataHistory = dataCsv.map(baris => {
             const k = baris.split(',');
             return { 
@@ -204,10 +211,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 aksi: (k[5]||'').trim()
             };
         });
-
         tampilkanDataHistory(dataHistory);
     }
-
     function tampilkanDataHistory(data) {
         if (!tabelHistory) return;
         tabelHistory.innerHTML = '';
@@ -215,10 +220,7 @@ document.addEventListener("DOMContentLoaded", function() {
             tabelHistory.innerHTML = '<tr><td colspan="6" class="loading">Belum ada riwayat transaksi.</td></tr>';
             return;
         }
-        
-        // Tampilkan data TERBARU di atas (reverse) dan batasi 50
         const dataTampil = [...data].reverse().slice(0, 50); 
-
         dataTampil.forEach(item => {
             const statusClass = (item.aksi || "").toLowerCase() === 'dipinjam' ? 'status-dipinjam' : 'status-tersedia';
             tabelHistory.innerHTML += `
@@ -232,8 +234,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 </tr>`;
         });
     }
-    // === AKHIR FUNGSI BARU ===
     
+    // (Tidak ada perubahan di updateDashboardStats, populateBukuDropdowns, populateKelasSelect, dropdown bertingkat, dan filter)
     function updateDashboardStats() {
         if (!totalJudulBukuElement) return;
         const totalJudul = dataBuku.length;
@@ -243,11 +245,6 @@ document.addEventListener("DOMContentLoaded", function() {
         bukuTersediaElement.textContent = bukuTersedia;
         bukuDipinjamElement.textContent = bukuDipinjam;
     }
-
-    // ===========================================
-    // == FUNGSI DROPDOWN SIRKULASI ==
-    // ===========================================
-
     function populateBukuDropdowns() {
         if (!selectPinjamInv || !selectKembaliInv) return;
         selectPinjamInv.innerHTML = '<option value="">-- Pilih Buku (Tersedia) --</option>';
@@ -262,7 +259,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-
     function populateKelasSelect() {
         if (!selectPinjamKelas) return;
         const semuaKelas = dataAnggota.map(anggota => anggota.kelas);
@@ -274,7 +270,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-
     if (selectPinjamKelas) {
         selectPinjamKelas.addEventListener('change', function() {
             const kelasTerpilih = this.value;
@@ -293,16 +288,11 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-
     if (selectPinjamNama) {
         selectPinjamNama.addEventListener('change', function() {
             inputPinjamNIS.value = this.value;
         });
     }
-
-    // ===========================================
-    // Logika Filter Pencarian
-    // ===========================================
     if (filterBuku) {
         filterBuku.addEventListener('keyup', () => {
             const kataKunci = filterBuku.value.toLowerCase();
@@ -315,7 +305,6 @@ document.addEventListener("DOMContentLoaded", function() {
             tampilkanDataBuku(dataFilter);
         });
     }
-    
     if (filterAnggota) {
         filterAnggota.addEventListener('keyup', () => {
             const kataKunci = filterAnggota.value.toLowerCase();
@@ -334,6 +323,10 @@ document.addEventListener("DOMContentLoaded", function() {
     
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
+            // Kosongkan denda dari form sebelah
+            if (kembaliDenda) kembaliDenda.value = "";
+            if (kembaliFeedback) kembaliFeedback.textContent = "";
+
             const noInventaris = selectPinjamInv.value; 
             const nis = inputPinjamNIS.value.trim();    
             const adminPassword = inputPinjamPass.value.trim();
@@ -362,21 +355,24 @@ document.addEventListener("DOMContentLoaded", function() {
             pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
             
             if (response.status === "success") {
-                // --- UPDATE INSTAN (DIMODIFIKASI) ---
+                // --- UPDATE INSTAN (MODIFIKASI) ---
                 
-                // 1. Dapatkan info buku dan siswa dari data memori
                 const bukuYangDipinjam = dataBuku.find(b => b.noInventaris === noInventaris);
                 const siswaPeminjam = dataAnggota.find(a => a.nis === nis);
                 const namaSiswa = siswaPeminjam ? siswaPeminjam.nama : nis;
                 
-                // 2. Update dataBuku di memori
+                // Hitung Tgl Jatuh Tempo di sisi klien untuk instant update
+                const tglJatuhTempo = new Date();
+                tglJatuhTempo.setDate(tglJatuhTempo.getDate() + LAMA_PINJAM_HARI_JS);
+                const tglJatuhTempoString = tglJatuhTempo.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
                 if (bukuYangDipinjam) {
                     bukuYangDipinjam.status = "Dipinjam";
                     bukuYangDipinjam.peminjamNis = nis;
                     bukuYangDipinjam.tglPinjam = "Baru Saja"; 
+                    bukuYangDipinjam.jatuhTempo = tglJatuhTempoString; // <-- Tampilkan
                 }
                 
-                // 3. Tambahkan ke dataHistory di memori (di paling atas)
                 const newHistoryEntry = {
                     timestamp: "Baru Saja",
                     noInv: noInventaris,
@@ -385,15 +381,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     nama: namaSiswa,
                     aksi: "Dipinjam"
                 };
-                dataHistory.push(newHistoryEntry); // Push lalu nanti di-reverse oleh tampilkanDataHistory
+                dataHistory.push(newHistoryEntry); 
                 
-                // 4. Gambar ulang semua yang terpengaruh
                 tampilkanDataBuku(dataBuku); 
                 populateBukuDropdowns(); 
                 updateDashboardStats(); 
-                tampilkanDataHistory(dataHistory); // <-- PANGGILAN BARU
+                tampilkanDataHistory(dataHistory); 
                 
-                // 5. Reset form
                 selectPinjamInv.value = "";
                 selectPinjamKelas.value = "";
                 selectPinjamNama.innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
@@ -408,6 +402,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (btnProsesKembali) {
         btnProsesKembali.addEventListener('click', async function() {
+            // Kosongkan denda dan feedback
+            kembaliDenda.value = "";
+            kembaliFeedback.textContent = "";
+            if (pinjamFeedback) pinjamFeedback.textContent = "";
+            
             const noInventaris = selectKembaliInv.value; 
             const adminPassword = inputKembaliPass.value.trim(); 
             
@@ -419,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function() {
             
             this.disabled = true;
             this.textContent = "Memproses...";
-            kembaliFeedback.textContent = "Menghubungi server...";
+            kembaliFeedback.textContent = "Menghubungi server... (menghitung denda)";
             kembaliFeedback.style.color = "blue";
             
             const dataKirim = {
@@ -430,26 +429,32 @@ document.addEventListener("DOMContentLoaded", function() {
             
             const response = await kirimDataKeBackend(dataKirim);
             
+            // --- MODIFIKASI (Menampilkan Denda) ---
             kembaliFeedback.textContent = response.message;
             kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
-            
+
             if (response.status === "success") {
-                // --- UPDATE INSTAN (DIMODIFIKASI) ---
-                
-                // 1. Dapatkan info buku dan siswa dari data memori
+                // Tampilkan denda di input field
+                if (response.denda > 0) {
+                    kembaliDenda.value = "Rp " + response.denda;
+                } else {
+                    kembaliDenda.value = "Rp 0";
+                }
+                // --- AKHIR MODIFIKASI ---
+
+                // --- UPDATE INSTAN (MODIFIKASI) ---
                 const bukuYangDikembalikan = dataBuku.find(b => b.noInventaris === noInventaris);
                 const nisSiswa = bukuYangDikembalikan ? bukuYangDikembalikan.peminjamNis : "N/A";
                 const siswaPeminjam = dataAnggota.find(a => a.nis === nisSiswa);
                 const namaSiswa = siswaPeminjam ? siswaPeminjam.nama : nisSiswa;
                 
-                // 2. Update dataBuku di memori
                 if (bukuYangDikembalikan) {
                     bukuYangDikembalikan.status = "Tersedia";
                     bukuYangDikembalikan.peminjamNis = "";
                     bukuYangDikembalikan.tglPinjam = "";
+                    bukuYangDikembalikan.jatuhTempo = ""; // <-- Kosongkan
                 }
                 
-                // 3. Tambahkan ke dataHistory di memori (di paling atas)
                 const newHistoryEntry = {
                     timestamp: "Baru Saja",
                     noInv: noInventaris,
@@ -460,15 +465,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 };
                 dataHistory.push(newHistoryEntry);
                 
-                // 4. Gambar ulang semua yang terpengaruh
                 tampilkanDataBuku(dataBuku); 
                 populateBukuDropdowns(); 
                 updateDashboardStats(); 
-                tampilkanDataHistory(dataHistory); // <-- PANGGILAN BARU
+                tampilkanDataHistory(dataHistory); 
                 
-                // 5. Reset form
                 selectKembaliInv.value = "";
                 inputKembaliPass.value = "";
+                // Jangan reset 'kembaliDenda', biarkan tampil
             }
             
             this.disabled = false;
@@ -497,5 +501,5 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     muatDataBuku();
     muatDataAnggota();
-    muatDataHistory(); // <-- PANGGILAN BARU
+    muatDataHistory(); 
 });
