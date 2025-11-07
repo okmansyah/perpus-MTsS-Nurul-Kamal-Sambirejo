@@ -24,11 +24,15 @@ document.addEventListener("DOMContentLoaded", function() {
     let dataHistory = [];
     let appSettings = {};
     
-    // === Variabel Global BARU untuk Grafik ===
-    let dataGrafikBulanan = {}; // Untuk menyimpan data bulanan per tahun
-    let chartBulanan = null; // Untuk menyimpan objek grafik bulanan
-    let chartTahunan = null; // Untuk menyimpan objek grafik tahunan
-    let chartAkuisisi = null; // Untuk menyimpan objek grafik akuisisi
+    // === Variabel Global untuk Grafik ===
+    let dataGrafikBulanan = {}; 
+    let dataGrafikTahunan = {}; // <-- BARU
+    let dataGrafikAkuisisi = {}; // <-- BARU
+    let sudahRenderGrafik = false; // <-- BARU (Flag)
+    
+    let chartBulanan = null; 
+    let chartTahunan = null; 
+    let chartAkuisisi = null; 
 
     // (Elemen Menu & Tabel)
     const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
@@ -44,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const bukuTersediaElement = document.getElementById('buku-tersedia');
     const bukuDipinjamElement = document.getElementById('buku-dipinjam');
 
-    // === ELEMEN BARU (Grafik) ===
+    // (Elemen Grafik)
     const ctxGrafikBulanan = document.getElementById('grafikBulanan')?.getContext('2d');
     const ctxGrafikTahunan = document.getElementById('grafikTahunan')?.getContext('2d');
     const ctxGrafikAkuisisi = document.getElementById('grafikAkuisisiBuku')?.getContext('2d');
@@ -120,15 +124,25 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // == Logika Navigasi Menu & Sub-Menu ==
+    // === MODIFIKASI: Memanggil renderSemuaGrafik() ===
     // ===========================================
     function activateSection(targetId) {
         menuItems.forEach(i => i.classList.remove('active'));
         contentSections.forEach(s => s.classList.remove('active'));
         const targetMenuItem = document.querySelector(`.menu-item a[data-target="${targetId}"]`);
         const targetElement = document.getElementById(targetId);
+        
         if (targetMenuItem && targetElement) {
             targetMenuItem.parentElement.classList.add('active');
             targetElement.classList.add('active');
+            
+            // --- INI PERBAIKANNYA ---
+            // Hanya panggil render grafik JIKA tab dashboard yang diklik
+            if (targetId === 'dashboard-statistik') {
+                renderSemuaGrafik();
+            }
+            // --- AKHIR PERBAIKAN ---
+
         } else {
             document.querySelector('.menu-item a[data-target="katalog-buku"]').parentElement.classList.add('active');
             document.getElementById('katalog-buku').classList.add('active');
@@ -143,15 +157,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 window.location.hash = targetId;
             });
         });
+        
+        // Cek hash saat load (untuk refresh)
         const currentHash = window.location.hash.substring(1); 
         if (currentHash) {
             activateSection(currentHash); 
+            // (Logika untuk merender saat refresh ada di bagian paling bawah)
         } else {
             activateSection("katalog-buku");
         }
     } else {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
+    // (Logika Sub-Nav - Tidak berubah)
     if (subNavItems.length > 0 && subContentSections.length > 0) {
         subNavItems.forEach(item => {
             item.addEventListener('click', function() {
@@ -164,11 +182,11 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // === EVENT LISTENER BARU (Filter Tahun Grafik) ===
+    // (Filter Tahun Grafik - Tidak berubah)
     if(filterTahunGrafik) {
         filterTahunGrafik.addEventListener('change', function() {
             const tahunTerpilih = this.value;
-            renderGrafikBulanan(tahunTerpilih); // Render ulang grafik bulanan
+            renderGrafikBulanan(tahunTerpilih); // Ini sudah benar
         });
     }
 
@@ -197,7 +215,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
     
-    // (muatDataBuku) - Sekarang memanggil prosesGrafikBuku
+    // === MODIFIKASI: muatDataBuku ===
+    // (Memanggil prosesGrafikBuku, tapi prosesGrafikBuku TIDAK LAGI merender)
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
@@ -225,8 +244,7 @@ document.addEventListener("DOMContentLoaded", function() {
         populateBukuDropdowns();
         populateEditBukuSelect();
         
-        // --- PANGGILAN BARU ---
-        prosesGrafikBuku(dataBuku);
+        prosesGrafikBuku(dataBuku); // (Tetap panggil proses)
     }
     
     // (tampilkanDataBukuAgregat - Tidak ada perubahan)
@@ -305,7 +323,8 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (muatDataHistory) - Sekarang memanggil prosesDataGrafik
+    // === MODIFIKASI: muatDataHistory ===
+    // (Memanggil prosesDataGrafik, tapi prosesDataGrafik TIDAK LAGI merender)
     async function muatDataHistory() {
         if (!tabelHistory) return;
         if (urlHistory === 'PASTE_LINK_CSV_HISTORY_ANDA_DI_SINI' || !urlHistory) {
@@ -321,15 +340,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 timestamp: (k[0]||'').trim(), 
                 noInv: (k[1]||'').trim(), 
                 judul: (k[2]||'').trim(), 
-                nis: (k[3]||'').trim(), 
+                nis: (k[3]||'').trim(), // (Ini sudah diperbaiki dari typo sebelumnya)
                 nama: (k[4]||'').trim(),
                 aksi: (k[5]||'').trim()
             };
         });
         tampilkanDataHistory(dataHistory);
-
-        // --- PANGGILAN BARU ---
-        prosesDataGrafik(dataHistory);
+        prosesDataGrafik(dataHistory); // (Tetap panggil proses)
     }
     
     // (tampilkanDataHistory - Tidak ada perubahan)
@@ -494,9 +511,12 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // === FUNGSI BARU: Logika & Render Grafik ===
+    // ===========================================
+    // == MODIFIKASI: FUNGSI GRAFIK ==
+    // ===========================================
     
     // 1. Proses data Peminjaman (dari History)
+    // (MODIFIKASI: Hanya memproses dan menyimpan data, TIDAK me-render)
     function prosesDataGrafik(historyData) {
         const pinjamPerTahun = {};
         const pinjamPerBulan = {};
@@ -506,56 +526,44 @@ document.addEventListener("DOMContentLoaded", function() {
         const dataPinjam = historyData.filter(item => (item.aksi || "").toLowerCase() === 'dipinjam');
 
         dataPinjam.forEach(item => {
-            // Coba parsing tanggal. Format CSV "7/11/2025 10:30:00" adalah M/D/Y
             const tgl = new Date(item.timestamp);
-            if (isNaN(tgl.getTime())) { // Skip jika tanggal tidak valid
+            if (isNaN(tgl.getTime())) { 
                 console.warn("Format tanggal tidak valid:", item.timestamp);
                 return; 
             }
-
             const tahun = tgl.getFullYear();
             const bulan = tgl.getMonth(); // 0-11
             setTahun.add(tahun);
-
-            // Inisialisasi jika belum ada
             if (!pinjamPerTahun[tahun]) pinjamPerTahun[tahun] = 0;
             if (!pinjamPerBulan[tahun]) pinjamPerBulan[tahun] = Array(12).fill(0);
-
-            // Tambah hitungan
             pinjamPerTahun[tahun]++;
             pinjamPerBulan[tahun][bulan]++;
         });
 
-        // Simpan data bulanan ke variabel global
+        // Simpan data ke global
         dataGrafikBulanan = pinjamPerBulan;
+        dataGrafikTahunan = pinjamPerTahun; // <-- SIMPAN KE GLOBAL
 
         // Isi filter <select>
         if (filterTahunGrafik) {
-            const tahunSorted = [...setTahun].sort((a, b) => b - a); // Urutkan terbaru di atas
+            const tahunSorted = [...setTahun].sort((a, b) => b - a); 
             filterTahunGrafik.innerHTML = '';
             tahunSorted.forEach(tahun => {
                 filterTahunGrafik.innerHTML += `<option value="${tahun}" ${tahun === tahunSekarang ? 'selected' : ''}>${tahun}</option>`;
             });
-            // Jika tidak ada data, tambahkan tahun sekarang
             if(tahunSorted.length === 0) {
                  filterTahunGrafik.innerHTML += `<option value="${tahunSekarang}">${tahunSekarang}</option>`;
             }
         }
-        
-        // Render grafik
-        renderGrafikTahunan(pinjamPerTahun);
-        renderGrafikBulanan(filterTahunGrafik.value);
+        // HAPUS PANGGILAN RENDER DARI SINI
     }
     
     // 2. Render Grafik Peminjaman Tahunan
     function renderGrafikTahunan(data) {
         if (!ctxGrafikTahunan) return;
-        
         const labels = Object.keys(data).sort((a,b) => a-b);
         const values = labels.map(label => data[label]);
-
-        if(chartTahunan) chartTahunan.destroy(); // Hapus grafik lama jika ada
-        
+        if(chartTahunan) chartTahunan.destroy(); 
         chartTahunan = new Chart(ctxGrafikTahunan, {
             type: 'bar',
             data: {
@@ -568,27 +576,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     borderWidth: 1
                 }]
             },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 } // Pastikan angka bulat
-                    }
-                }
-            }
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
     }
 
     // 3. Render Grafik Peminjaman Bulanan
     function renderGrafikBulanan(tahun) {
         if (!ctxGrafikBulanan) return;
-        
         const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-        const values = dataGrafikBulanan[tahun] || Array(12).fill(0); // Ambil data dari global
-
-        if(chartBulanan) chartBulanan.destroy(); // Hapus grafik lama
-
+        const values = dataGrafikBulanan[tahun] || Array(12).fill(0); 
+        if(chartBulanan) chartBulanan.destroy(); 
         chartBulanan = new Chart(ctxGrafikBulanan, {
             type: 'bar',
             data: {
@@ -601,24 +598,15 @@ document.addEventListener("DOMContentLoaded", function() {
                     borderWidth: 1
                 }]
             },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
-                }
-            }
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
     }
 
     // 4. Proses data Penambahan Buku (dari Katalog)
+    // (MODIFIKASI: Hanya memproses dan menyimpan data, TIDAK me-render)
     function prosesGrafikBuku(dataBuku) {
         const bukuPerTahun = {};
-        
         dataBuku.forEach(buku => {
-            // Ekstrak 4 digit di akhir No. Inventaris
             const match = (buku.noInventaris || "").match(/(\d{4})$/); 
             if (match && match[1]) {
                 const tahun = match[1];
@@ -626,21 +614,18 @@ document.addEventListener("DOMContentLoaded", function() {
                 bukuPerTahun[tahun]++;
             }
         });
-        
-        renderGrafikAkuisisi(bukuPerTahun);
+        dataGrafikAkuisisi = bukuPerTahun; // <-- SIMPAN KE GLOBAL
+        // HAPUS PANGGILAN RENDER DARI SINI
     }
 
     // 5. Render Grafik Penambahan Buku (Akuisisi)
     function renderGrafikAkuisisi(data) {
         if (!ctxGrafikAkuisisi) return;
-        
         const labels = Object.keys(data).sort((a,b) => a-b);
         const values = labels.map(label => data[label]);
-
-        if(chartAkuisisi) chartAkuisisi.destroy(); // Hapus grafik lama
-
+        if(chartAkuisisi) chartAkuisisi.destroy(); 
         chartAkuisisi = new Chart(ctxGrafikAkuisisi, {
-            type: 'line', // Grafik garis untuk "peningkatan"
+            type: 'line', 
             data: {
                 labels: labels,
                 datasets: [{
@@ -653,19 +638,31 @@ document.addEventListener("DOMContentLoaded", function() {
                     tension: 0.1
                 }]
             },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 }
-                    }
-                }
-            }
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
     }
 
+    // === 6. FUNGSI BARU: MASTER RENDER GRAFIK ===
+    // Fungsi ini dipanggil saat tab dashboard diklik
+    function renderSemuaGrafik() {
+        // Cek jika elemen ada, dan belum pernah dirender
+        if (!ctxGrafikBulanan || sudahRenderGrafik) return; 
 
+        // Pastikan data sudah ada (tidak kosong)
+        if (Object.keys(dataGrafikTahunan).length > 0) {
+            renderGrafikTahunan(dataGrafikTahunan);
+        }
+        if (Object.keys(dataGrafikBulanan).length > 0) {
+            renderGrafikBulanan(filterTahunGrafik.value);
+        }
+        if (Object.keys(dataGrafikAkuisisi).length > 0) {
+            renderGrafikAkuisisi(dataGrafikAkuisisi);
+        }
+        
+        sudahRenderGrafik = true; // Tandai sudah dirender
+    }
+    
+    
     // ===========================================
     // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
     // (Tidak ada perubahan di semua fungsi ini)
@@ -1082,9 +1079,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // Jalankan Fungsi Saat Halaman Dimuat
+    // === MODIFIKASI: Menangani Refresh di Tab Grafik ===
     // ===========================================
-    muatDataBuku();
-    muatDataAnggota();
-    muatDataHistory(); 
-    muatDataPengaturan(); 
+    
+    // Buat fungsi inisialisasi utama
+    async function inisialisasiAplikasi() {
+        // Jalankan semua pemuatan data secara paralel (bersamaan)
+        await Promise.all([
+            muatDataBuku(),
+            muatDataAnggota(),
+            muatDataHistory(),
+            muatDataPengaturan()
+        ]);
+        
+        // Setelah SEMUA data dimuat, cek hash LAGI
+        const hash = window.location.hash.substring(1);
+        if (hash === 'dashboard-statistik') {
+            // Jika me-refresh di tab dashboard, render grafiknya
+            renderSemuaGrafik();
+        }
+    }
+    
+    // Panggil fungsi inisialisasi utama
+    inisialisasiAplikasi();
 });
