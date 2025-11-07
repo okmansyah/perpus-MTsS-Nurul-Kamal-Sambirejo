@@ -28,7 +28,7 @@ body {
     width: 250px;
     background-color: #1a202c;
     color: white;
-    padding: 15px 20px; /* DIUBAH: Padding atas/bawah dikurangi dari 20px */
+    padding: 10px 15px; /* LEBIH RAPAT: Padding atas/bawah & ki/ka dikurangi */
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
@@ -37,22 +37,22 @@ body {
 
 .sidebar-header {
     text-align: center;
-    margin-bottom: 15px; /* DIUBAH: Dirapatkan ke menu (dari 30px) */
-    padding-bottom: 15px; /* DIUBAH: Dirapatkan ke menu (dari 20px) */
+    margin-bottom: 10px; /* LEBIH RAPAT: Jarak ke menu (dari 15px) */
+    padding-bottom: 10px; /* LEBIH RAPAT: Jarak ke garis (dari 15px) */
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .sidebar-logo {
-    max-width: 100px;
+    max-width: 90px; /* LEBIH RAPAT: Logo sedikit dikecilkan */
     border-radius: 50%;
     border: 3px solid #66bb6a; 
-    margin-bottom: 5px; /* DIUBAH: Dirapatkan ke teks (dari 10px) */
+    margin-bottom: 5px; 
 }
 
 .sidebar-header h2 {
-    margin: 5px 0 5px; /* DIUBAH: Margin atas dikurangi (dari 10px) */
+    margin: 5px 0 0; /* LEBIH RAPAT: Margin atas tetap, bawah 0 (dari 5px 0 5px) */
     color: #66bb6a;
-    font-size: 1.6em;
+    font-size: 1.5em; /* LEBIH RAPAT: Font judul dikecilkan sedikit */
 }
 
 .sidebar-header p {
@@ -68,23 +68,23 @@ body {
 }
 
 .menu-item {
-    margin-bottom: 5px; /* DIUBAH: Antar menu dirapatkan (dari 10px) */
+    margin-bottom: 2px; /* LEBIH RAPAT: Antar menu sangat rapat (dari 5px) */
 }
 
 .menu-item a {
     display: flex;
     align-items: center;
-    padding: 12px 15px;
+    padding: 10px 15px; /* LEBIH RAPAT: Tombol menu lebih pendek (dari 12px) */
     color: #cbd5e0;
     text-decoration: none;
-    font-size: 1.1em;
+    font-size: 1.0em; /* LEBIH RAPAT: Font menu dikecilkan (dari 1.1em) */
     border-radius: 8px;
     transition: all 0.3s ease;
 }
 
 .menu-item a i {
     margin-right: 15px;
-    font-size: 1.2em;
+    font-size: 1.1em; /* LEBIH RAPAT: Icon disesuaikan (dari 1.2em) */
     color: #66bb6a;
     transition: color 0.3s ease;
 }
@@ -102,6 +102,7 @@ body {
 
 /* =========================================== */
 /* == KONTEN UTAMA (KANAN) == */
+/* (Tidak ada perubahan di bagian ini) */
 /* =========================================== */
 .main-content {
     flex-grow: 1;
@@ -155,6 +156,7 @@ h2 {
 
 /* =========================================== */
 /* == ELEMEN FORM & TABEL == */
+/* (Tidak ada perubahan di bagian ini) */
 /* =========================================== */
 
 #filterBuku, #filterAnggota {
@@ -267,10 +269,9 @@ tbody tr:hover {
     color: #4a5568;
 }
 
-/* Ini adalah perbaikan dari dropdown yang melebar sebelumnya */
 .form-section input[type="text"],
 .form-section input[type="password"],
-.form-section input[type="number"], /* Ditambahkan untuk form pengaturan */
+.form-section input[type="number"],
 .form-section select {
     width: 100%;
     padding: 12px 15px;
@@ -310,6 +311,7 @@ tbody tr:hover {
 
 /* =========================================== */
 /* == KODE RESPONSIVE UNTUK MOBILE == */
+/* (Tidak ada perubahan di bagian ini) */
 /* =========================================== */
 
 @media (max-width: 768px) {
@@ -336,7 +338,7 @@ tbody tr:hover {
         width: 100%;
         box-sizing: border-box;
         height: auto;
-        padding: 10px 15px; /* Disesuaikan untuk HP */
+        padding: 10px 15px; 
     }
 
     .sidebar-header {
@@ -348,7 +350,7 @@ tbody tr:hover {
     }
 
     .sidebar-logo {
-        max-width: 60px;
+        max-width: 60px; /* Ukuran logo di HP */
         margin-right: 15px;
         margin-bottom: 0;
     }
@@ -358,7 +360,7 @@ tbody tr:hover {
     }
     .sidebar-header h2 {
         font-size: 1.2em;
-        margin: 0; /* Dirapatkan di HP */
+        margin: 0; 
     }
 
     .sidebar-menu {
@@ -367,7 +369,7 @@ tbody tr:hover {
         overflow-x: auto; 
         white-space: nowrap;
         border-top: 1px solid rgba(255,255,255,0.1);
-        margin-top: 10px; /* Dirapatkan (dari 15px) */
+        margin-top: 10px; 
         padding-top: 10px;
     }
 
@@ -380,7 +382,7 @@ tbody tr:hover {
     .menu-item a {
         flex-direction: column;
         padding: 10px 8px;
-        font-size: 0.8em;
+        font-size: 0.8em; /* Font menu di HP */
         text-align: center;
         min-width: 70px;
     }
@@ -388,7 +390,7 @@ tbody tr:hover {
     .menu-item a i {
         margin-right: 0;
         margin-bottom: 5px;
-        font-size: 1.4em;
+        font-size: 1.4em; /* Icon di HP */
     }
 
     .content-area {
@@ -429,11 +431,10 @@ tbody tr:hover {
         padding: 15px !important;
     }
     
-    /* Ini adalah perbaikan dari kode responsif sebelumnya */
     .form-section input[type="text"],
     .form-section input[type="password"],
     .form-section input[type="number"],
-    .form-section select { /* <-- DIPERBAIKI (titik) & ditambah number */
+    .form-section select { 
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box;
