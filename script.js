@@ -8,8 +8,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
 
+    // === TAMBAHAN BARU: PASTE LINK CSV "History" ANDA DI SINI ===
+    const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; 
+
     // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbxrrmVcsG5rFCDnTDiys1wcuR6FvoHp2lnMTP7lN80si56rpsuj8pj5-rwDiNxAWIOI/exec';
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbwAryp3i9flEKWAtqqBIX4RwuuqFVnqlhVvJDTa1L7P_TUppvQ1_epb2NmS4p6-1EUB/exec';
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -17,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     let dataBuku = [];
     let dataAnggota = [];
+    let dataHistory = []; // <-- TAMBAHAN BARU
 
     const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
     const contentSections = document.querySelectorAll('.content-section');
@@ -25,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const filterBuku = document.getElementById('filterBuku');
     const tabelAnggota = document.getElementById('tabel-anggota');
     const filterAnggota = document.getElementById('filterAnggota');
+    const tabelHistory = document.getElementById('tabel-history'); // <-- TAMBAHAN BARU
     
     const totalJudulBukuElement = document.getElementById('total-judul-buku');
     const bukuTersediaElement = document.getElementById('buku-tersedia');
@@ -47,16 +52,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // Logika Navigasi Menu Sidebar
+    // (Kode ini sudah benar, tidak perlu diubah)
     // ===========================================
     if (menuItems.length > 0 && contentSections.length > 0) {
         menuItems.forEach(item => {
             item.addEventListener('click', function(e) {
                 e.preventDefault();
                 const targetId = this.querySelector('a').getAttribute('data-target');
-                
                 menuItems.forEach(i => i.classList.remove('active'));
                 contentSections.forEach(s => s.classList.remove('active'));
-
                 this.classList.add('active');
                 const targetElement = document.getElementById(targetId);
                 if (targetElement) {
@@ -75,7 +79,6 @@ document.addEventListener("DOMContentLoaded", function() {
     
     async function fetchData(url) {
         try {
-            // Tambahkan parameter acak untuk mencegah cache
             const respons = await fetch(url + '&cachebust=' + new Date().getTime());
             if (!respons.ok) {
                  throw new Error(`Gagal memuat data dari URL: ${url}. Status: ${respons.status} (Not Found)`);
@@ -84,24 +87,21 @@ document.addEventListener("DOMContentLoaded", function() {
             return dataCsv.split('\n').slice(1).filter(baris => baris.trim() !== '');
         } catch (error) {
             console.error('Error di fungsi fetchData:', error);
-            if(tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="7" class="loading" style="color:red;">Error: ${error.message}. Cek link CSV.</td></tr>`;
-            if(tabelAnggota) tabelAnggota.innerHTML = `<tr><td colspan="4" class="loading" style="color:red;">Error: ${error.message}. Cek link CSV.</td></tr>`;
+            const errorMsg = `Error: ${error.message}. Cek link CSV.`;
+            if (url === urlBuku && tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="7" class="loading" style="color:red;">${errorMsg}</td></tr>`;
+            if (url === urlAnggota && tabelAnggota) tabelAnggota.innerHTML = `<tr><td colspan="4" class="loading" style="color:red;">${errorMsg}</td></tr>`;
+            if (url === urlHistory && tabelHistory) tabelHistory.innerHTML = `<tr><td colspan="6" class="loading" style="color:red;">${errorMsg}</td></tr>`;
             return null;
         }
     }
     
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
-
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="7" class="loading">Memuat data buku...</td></tr>';
         
         const dataCsv = await fetchData(urlBuku);
-        if (!dataCsv) {
-            return;
-        }
+        if (!dataCsv) return;
 
-        // --- INI ADALAH MODIFIKASI ---
-        // Membaca 7 kolom, bukan 5
         dataBuku = dataCsv.map(baris => {
             const k = baris.split(',');
             return { 
@@ -110,20 +110,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 pengarang: (k[2]||'').trim(), 
                 penerbit: (k[3]||'').trim(), 
                 status: (k[4]||'').trim(),
-                // Tambahan 2 kolom baru
                 peminjamNis: (k[5]||'').trim(),
                 tglPinjam: (k[6]||'').trim()
             };
         });
-        // --- AKHIR MODIFIKASI ---
 
-        if (tabelBuku) {
-            tampilkanDataBuku(dataBuku);
-        }
-        if (totalJudulBukuElement) {
-            updateDashboardStats();
-        }
-        
+        if (tabelBuku) tampilkanDataBuku(dataBuku);
+        if (totalJudulBukuElement) updateDashboardStats();
         populateBukuDropdowns();
     }
 
@@ -136,9 +129,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         data.forEach(buku => {
             const statusClass = (buku.status || "").toLowerCase() === 'tersedia' ? 'status-tersedia' : 'status-dipinjam';
-            
-            // --- INI ADALAH MODIFIKASI ---
-            // Menampilkan 7 kolom, bukan 5
             tabelBuku.innerHTML += `
                 <tr>
                     <td>${buku.noInventaris}</td>
@@ -149,19 +139,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     <td>${buku.peminjamNis}</td>
                     <td>${buku.tglPinjam}</td>
                 </tr>`;
-            // --- AKHIR MODIFIKASI ---
         });
     }
 
     async function muatDataAnggota() {
         if (!tabelAnggota && !selectPinjamKelas) return; 
-
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
         
         const dataCsv = await fetchData(urlAnggota);
-        if (!dataCsv) {
-            return;
-        }
+        if (!dataCsv) return;
+
         dataAnggota = dataCsv.map(baris => {
             const k = baris.split(',');
             return { 
@@ -172,10 +159,7 @@ document.addEventListener("DOMContentLoaded", function() {
             };
         });
         
-        if (tabelAnggota) {
-            tampilkanDataAnggota(dataAnggota);
-        }
-
+        if (tabelAnggota) tampilkanDataAnggota(dataAnggota);
         populateKelasSelect();
     }
     
@@ -196,13 +180,65 @@ document.addEventListener("DOMContentLoaded", function() {
                 </tr>`;
         });
     }
+
+    // === FUNGSI BARU UNTUK HISTORY ===
+    async function muatDataHistory() {
+        if (!tabelHistory) return;
+        if (urlHistory === 'LINK_CSV_HISTORY_ANDA_DI_SINI') {
+            tabelHistory.innerHTML = '<tr><td colspan="6" class="loading" style="color:orange;">Harap masukkan URL CSV Sheet "History" di dalam file script.js</td></tr>';
+            return;
+        }
+
+        tabelHistory.innerHTML = '<tr><td colspan="6" class="loading">Memuat riwayat...</td></tr>';
+        const dataCsv = await fetchData(urlHistory);
+        if (!dataCsv) return;
+
+        dataHistory = dataCsv.map(baris => {
+            const k = baris.split(',');
+            return { 
+                timestamp: (k[0]||'').trim(), 
+                noInv: (k[1]||'').trim(), 
+                judul: (k[2]||'').trim(), 
+                nis: (k[3]||'').trim(), 
+                nama: (k[4]||'').trim(),
+                aksi: (k[5]||'').trim()
+            };
+        });
+
+        tampilkanDataHistory(dataHistory);
+    }
+
+    function tampilkanDataHistory(data) {
+        if (!tabelHistory) return;
+        tabelHistory.innerHTML = '';
+        if (data.length === 0) {
+            tabelHistory.innerHTML = '<tr><td colspan="6" class="loading">Belum ada riwayat transaksi.</td></tr>';
+            return;
+        }
+        
+        // Tampilkan data TERBARU di atas (reverse) dan batasi 50
+        const dataTampil = [...data].reverse().slice(0, 50); 
+
+        dataTampil.forEach(item => {
+            const statusClass = (item.aksi || "").toLowerCase() === 'dipinjam' ? 'status-dipinjam' : 'status-tersedia';
+            tabelHistory.innerHTML += `
+                <tr>
+                    <td>${item.timestamp}</td>
+                    <td>${item.noInv}</td>
+                    <td>${item.judul}</td>
+                    <td>${item.nis}</td>
+                    <td>${item.nama}</td>
+                    <td><span class="status ${statusClass}">${item.aksi}</span></td>
+                </tr>`;
+        });
+    }
+    // === AKHIR FUNGSI BARU ===
     
     function updateDashboardStats() {
         if (!totalJudulBukuElement) return;
         const totalJudul = dataBuku.length;
         const bukuTersedia = dataBuku.filter(buku => (buku.status || "").toLowerCase() === 'tersedia').length;
         const bukuDipinjam = totalJudul - bukuTersedia;
-
         totalJudulBukuElement.textContent = totalJudul;
         bukuTersediaElement.textContent = bukuTersedia;
         bukuDipinjamElement.textContent = bukuDipinjam;
@@ -214,15 +250,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function populateBukuDropdowns() {
         if (!selectPinjamInv || !selectKembaliInv) return;
-
         selectPinjamInv.innerHTML = '<option value="">-- Pilih Buku (Tersedia) --</option>';
         selectKembaliInv.innerHTML = '<option value="">-- Pilih Buku (Dipinjam) --</option>';
-
         const sortedData = [...dataBuku].sort((a, b) => a.noInventaris.localeCompare(b.noInventaris, undefined, { numeric: true }));
-
         sortedData.forEach(buku => {
             const optionText = `${buku.noInventaris} - ${buku.judul}`;
-            
             if ((buku.status || "").toLowerCase() === 'tersedia') {
                 selectPinjamInv.innerHTML += `<option value="${buku.noInventaris}">${optionText}</option>`;
             } else {
@@ -233,10 +265,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function populateKelasSelect() {
         if (!selectPinjamKelas) return;
-
         const semuaKelas = dataAnggota.map(anggota => anggota.kelas);
         const kelasUnik = [...new Set(semuaKelas)].sort(); 
-
         selectPinjamKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
         kelasUnik.forEach(kelas => {
             if (kelas) { 
@@ -248,16 +278,12 @@ document.addEventListener("DOMContentLoaded", function() {
     if (selectPinjamKelas) {
         selectPinjamKelas.addEventListener('change', function() {
             const kelasTerpilih = this.value;
-            
             selectPinjamNama.innerHTML = '<option value="">-- Pilih Nama --</option>';
             inputPinjamNIS.value = ""; 
-
             if (!kelasTerpilih) return; 
-
             const anggotaDiKelas = dataAnggota
                 .filter(anggota => anggota.kelas === kelasTerpilih)
                 .sort((a, b) => a.nama.localeCompare(b.nama)); 
-
             if (anggotaDiKelas.length === 0) {
                 selectPinjamNama.innerHTML = '<option value="">-- Tidak ada siswa di kelas ini --</option>';
             } else {
@@ -284,7 +310,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 (buku.judul || "").toLowerCase().includes(kataKunci) ||
                 (buku.pengarang || "").toLowerCase().includes(kataKunci) ||
                 (buku.penerbit || "").toLowerCase().includes(kataKunci) ||
-                // Tambah filter berdasarkan NIS Peminjam
                 (buku.peminjamNis || "").toLowerCase().includes(kataKunci)
             );
             tampilkanDataBuku(dataFilter);
@@ -337,28 +362,43 @@ document.addEventListener("DOMContentLoaded", function() {
             pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
             
             if (response.status === "success") {
-                // Reset form
+                // --- UPDATE INSTAN (DIMODIFIKASI) ---
+                
+                // 1. Dapatkan info buku dan siswa dari data memori
+                const bukuYangDipinjam = dataBuku.find(b => b.noInventaris === noInventaris);
+                const siswaPeminjam = dataAnggota.find(a => a.nis === nis);
+                const namaSiswa = siswaPeminjam ? siswaPeminjam.nama : nis;
+                
+                // 2. Update dataBuku di memori
+                if (bukuYangDipinjam) {
+                    bukuYangDipinjam.status = "Dipinjam";
+                    bukuYangDipinjam.peminjamNis = nis;
+                    bukuYangDipinjam.tglPinjam = "Baru Saja"; 
+                }
+                
+                // 3. Tambahkan ke dataHistory di memori (di paling atas)
+                const newHistoryEntry = {
+                    timestamp: "Baru Saja",
+                    noInv: noInventaris,
+                    judul: bukuYangDipinjam ? bukuYangDipinjam.judul : "N/A",
+                    nis: nis,
+                    nama: namaSiswa,
+                    aksi: "Dipinjam"
+                };
+                dataHistory.push(newHistoryEntry); // Push lalu nanti di-reverse oleh tampilkanDataHistory
+                
+                // 4. Gambar ulang semua yang terpengaruh
+                tampilkanDataBuku(dataBuku); 
+                populateBukuDropdowns(); 
+                updateDashboardStats(); 
+                tampilkanDataHistory(dataHistory); // <-- PANGGILAN BARU
+                
+                // 5. Reset form
                 selectPinjamInv.value = "";
                 selectPinjamKelas.value = "";
                 selectPinjamNama.innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                 inputPinjamNIS.value = "";
                 inputPinjamPass.value = "";
-                
-                // --- INI ADALAH MODIFIKASI (Solusi Delay 5 Menit) ---
-                // Alih-alih memuat ulang, kita update data di memori
-                
-                // 1. Ubah data di memori (variable 'dataBuku')
-                const bukuYangDipinjam = dataBuku.find(b => b.noInventaris === noInventaris);
-                if (bukuYangDipinjam) {
-                    bukuYangDipinjam.status = "Dipinjam";
-                    bukuYangDipinjam.peminjamNis = nis;
-                    bukuYangDipinjam.tglPinjam = "Baru Saja"; // Tampilan instan
-                }
-                // 2. Gambar ulang semua yang bergantung pada 'dataBuku'
-                tampilkanDataBuku(dataBuku); 
-                populateBukuDropdowns(); 
-                updateDashboardStats(); 
-                // --- AKHIR MODIFIKASI ---
             }
             
             this.disabled = false;
@@ -394,23 +434,41 @@ document.addEventListener("DOMContentLoaded", function() {
             kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
             
             if (response.status === "success") {
-                // Reset form
-                selectKembaliInv.value = "";
-                inputKembaliPass.value = "";
-
-                // --- INI ADALAH MODIFIKASI (Solusi Delay 5 Menit) ---
-                // 1. Ubah data di memori (variable 'dataBuku')
+                // --- UPDATE INSTAN (DIMODIFIKASI) ---
+                
+                // 1. Dapatkan info buku dan siswa dari data memori
                 const bukuYangDikembalikan = dataBuku.find(b => b.noInventaris === noInventaris);
+                const nisSiswa = bukuYangDikembalikan ? bukuYangDikembalikan.peminjamNis : "N/A";
+                const siswaPeminjam = dataAnggota.find(a => a.nis === nisSiswa);
+                const namaSiswa = siswaPeminjam ? siswaPeminjam.nama : nisSiswa;
+                
+                // 2. Update dataBuku di memori
                 if (bukuYangDikembalikan) {
                     bukuYangDikembalikan.status = "Tersedia";
                     bukuYangDikembalikan.peminjamNis = "";
                     bukuYangDikembalikan.tglPinjam = "";
                 }
-                // 2. Gambar ulang semua yang bergantung pada 'dataBuku'
+                
+                // 3. Tambahkan ke dataHistory di memori (di paling atas)
+                const newHistoryEntry = {
+                    timestamp: "Baru Saja",
+                    noInv: noInventaris,
+                    judul: bukuYangDikembalikan ? bukuYangDikembalikan.judul : "N/A",
+                    nis: nisSiswa,
+                    nama: namaSiswa,
+                    aksi: "Dikembalikan"
+                };
+                dataHistory.push(newHistoryEntry);
+                
+                // 4. Gambar ulang semua yang terpengaruh
                 tampilkanDataBuku(dataBuku); 
                 populateBukuDropdowns(); 
                 updateDashboardStats(); 
-                // --- AKHIR MODIFIKASI ---
+                tampilkanDataHistory(dataHistory); // <-- PANGGILAN BARU
+                
+                // 5. Reset form
+                selectKembaliInv.value = "";
+                inputKembaliPass.value = "";
             }
             
             this.disabled = false;
@@ -424,13 +482,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 method: "POST",
                 body: JSON.stringify(data)
             });
-            
             if (!res.ok) {
                 throw new Error("Respon jaringan tidak OK");
             }
-            
             return await res.json(); 
-            
         } catch (error) {
             console.error("Error saat mengirim data:", error);
             return { status: "error", message: "Gagal terhubung ke server. Pastikan URL Web App benar dan server di-deploy." };
@@ -442,6 +497,5 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     muatDataBuku();
     muatDataAnggota();
+    muatDataHistory(); // <-- PANGGILAN BARU
 });
-
-
