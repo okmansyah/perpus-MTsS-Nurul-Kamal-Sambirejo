@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlSettings = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=1547395606&single=true&output=csv';
 
     // 2. LINK BACKEND
-        const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec';';
+        const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec';
     // ==========================================================
     // == Variabel Global & Elemen ==
     // ==========================================================
@@ -911,4 +911,5 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataHistory(); 
     muatDataPengaturan(); 
 });
+
 
