@@ -145,25 +145,20 @@
                 <section id="sirkulasi-pinjam" class="content-section">
                     <h2>Form Peminjaman Buku</h2>
                     <div class="form-section">
-                        
                         <label for="pinjam-no-inventaris">1. Pilih Buku (Hanya buku tersedia):</label>
                         <select id="pinjam-no-inventaris">
                             <option value="">-- Memuat data buku... --</option>
                         </select>
-                        
                         <label for="pinjam-kelas">2. Pilih Kelas Peminjam:</label>
                         <select id="pinjam-kelas">
                             <option value="">-- Memuat data anggota... --</option>
                         </select>
-                
                         <label for="pinjam-nama">3. Pilih Nama Peminjam:</label>
                         <select id="pinjam-nama">
                             <option value="">-- Pilih kelas terlebih dahulu --</option>
                         </select>
-                
                         <label for="pinjam-nis">4. NIS Peminjam (Otomatis):</label>
                         <input type="text" id="pinjam-nis" placeholder="NIS akan muncul di sini..." readonly>
-                
                         <label for="pinjam-password">5. Password Admin:</label>
                         <input type="password" id="pinjam-password" placeholder="Masukkan password admin...">
                         <button id="btn-proses-pinjam" class="btn btn-primary">Proses Peminjaman</button>
@@ -178,82 +173,86 @@
                         <select id="kembali-no-inventaris">
                             <option value="">-- Memuat data buku... --</option>
                         </select>
-                
                         <label for="kembali-password">2. Password Admin:</label>
                         <input type="password" id="kembali-password" placeholder="Masukkan password admin...">
-
                         <label for="kembali-denda">3. Denda Keterlambatan (Otomatis):</label>
                         <input type="text" id="kembali-denda" placeholder="Denda akan muncul di sini..." readonly style="background-color: #eee; color: #991b1b; font-weight: bold;">
-
                         <button id="btn-proses-kembali" class="btn btn-warning">Proses Pengembalian</button>
                         <p id="kembali-feedback" class="feedback-message"></p>
                     </div>
                 </section>
 
                 <section id="admin-pengaturan" class="content-section">
+                    <h2>Pengaturan & Admin</h2>
+
+                    <div class="sub-nav">
+                        <ul>
+                            <li class="sub-nav-item active" data-sub-target="sub-denda"><i class="fas fa-sliders-h"></i> Pengaturan Denda</li>
+                            <li class="sub-nav-item" data-sub-target="sub-tambah-buku"><i class="fas fa-plus-circle"></i> Tambah Buku</li>
+                            <li class="sub-nav-item" data-sub-target="sub-tambah-anggota"><i class="fas fa-user-plus"></i> Tambah Anggota</li>
+                        </ul>
+                    </div>
+                    <div id="sub-denda" class="sub-content-section active">
+                        <p>Ubah pengaturan denda dan lama peminjaman di sini.</p>
+                        <div class="form-section">
+                            <label for="setting-hari">1. Lama Peminjaman (Hari):</label>
+                            <input type="number" id="setting-hari" placeholder="Contoh: 7">
                     
-                    <h2>Pengaturan Denda & Waktu</h2>
-                    <p>Ubah pengaturan denda dan lama peminjaman di sini.</p>
-                    <div class="form-section">
-                        <label for="setting-hari">1. Lama Peminjaman (Hari):</label>
-                        <input type="number" id="setting-hari" placeholder="Contoh: 7">
-                
-                        <label for="setting-denda">2. Denda per Hari (Rupiah):</label>
-                        <input type="number" id="setting-denda" placeholder="Contoh: 1000">
-                        
-                        <label for="setting-password">3. Password Admin (Wajib):</label>
-                        <input type="password" id="setting-password" placeholder="Masukkan password admin...">
-                        
-                        <button id="btn-simpan-pengaturan" class="btn btn-success">Simpan Pengaturan</button>
-                        <p id="setting-feedback" class="feedback-message"></p>
+                            <label for="setting-denda">2. Denda per Hari (Rupiah):</label>
+                            <input type="number" id="setting-denda" placeholder="Contoh: 1000">
+                            
+                            <label for="setting-password">3. Password Admin (Wajib):</label>
+                            <input type="password" id="setting-password" placeholder="Masukkan password admin...">
+                            
+                            <button id="btn-simpan-pengaturan" class="btn btn-success">Simpan Pengaturan</button>
+                            <p id="setting-feedback" class="feedback-message"></p>
+                        </div>
+                    </div>
+                    
+                    <div id="sub-tambah-buku" class="sub-content-section">
+                        <p>Tambahkan buku baru ke Google Sheet "Katalog Buku".</p>
+                        <div class="form-section">
+                            <label for="buku-inventaris">No. Inventaris:</label>
+                            <input type="text" id="buku-inventaris" placeholder="Contoh: 001/MTs/2025">
+                    
+                            <label for="buku-judul">Judul Buku:</label>
+                            <input type="text" id="buku-judul" placeholder="Contoh: Bahasa Indonesia Kelas VII">
+
+                            <label for="buku-pengarang">Pengarang:</label>
+                            <input type="text" id="buku-pengarang" placeholder="Contoh: Budi">
+
+                            <label for="buku-penerbit">Penerbit:</label>
+                            <input type="text" id="buku-penerbit" placeholder="Contoh: Erlangga">
+                            
+                            <label for="buku-password">Password Admin (Wajib):</label>
+                            <input type="password" id="buku-password" placeholder="Masukkan password admin...">
+                            
+                            <button id="btn-tambah-buku" class="btn btn-primary">Tambah Buku</button>
+                            <p id="buku-feedback" class="feedback-message"></p>
+                        </div>
                     </div>
 
-                    <hr style="margin: 30px 0;">
-
-                    <h2>Tambah Buku Baru</h2>
-                    <p>Tambahkan buku baru ke Google Sheet "Katalog Buku".</p>
-                    <div class="form-section">
-                        <label for="buku-inventaris">No. Inventaris:</label>
-                        <input type="text" id="buku-inventaris" placeholder="Contoh: 001/MTs/2025">
-                
-                        <label for="buku-judul">Judul Buku:</label>
-                        <input type="text" id="buku-judul" placeholder="Contoh: Bahasa Indonesia Kelas VII">
-
-                        <label for="buku-pengarang">Pengarang:</label>
-                        <input type="text" id="buku-pengarang" placeholder="Contoh: Budi">
-
-                        <label for="buku-penerbit">Penerbit:</label>
-                        <input type="text" id="buku-penerbit" placeholder="Contoh: Erlangga">
-                        
-                        <label for="buku-password">Password Admin (Wajib):</label>
-                        <input type="password" id="buku-password" placeholder="Masukkan password admin...">
-                        
-                        <button id="btn-tambah-buku" class="btn btn-primary">Tambah Buku</button>
-                        <p id="buku-feedback" class="feedback-message"></p>
-                    </div>
-
-                    <hr style="margin: 30px 0;">
+                    <div id="sub-tambah-anggota" class="sub-content-section">
+                        <p>Tambahkan siswa baru ke Google Sheet "Anggota".</p>
+                        <div class="form-section">
+                            <label for="anggota-nis">NIS:</label>
+                            <input type="text" id="anggota-nis" placeholder="Contoh: 123456">
                     
-                    <h2>Tambah Anggota Baru</h2>
-                    <p>Tambahkan siswa baru ke Google Sheet "Anggota".</p>
-                    <div class="form-section">
-                        <label for="anggota-nis">NIS:</label>
-                        <input type="text" id="anggota-nis" placeholder="Contoh: 123456">
-                
-                        <label for="anggota-nama">Nama Lengkap:</label>
-                        <input type="text" id="anggota-nama" placeholder="Contoh: Budi Setiawan">
+                            <label for="anggota-nama">Nama Lengkap:</label>
+                            <input type="text" id="anggota-nama" placeholder="Contoh: Budi Setiawan">
 
-                        <label for="anggota-kelas">Kelas:</label>
-                        <input type="text" id="anggota-kelas" placeholder="Contoh: VII-A">
+                            <label for="anggota-kelas">Kelas:</label>
+                            <input type="text" id="anggota-kelas" placeholder="Contoh: VII-A">
 
-                        <label for="anggota-status">Status (Opsional):</label>
-                        <input type="text" id="anggota-status" placeholder="Contoh: Aktif">
-                        
-                        <label for="anggota-password">Password Admin (Wajib):</label>
-                        <input type="password" id="anggota-password" placeholder="Masukkan password admin...">
-                        
-                        <button id="btn-tambah-anggota" class="btn btn-primary">Tambah Anggota</button>
-                        <p id="anggota-feedback" class="feedback-message"></p>
+                            <label for="anggota-status">Status (Opsional):</label>
+                            <input type="text" id="anggota-status" placeholder="Contoh: Aktif">
+                            
+                            <label for="anggota-password">Password Admin (Wajib):</label>
+                            <input type="password" id="anggota-password" placeholder="Masukkan password admin...">
+                            
+                            <button id="btn-tambah-anggota" class="btn btn-primary">Tambah Anggota</button>
+                            <p id="anggota-feedback" class="feedback-message"></p>
+                        </div>
                     </div>
 
                 </section>
