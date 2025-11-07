@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // ==========================================================
 
     // 1. LINK CSV
+    // PASTIKAN ANDA MENGGANTI 4 LINK DI BAWAH INI
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
     const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; // <-- PASTIKAN INI SUDAH BENAR
@@ -26,9 +27,9 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // === Variabel Global untuk Grafik ===
     let dataGrafikBulanan = {}; 
-    let dataGrafikTahunan = {}; // <-- BARU
-    let dataGrafikAkuisisi = {}; // <-- BARU
-    let sudahRenderGrafik = false; // <-- BARU (Flag)
+    let dataGrafikTahunan = {}; 
+    let dataGrafikAkuisisi = {}; 
+    let sudahRenderGrafik = false; // Flag agar tidak render berulang
     
     let chartBulanan = null; 
     let chartTahunan = null; 
@@ -186,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if(filterTahunGrafik) {
         filterTahunGrafik.addEventListener('change', function() {
             const tahunTerpilih = this.value;
-            renderGrafikBulanan(tahunTerpilih); // Ini sudah benar
+            renderGrafikBulanan(tahunTerpilih);
         });
     }
 
@@ -215,8 +216,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
     
-    // === MODIFIKASI: muatDataBuku ===
-    // (Memanggil prosesGrafikBuku, tapi prosesGrafikBuku TIDAK LAGI merender)
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
@@ -244,10 +243,9 @@ document.addEventListener("DOMContentLoaded", function() {
         populateBukuDropdowns();
         populateEditBukuSelect();
         
-        prosesGrafikBuku(dataBuku); // (Tetap panggil proses)
+        prosesGrafikBuku(dataBuku); // Memproses data buku untuk grafik
     }
     
-    // (tampilkanDataBukuAgregat - Tidak ada perubahan)
     function tampilkanDataBukuAgregat(data) {
         if (!tabelBuku) return;
         tabelBuku.innerHTML = '';
@@ -286,7 +284,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (muatDataAnggota & tampilkanDataAnggota - Tidak ada perubahan)
     async function muatDataAnggota() {
         if (!tabelAnggota && !selectPinjamKelas) return; 
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
@@ -305,6 +302,7 @@ document.addEventListener("DOMContentLoaded", function() {
         populateKelasSelect(); 
         populateEditAnggotaSelect();
     }
+    
     function tampilkanDataAnggota(data) {
         if (!tabelAnggota) return;
         tabelAnggota.innerHTML = '';
@@ -323,8 +321,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // === MODIFIKASI: muatDataHistory ===
-    // (Memanggil prosesDataGrafik, tapi prosesDataGrafik TIDAK LAGI merender)
     async function muatDataHistory() {
         if (!tabelHistory) return;
         if (urlHistory === 'PASTE_LINK_CSV_HISTORY_ANDA_DI_SINI' || !urlHistory) {
@@ -340,16 +336,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 timestamp: (k[0]||'').trim(), 
                 noInv: (k[1]||'').trim(), 
                 judul: (k[2]||'').trim(), 
-                nis: (k[3]||'').trim(), // (Ini sudah diperbaiki dari typo sebelumnya)
+                nis: (k[3]||'').trim(), // (Perbaikan typo 'trim')
                 nama: (k[4]||'').trim(),
                 aksi: (k[5]||'').trim()
             };
         });
         tampilkanDataHistory(dataHistory);
-        prosesDataGrafik(dataHistory); // (Tetap panggil proses)
+        prosesDataGrafik(dataHistory); // Memproses data riwayat untuk grafik
     }
     
-    // (tampilkanDataHistory - Tidak ada perubahan)
     function tampilkanDataHistory(data) {
         if (!tabelHistory) return;
         tabelHistory.innerHTML = '';
@@ -372,7 +367,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // (muatDataPengaturan - Tidak ada perubahan)
     async function muatDataPengaturan() {
         if (urlSettings === 'PASTE_LINK_CSV_SETTINGS_ANDA_DI_SINI' || !urlSettings) {
              if (settingFeedback) settingFeedback.textContent = "URL CSV Settings belum diisi di script.js";
@@ -393,7 +387,6 @@ document.addEventListener("DOMContentLoaded", function() {
         if (inputSettingDenda) inputSettingDenda.value = appSettings.DendaPerHari || 1000;
     }
     
-    // (updateDashboardStats - Tidak ada perubahan)
     function updateDashboardStats() {
         if (!totalJudulBukuElement) return;
         const aggregatedData = {};
@@ -512,50 +505,33 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     // ===========================================
-    // == MODIFIKASI: FUNGSI GRAFIK ==
+    // == FUNGSI GRAFIK (Semua logika dipindah ke sini) ==
     // ===========================================
     
     // 1. Proses data Peminjaman (dari History)
-    // (MODIFIKASI: Hanya memproses dan menyimpan data, TIDAK me-render)
+    // (MODIFIKASI: HANYA memproses, tidak mengisi filter, tidak merender)
     function prosesDataGrafik(historyData) {
         const pinjamPerTahun = {};
         const pinjamPerBulan = {};
-        const setTahun = new Set();
-        const tahunSekarang = new Date().getFullYear();
-
         const dataPinjam = historyData.filter(item => (item.aksi || "").toLowerCase() === 'dipinjam');
 
         dataPinjam.forEach(item => {
             const tgl = new Date(item.timestamp);
             if (isNaN(tgl.getTime())) { 
-                console.warn("Format tanggal tidak valid:", item.timestamp);
                 return; 
             }
             const tahun = tgl.getFullYear();
             const bulan = tgl.getMonth(); // 0-11
-            setTahun.add(tahun);
+            
             if (!pinjamPerTahun[tahun]) pinjamPerTahun[tahun] = 0;
             if (!pinjamPerBulan[tahun]) pinjamPerBulan[tahun] = Array(12).fill(0);
+            
             pinjamPerTahun[tahun]++;
             pinjamPerBulan[tahun][bulan]++;
         });
 
-        // Simpan data ke global
         dataGrafikBulanan = pinjamPerBulan;
-        dataGrafikTahunan = pinjamPerTahun; // <-- SIMPAN KE GLOBAL
-
-        // Isi filter <select>
-        if (filterTahunGrafik) {
-            const tahunSorted = [...setTahun].sort((a, b) => b - a); 
-            filterTahunGrafik.innerHTML = '';
-            tahunSorted.forEach(tahun => {
-                filterTahunGrafik.innerHTML += `<option value="${tahun}" ${tahun === tahunSekarang ? 'selected' : ''}>${tahun}</option>`;
-            });
-            if(tahunSorted.length === 0) {
-                 filterTahunGrafik.innerHTML += `<option value="${tahunSekarang}">${tahunSekarang}</option>`;
-            }
-        }
-        // HAPUS PANGGILAN RENDER DARI SINI
+        dataGrafikTahunan = pinjamPerTahun; 
     }
     
     // 2. Render Grafik Peminjaman Tahunan
@@ -603,19 +579,36 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // 4. Proses data Penambahan Buku (dari Katalog)
-    // (MODIFIKASI: Hanya memproses dan menyimpan data, TIDAK me-render)
+    // (MODIFIKASI: SEKARANG MENGISI FILTER TAHUN)
     function prosesGrafikBuku(dataBuku) {
         const bukuPerTahun = {};
+        const setTahun = new Set();
+        const tahunSekarang = new Date().getFullYear();
+
         dataBuku.forEach(buku => {
             const match = (buku.noInventaris || "").match(/(\d{4})$/); 
             if (match && match[1]) {
                 const tahun = match[1];
+                setTahun.add(tahun); // Tambahkan tahun ke Set
                 if (!bukuPerTahun[tahun]) bukuPerTahun[tahun] = 0;
                 bukuPerTahun[tahun]++;
             }
         });
-        dataGrafikAkuisisi = bukuPerTahun; // <-- SIMPAN KE GLOBAL
-        // HAPUS PANGGILAN RENDER DARI SINI
+        
+        dataGrafikAkuisisi = bukuPerTahun; // Simpan data ke global
+
+        // --- INI PERBAIKAN FILTERNYA ---
+        if (filterTahunGrafik) {
+            const tahunSorted = [...setTahun].sort((a, b) => b - a); 
+            filterTahunGrafik.innerHTML = '';
+            tahunSorted.forEach(tahun => {
+                filterTahunGrafik.innerHTML += `<option value="${tahun}" ${parseInt(tahun) === tahunSekarang ? 'selected' : ''}>${tahun}</option>`;
+            });
+            // Jika tidak ada data buku sama sekali
+            if(tahunSorted.length === 0) {
+                 filterTahunGrafik.innerHTML += `<option value="${tahunSekarang}">${tahunSekarang}</option>`;
+            }
+        }
     }
 
     // 5. Render Grafik Penambahan Buku (Akuisisi)
@@ -642,8 +635,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // === 6. FUNGSI BARU: MASTER RENDER GRAFIK ===
-    // Fungsi ini dipanggil saat tab dashboard diklik
+    // 6. FUNGSI BARU: MASTER RENDER GRAFIK
     function renderSemuaGrafik() {
         // Cek jika elemen ada, dan belum pernah dirender
         if (!ctxGrafikBulanan || sudahRenderGrafik) return; 
@@ -652,7 +644,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (Object.keys(dataGrafikTahunan).length > 0) {
             renderGrafikTahunan(dataGrafikTahunan);
         }
-        if (Object.keys(dataGrafikBulanan).length > 0) {
+        if (Object.keys(dataGrafikBulanan).length > 0 || filterTahunGrafik.value) {
             renderGrafikBulanan(filterTahunGrafik.value);
         }
         if (Object.keys(dataGrafikAkuisisi).length > 0) {
@@ -1079,10 +1071,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // Jalankan Fungsi Saat Halaman Dimuat
-    // === MODIFIKASI: Menangani Refresh di Tab Grafik ===
     // ===========================================
     
-    // Buat fungsi inisialisasi utama
     async function inisialisasiAplikasi() {
         // Jalankan semua pemuatan data secara paralel (bersamaan)
         await Promise.all([
