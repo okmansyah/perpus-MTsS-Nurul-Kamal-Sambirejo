@@ -78,12 +78,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputAnggotaStatus = document.getElementById('anggota-status');
     const inputAnggotaPassword = document.getElementById('anggota-password');
     const anggotaFeedback = document.getElementById('anggota-feedback');
-
-    // === ELEMEN BARU (Sub-Menu Pengaturan) ===
+    
+    // (Elemen Sub-Menu Pengaturan)
     const subNavItems = document.querySelectorAll('.sub-nav-item');
     const subContentSections = document.querySelectorAll('.sub-content-section');
     
-    // === ELEMEN BARU (Form Edit Anggota) ===
+    // (Elemen Form Edit Anggota)
     const selectEditAnggota = document.getElementById('select-edit-anggota');
     const inputEditAnggotaNis = document.getElementById('edit-anggota-nis');
     const inputEditAnggotaNama = document.getElementById('edit-anggota-nama');
@@ -94,9 +94,21 @@ document.addEventListener("DOMContentLoaded", function() {
     const btnHapusAnggota = document.getElementById('btn-hapus-anggota');
     const editAnggotaFeedback = document.getElementById('edit-anggota-feedback');
 
+    // === ELEMEN BARU (Form Edit Buku) ===
+    const selectEditBuku = document.getElementById('select-edit-buku');
+    const inputEditBukuInventaris = document.getElementById('edit-buku-inventaris');
+    const inputEditBukuJudul = document.getElementById('edit-buku-judul');
+    const inputEditBukuPengarang = document.getElementById('edit-buku-pengarang');
+    const inputEditBukuPenerbit = document.getElementById('edit-buku-penerbit');
+    const inputEditBukuPassword = document.getElementById('edit-buku-password');
+    const btnUpdateBuku = document.getElementById('btn-update-buku');
+    const btnHapusBuku = document.getElementById('btn-hapus-buku');
+    const editBukuFeedback = document.getElementById('edit-buku-feedback');
+
 
     // ===========================================
     // == Logika Navigasi Menu & Sub-Menu ==
+    // (Tidak ada perubahan)
     // ===========================================
     function activateSection(targetId) {
         menuItems.forEach(i => i.classList.remove('active'));
@@ -162,6 +174,9 @@ document.addEventListener("DOMContentLoaded", function() {
             return null;
         }
     }
+
+    // === MODIFIKASI: muatDataBuku ===
+    // Sekarang memanggil fungsi baru: populateEditBukuSelect
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
@@ -187,7 +202,12 @@ document.addEventListener("DOMContentLoaded", function() {
             updateDashboardStats(dataBuku); 
         }
         populateBukuDropdowns();
+        
+        // --- PANGGILAN BARU ---
+        populateEditBukuSelect();
     }
+    
+    // (tampilkanDataBukuAgregat - Tidak ada perubahan)
     function tampilkanDataBukuAgregat(data) {
         if (!tabelBuku) return;
         tabelBuku.innerHTML = '';
@@ -226,8 +246,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // === MODIFIKASI: muatDataAnggota ===
-    // Sekarang memanggil fungsi baru: populateEditAnggotaSelect
+    // (muatDataAnggota & tampilkanDataAnggota - Tidak ada perubahan)
     async function muatDataAnggota() {
         if (!tabelAnggota && !selectPinjamKelas) return; 
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
@@ -244,12 +263,8 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         if (tabelAnggota) tampilkanDataAnggota(dataAnggota);
         populateKelasSelect();
-        
-        // --- PANGGILAN BARU ---
-        populateEditAnggotaSelect(); 
+        populateEditAnggotaSelect(); // (Panggilan ini sudah ada dari sebelumnya)
     }
-    
-    // (tampilkanDataAnggota - Tidak ada perubahan)
     function tampilkanDataAnggota(data) {
         if (!tabelAnggota) return;
         tabelAnggota.innerHTML = '';
@@ -387,18 +402,29 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // === FUNGSI BARU: Mengisi Dropdown Edit Anggota ===
+    // (populateEditAnggotaSelect - Tidak ada perubahan)
     function populateEditAnggotaSelect() {
         if (!selectEditAnggota) return;
-        
         selectEditAnggota.innerHTML = '<option value="">-- Pilih Anggota --</option>';
-        // Urutkan anggota berdasarkan nama
         const sortedAnggota = [...dataAnggota].sort((a, b) => a.nama.localeCompare(b.nama));
-        
         sortedAnggota.forEach(anggota => {
             if (anggota.nis && anggota.nama) {
-                // Value-nya adalah NIS, teksnya adalah NAMA (NIS)
                 selectEditAnggota.innerHTML += `<option value="${anggota.nis}">${anggota.nama} (${anggota.nis})</option>`;
+            }
+        });
+    }
+
+    // === FUNGSI BARU: Mengisi Dropdown Edit BUKU ===
+    function populateEditBukuSelect() {
+        if (!selectEditBuku) return;
+        
+        selectEditBuku.innerHTML = '<option value="">-- Pilih Buku (Per No. Inventaris) --</option>';
+        // Urutkan buku berdasarkan No. Inventaris
+        const sortedBuku = [...dataBuku].sort((a, b) => a.noInventaris.localeCompare(b.noInventaris, undefined, { numeric: true }));
+        
+        sortedBuku.forEach(buku => {
+            if (buku.noInventaris && buku.judul) {
+                selectEditBuku.innerHTML += `<option value="${buku.noInventaris}">${buku.noInventaris} - ${buku.judul}</option>`;
             }
         });
     }
@@ -637,25 +663,19 @@ document.addEventListener("DOMContentLoaded", function() {
             this.disabled = false; this.textContent = "Tambah Anggota";
         });
     }
-
-    // === EVENT LISTENER BARU (Dropdown Edit Anggota) ===
+    // (Fungsi Edit/Hapus Anggota - Tidak ada perubahan)
     if (selectEditAnggota) {
         selectEditAnggota.addEventListener('change', function() {
             const nisTerpilih = this.value;
-            editAnggotaFeedback.textContent = ""; // Kosongkan feedback
-            
+            editAnggotaFeedback.textContent = ""; 
             if (!nisTerpilih) {
-                // Reset form jika memilih "-- Pilih Anggota --"
                 inputEditAnggotaNis.value = "";
                 inputEditAnggotaNama.value = "";
                 inputEditAnggotaKelas.value = "";
                 inputEditAnggotaStatus.value = "";
                 return;
             }
-            
-            // Cari data anggota di memori
             const anggota = dataAnggota.find(a => a.nis === nisTerpilih);
-            
             if (anggota) {
                 inputEditAnggotaNis.value = anggota.nis;
                 inputEditAnggotaNama.value = anggota.nama;
@@ -664,8 +684,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-    
-    // === EVENT LISTENER BARU (Tombol Update Anggota) ===
     if (btnUpdateAnggota) {
         btnUpdateAnggota.addEventListener('click', async function() {
             const dataAnggotaBaru = {
@@ -675,91 +693,197 @@ document.addEventListener("DOMContentLoaded", function() {
                 status: inputEditAnggotaStatus.value.trim()
             };
             const adminPassword = inputEditAnggotaPassword.value.trim();
-
             if (!dataAnggotaBaru.nis || !adminPassword) {
                 editAnggotaFeedback.textContent = "Pilih anggota dan masukkan Password Admin.";
                 editAnggotaFeedback.style.color = "red";
                 return;
             }
-
             this.disabled = true; btnHapusAnggota.disabled = true;
             this.textContent = "Mengupdate...";
             editAnggotaFeedback.textContent = "Menghubungi server...";
             editAnggotaFeedback.style.color = "blue";
-
-            const dataKirim = {
-                action: "updateAnggota",
-                password: adminPassword,
-                anggota: dataAnggotaBaru
-            };
-
+            const dataKirim = { action: "updateAnggota", password: adminPassword, anggota: dataAnggotaBaru };
             const response = await kirimDataKeBackend(dataKirim);
-            
             editAnggotaFeedback.textContent = response.message;
             editAnggotaFeedback.style.color = (response.status === "success") ? "green" : "red";
-
             if (response.status === "success") {
-                // Muat ulang data anggota agar semua dropdown & tabel terupdate
                 await muatDataAnggota(); 
-                // Kosongkan form
                 inputEditAnggotaNis.value = "";
                 inputEditAnggotaNama.value = "";
                 inputEditAnggotaKelas.value = "";
                 inputEditAnggotaStatus.value = "";
                 inputEditAnggotaPassword.value = "";
             }
-            
             this.disabled = false; btnHapusAnggota.disabled = false;
             this.textContent = "Update Anggota";
         });
     }
-
-    // === EVENT LISTENER BARU (Tombol Hapus Anggota) ===
     if (btnHapusAnggota) {
         btnHapusAnggota.addEventListener('click', async function() {
             const nis = inputEditAnggotaNis.value.trim();
             const adminPassword = inputEditAnggotaPassword.value.trim();
-
             if (!nis || !adminPassword) {
                 editAnggotaFeedback.textContent = "Pilih anggota dan masukkan Password Admin.";
                 editAnggotaFeedback.style.color = "red";
                 return;
             }
-
-            // Konfirmasi sebelum menghapus
             if (!confirm(`Apakah Anda yakin ingin menghapus anggota dengan NIS: ${nis}? \n TINDAKAN INI TIDAK BISA DIBATALKAN.`)) {
                 return;
             }
-
             this.disabled = true; btnUpdateAnggota.disabled = true;
             this.textContent = "Menghapus...";
             editAnggotaFeedback.textContent = "Menghubungi server...";
             editAnggotaFeedback.style.color = "blue";
-
-            const dataKirim = {
-                action: "hapusAnggota",
-                password: adminPassword,
-                nis: nis
-            };
-
+            const dataKirim = { action: "hapusAnggota", password: adminPassword, nis: nis };
             const response = await kirimDataKeBackend(dataKirim);
-            
             editAnggotaFeedback.textContent = response.message;
             editAnggotaFeedback.style.color = (response.status === "success") ? "green" : "red";
-
             if (response.status === "success") {
-                // Muat ulang data anggota agar semua dropdown & tabel terupdate
                 await muatDataAnggota(); 
-                // Kosongkan form
                 inputEditAnggotaNis.value = "";
                 inputEditAnggotaNama.value = "";
                 inputEditAnggotaKelas.value = "";
                 inputEditAnggotaStatus.value = "";
                 inputEditAnggotaPassword.value = "";
             }
-            
             this.disabled = false; btnUpdateAnggota.disabled = false;
             this.textContent = "Hapus Anggota";
+        });
+    }
+    
+    // === EVENT LISTENER BARU (Dropdown Edit Buku) ===
+    if (selectEditBuku) {
+        selectEditBuku.addEventListener('change', function() {
+            const noInventarisTerpilih = this.value;
+            editBukuFeedback.textContent = ""; // Kosongkan feedback
+            
+            if (!noInventarisTerpilih) {
+                // Reset form
+                inputEditBukuInventaris.value = "";
+                inputEditBukuJudul.value = "";
+                inputEditBukuPengarang.value = "";
+                inputEditBukuPenerbit.value = "";
+                btnUpdateBuku.disabled = false;
+                btnHapusBuku.disabled = false;
+                return;
+            }
+            
+            // Cari data buku di memori (dataBuku mentah)
+            const buku = dataBuku.find(b => b.noInventaris === noInventarisTerpilih);
+            
+            if (buku) {
+                inputEditBukuInventaris.value = buku.noInventaris;
+                inputEditBukuJudul.value = buku.judul;
+                inputEditBukuPengarang.value = buku.pengarang;
+                inputEditBukuPenerbit.value = buku.penerbit;
+
+                // Pengecekan Keamanan Sisi Klien
+                if (buku.status.toLowerCase() === 'dipinjam') {
+                    editBukuFeedback.textContent = "Buku ini sedang dipinjam. Tidak bisa diedit atau dihapus.";
+                    editBukuFeedback.style.color = "orange";
+                    btnUpdateBuku.disabled = true;
+                    btnHapusBuku.disabled = true;
+                } else {
+                    editBukuFeedback.textContent = "";
+                    btnUpdateBuku.disabled = false;
+                    btnHapusBuku.disabled = false;
+                }
+            }
+        });
+    }
+
+    // === EVENT LISTENER BARU (Tombol Update Buku) ===
+    if (btnUpdateBuku) {
+        btnUpdateBuku.addEventListener('click', async function() {
+            const dataBukuBaru = {
+                noInventaris: inputEditBukuInventaris.value.trim(),
+                judul: inputEditBukuJudul.value.trim(),
+                pengarang: inputEditBukuPengarang.value.trim(),
+                penerbit: inputEditBukuPenerbit.value.trim()
+            };
+            const adminPassword = inputEditBukuPassword.value.trim();
+
+            if (!dataBukuBaru.noInventaris || !adminPassword) {
+                editBukuFeedback.textContent = "Pilih buku dan masukkan Password Admin.";
+                editBukuFeedback.style.color = "red";
+                return;
+            }
+
+            this.disabled = true; btnHapusBuku.disabled = true;
+            this.textContent = "Mengupdate...";
+            editBukuFeedback.textContent = "Menghubungi server...";
+            editBukuFeedback.style.color = "blue";
+
+            const dataKirim = {
+                action: "updateBuku",
+                password: adminPassword,
+                buku: dataBukuBaru
+            };
+
+            const response = await kirimDataKeBackend(dataKirim);
+            
+            editBukuFeedback.textContent = response.message;
+            editBukuFeedback.style.color = (response.status === "success") ? "green" : "red";
+
+            if (response.status === "success") {
+                await muatDataBuku(); // Muat ulang semua data buku
+                // Kosongkan form
+                inputEditBukuInventaris.value = "";
+                inputEditBukuJudul.value = "";
+                inputEditBukuPengarang.value = "";
+                inputEditBukuPenerbit.value = "";
+                inputEditBukuPassword.value = "";
+            }
+            
+            this.disabled = false; btnHapusBuku.disabled = false;
+            this.textContent = "Update Buku";
+        });
+    }
+
+    // === EVENT LISTENER BARU (Tombol Hapus Buku) ===
+    if (btnHapusBuku) {
+        btnHapusBuku.addEventListener('click', async function() {
+            const noInventaris = inputEditBukuInventaris.value.trim();
+            const adminPassword = inputEditBukuPassword.value.trim();
+
+            if (!noInventaris || !adminPassword) {
+                editBukuFeedback.textContent = "Pilih buku dan masukkan Password Admin.";
+                editBukuFeedback.style.color = "red";
+                return;
+            }
+
+            if (!confirm(`Apakah Anda yakin ingin menghapus buku dengan No. Inventaris: ${noInventaris}? \n TINDAKAN INI TIDAK BISA DIBATALKAN.`)) {
+                return;
+            }
+
+            this.disabled = true; btnUpdateBuku.disabled = true;
+            this.textContent = "Menghapus...";
+            editBukuFeedback.textContent = "Menghubungi server...";
+            editBukuFeedback.style.color = "blue";
+
+            const dataKirim = {
+                action: "hapusBuku",
+                password: adminPassword,
+                noInventaris: noInventaris
+            };
+
+            const response = await kirimDataKeBackend(dataKirim);
+            
+            editBukuFeedback.textContent = response.message;
+            editBukuFeedback.style.color = (response.status === "success") ? "green" : "red";
+
+            if (response.status === "success") {
+                await muatDataBuku(); // Muat ulang semua data buku
+                // Kosongkan form
+                inputEditBukuInventaris.value = "";
+                inputEditBukuJudul.value = "";
+                inputEditBukuPengarang.value = "";
+                inputEditBukuPenerbit.value = "";
+                inputEditBukuPassword.value = "";
+            }
+            
+            this.disabled = false; btnUpdateBuku.disabled = false;
+            this.textContent = "Hapus Buku";
         });
     }
 
