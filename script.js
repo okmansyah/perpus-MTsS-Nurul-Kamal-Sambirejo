@@ -19,8 +19,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // == Variabel Global & Elemen ==
     // ==========================================================
     
-    // Variabel dataBuku akan tetap menyimpan data PER Kopi (per No. Inventaris)
-    // Ini PENTING agar form Peminjaman tetap bekerja
     let dataBuku = []; 
     let dataAnggota = [];
     let dataHistory = [];
@@ -81,14 +79,24 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputAnggotaPassword = document.getElementById('anggota-password');
     const anggotaFeedback = document.getElementById('anggota-feedback');
 
-    // (Elemen Sub-Menu Pengaturan)
+    // === ELEMEN BARU (Sub-Menu Pengaturan) ===
     const subNavItems = document.querySelectorAll('.sub-nav-item');
     const subContentSections = document.querySelectorAll('.sub-content-section');
+    
+    // === ELEMEN BARU (Form Edit Anggota) ===
+    const selectEditAnggota = document.getElementById('select-edit-anggota');
+    const inputEditAnggotaNis = document.getElementById('edit-anggota-nis');
+    const inputEditAnggotaNama = document.getElementById('edit-anggota-nama');
+    const inputEditAnggotaKelas = document.getElementById('edit-anggota-kelas');
+    const inputEditAnggotaStatus = document.getElementById('edit-anggota-status');
+    const inputEditAnggotaPassword = document.getElementById('edit-anggota-password');
+    const btnUpdateAnggota = document.getElementById('btn-update-anggota');
+    const btnHapusAnggota = document.getElementById('btn-hapus-anggota');
+    const editAnggotaFeedback = document.getElementById('edit-anggota-feedback');
 
 
     // ===========================================
     // == Logika Navigasi Menu & Sub-Menu ==
-    // (Tidak ada perubahan)
     // ===========================================
     function activateSection(targetId) {
         menuItems.forEach(i => i.classList.remove('active'));
@@ -136,7 +144,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     // == Fungsi Baca Data (Fetch CSV) ==
     // ===========================================
-    
     async function fetchData(url) {
         try {
             const respons = await fetch(url + '&cachebust=' + new Date().getTime());
@@ -148,7 +155,6 @@ document.addEventListener("DOMContentLoaded", function() {
         } catch (error) {
             console.error('Error di fungsi fetchData:', error);
             const errorMsg = `Error: ${error.message}. Cek link CSV.`;
-            // === MODIFIKASI: Colspan disesuaikan menjadi 5 ===
             if (url === urlBuku && tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="5" class="loading" style="color:red;">${errorMsg}</td></tr>`;
             if (url === urlAnggota && tabelAnggota) tabelAnggota.innerHTML = `<tr><td colspan="4" class="loading" style="color:red;">${errorMsg}</td></tr>`;
             if (url === urlHistory && tabelHistory) tabelHistory.innerHTML = `<tr><td colspan="6" class="loading" style="color:red;">${errorMsg}</td></tr>`;
@@ -156,17 +162,11 @@ document.addEventListener("DOMContentLoaded", function() {
             return null;
         }
     }
-    
-    // === MODIFIKASI: Fungsi muatDataBuku ===
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
-        // === MODIFIKASI: Colspan disesuaikan menjadi 5 ===
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
-        
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) return;
-
-        // dataBuku (global) tetap diisi data mentah per Kopi (per No. Inventaris)
         dataBuku = dataCsv.map(baris => {
             const k = baris.split(',');
             return { 
@@ -180,36 +180,20 @@ document.addEventListener("DOMContentLoaded", function() {
                 jatuhTempo: (k[7]||'').trim() 
             };
         });
-
         if (tabelBuku) {
-            // Panggil fungsi agregat yang baru
             tampilkanDataBukuAgregat(dataBuku); 
         }
         if (totalJudulBukuElement) {
-            // updateDashboardStats tetap mengambil dari dataBuku mentah
             updateDashboardStats(dataBuku); 
         }
-        
-        // populateBukuDropdowns juga tetap mengambil dari dataBuku mentah
-        // Ini PENTING agar form peminjaman tetap bisa memilih No. Inventaris
         populateBukuDropdowns();
     }
-
-    // === FUNGSI BARU: tampilkanDataBukuAgregat ===
-    // Fungsi ini menggantikan 'tampilkanDataBuku' yang lama
     function tampilkanDataBukuAgregat(data) {
         if (!tabelBuku) return;
         tabelBuku.innerHTML = '';
-
-        // 1. Buat objek kosong untuk menampung data agregat
         const aggregatedData = {};
-
-        // 2. Loop melalui data mentah (data per kopi)
         data.forEach(buku => {
-            // Kita gunakan Judul + Pengarang sebagai kunci unik
             const key = buku.judul + "|" + buku.pengarang; 
-
-            // Jika ini pertama kali kita menemukan judul ini, buat entri baru
             if (!aggregatedData[key]) {
                 aggregatedData[key] = {
                     judul: buku.judul,
@@ -219,27 +203,18 @@ document.addEventListener("DOMContentLoaded", function() {
                     stokTersedia: 0
                 };
             }
-
-            // 3. Hitung total stok dan stok tersedia
             aggregatedData[key].totalStok += 1;
             if ((buku.status || "").toLowerCase() === 'tersedia') {
                 aggregatedData[key].stokTersedia += 1;
             }
         });
-
-        // 4. Ubah objek agregat kembali menjadi array
         const dataTampil = Object.values(aggregatedData);
-
         if (dataTampil.length === 0) {
             tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Data tidak ditemukan.</td></tr>';
             return;
         }
-
-        // 5. Render HTML baru
         dataTampil.forEach(buku => {
-            // Tentukan style untuk stok tersedia
             const stokClass = buku.stokTersedia > 0 ? 'status-tersedia' : 'status-dipinjam';
-            
             tabelBuku.innerHTML += `
                 <tr>
                     <td>${buku.judul}</td>
@@ -251,7 +226,8 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (muatDataAnggota & tampilkanDataAnggota - Tidak ada perubahan)
+    // === MODIFIKASI: muatDataAnggota ===
+    // Sekarang memanggil fungsi baru: populateEditAnggotaSelect
     async function muatDataAnggota() {
         if (!tabelAnggota && !selectPinjamKelas) return; 
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
@@ -268,7 +244,12 @@ document.addEventListener("DOMContentLoaded", function() {
         });
         if (tabelAnggota) tampilkanDataAnggota(dataAnggota);
         populateKelasSelect();
+        
+        // --- PANGGILAN BARU ---
+        populateEditAnggotaSelect(); 
     }
+    
+    // (tampilkanDataAnggota - Tidak ada perubahan)
     function tampilkanDataAnggota(data) {
         if (!tabelAnggota) return;
         tabelAnggota.innerHTML = '';
@@ -353,12 +334,9 @@ document.addEventListener("DOMContentLoaded", function() {
         if (inputSettingDenda) inputSettingDenda.value = appSettings.DendaPerHari || 1000;
     }
     
-    // === MODIFIKASI: updateDashboardStats ===
-    // Sekarang kita bisa menghitung "Total Judul" versus "Total Kopi"
+    // (updateDashboardStats - Tidak ada perubahan)
     function updateDashboardStats() {
         if (!totalJudulBukuElement) return;
-        
-        // Hitung data agregat HANYA untuk dashboard
         const aggregatedData = {};
         dataBuku.forEach(buku => {
             const key = buku.judul + "|" + buku.pengarang; 
@@ -374,19 +352,15 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
         const dataTampil = Object.values(aggregatedData);
-        
-        // Total Judul adalah panjang dari dataTampil
         const totalJudul = dataTampil.length;
-        // Total Tersedia dan Dipinjam dihitung dari dataBuku mentah
         const bukuTersedia = dataBuku.filter(buku => (buku.status || "").toLowerCase() === 'tersedia').length;
         const bukuDipinjam = dataBuku.length - bukuTersedia;
-
-        totalJudulBukuElement.textContent = totalJudul; // Ini sekarang "Total Judul"
-        bukuTersediaElement.textContent = bukuTersedia; // Ini "Total Kopi Tersedia"
-        bukuDipinjamElement.textContent = bukuDipinjam; // Ini "Total Kopi Dipinjam"
+        totalJudulBukuElement.textContent = totalJudul; 
+        bukuTersediaElement.textContent = bukuTersedia; 
+        bukuDipinjamElement.textContent = bukuDipinjam; 
     }
     
-    // (populateBukuDropdowns - Tidak ada perubahan, HARUS tetap pakai dataBuku mentah)
+    // (populateBukuDropdowns & populateKelasSelect - Tidak ada perubahan)
     function populateBukuDropdowns() {
         if (!selectPinjamInv || !selectKembaliInv) return;
         selectPinjamInv.innerHTML = '<option value="">-- Pilih Buku (Tersedia) --</option>';
@@ -401,8 +375,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-    
-    // (populateKelasSelect & dropdown bertingkat - Tidak ada perubahan)
     function populateKelasSelect() {
         if (!selectPinjamKelas) return;
         const semuaKelas = dataAnggota.map(anggota => anggota.kelas);
@@ -414,6 +386,25 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+    
+    // === FUNGSI BARU: Mengisi Dropdown Edit Anggota ===
+    function populateEditAnggotaSelect() {
+        if (!selectEditAnggota) return;
+        
+        selectEditAnggota.innerHTML = '<option value="">-- Pilih Anggota --</option>';
+        // Urutkan anggota berdasarkan nama
+        const sortedAnggota = [...dataAnggota].sort((a, b) => a.nama.localeCompare(b.nama));
+        
+        sortedAnggota.forEach(anggota => {
+            if (anggota.nis && anggota.nama) {
+                // Value-nya adalah NIS, teksnya adalah NAMA (NIS)
+                selectEditAnggota.innerHTML += `<option value="${anggota.nis}">${anggota.nama} (${anggota.nis})</option>`;
+            }
+        });
+    }
+    // === AKHIR FUNGSI BARU ===
+
+    // (Dropdown Pinjam & Filter - Tidak ada perubahan)
     if (selectPinjamKelas) {
         selectPinjamKelas.addEventListener('change', function() {
             const kelasTerpilih = this.value;
@@ -437,24 +428,17 @@ document.addEventListener("DOMContentLoaded", function() {
             inputPinjamNIS.value = this.value;
         });
     }
-
-    // === MODIFIKASI: Filter Pencarian Buku ===
     if (filterBuku) {
         filterBuku.addEventListener('keyup', () => {
             const kataKunci = filterBuku.value.toLowerCase();
-            // Filter tetap berjalan di dataBuku mentah (per kopi)
             const dataFilter = dataBuku.filter(buku => 
                 (buku.judul || "").toLowerCase().includes(kataKunci) ||
                 (buku.pengarang || "").toLowerCase().includes(kataKunci) ||
                 (buku.penerbit || "").toLowerCase().includes(kataKunci)
-                // Filter berdasarkan peminjamNIS dihapus karena kolom itu tidak ada lagi
             );
-            // Hasil filter (yang masih per kopi) kemudian di-agregat lagi
             tampilkanDataBukuAgregat(dataFilter);
         });
     }
-    
-    // (Filter Anggota - Tidak ada perubahan)
     if (filterAnggota) {
         filterAnggota.addEventListener('keyup', () => {
             const kataKunci = filterAnggota.value.toLowerCase();
@@ -469,9 +453,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
-    // (Tidak ada perubahan di semua fungsi ini)
     // ===========================================
     
+    // (Fungsi Pinjam, Kembali, Simpan Pengaturan, Tambah Buku, Tambah Anggota - Tidak ada perubahan)
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
             if (kembaliDenda) kembaliDenda.value = "";
@@ -506,7 +490,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
                 const newHistoryEntry = { timestamp: "Baru Saja", noInv: noInventaris, judul: bukuYangDipinjam ? bukuYangDipinjam.judul : "N/A", nis: nis, nama: namaSiswa, aksi: "Dipinjam" };
                 dataHistory.push(newHistoryEntry); 
-                tampilkanDataBukuAgregat(dataBuku); // MODIFIKASI: Panggil fungsi agregat
+                tampilkanDataBukuAgregat(dataBuku); 
                 populateBukuDropdowns(); 
                 updateDashboardStats(); 
                 tampilkanDataHistory(dataHistory); 
@@ -556,7 +540,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
                 const newHistoryEntry = { timestamp: "Baru Saja", noInv: noInventaris, judul: bukuYangDikembalikan ? bukuYangDikembalikan.judul : "N/A", nis: nisSiswa, nama: namaSiswa, aksi: "Dikembalikan"};
                 dataHistory.push(newHistoryEntry);
-                tampilkanDataBukuAgregat(dataBuku); // MODIFIKASI: Panggil fungsi agregat
+                tampilkanDataBukuAgregat(dataBuku); 
                 populateBukuDropdowns(); 
                 updateDashboardStats(); 
                 tampilkanDataHistory(dataHistory); 
@@ -653,6 +637,133 @@ document.addEventListener("DOMContentLoaded", function() {
             this.disabled = false; this.textContent = "Tambah Anggota";
         });
     }
+
+    // === EVENT LISTENER BARU (Dropdown Edit Anggota) ===
+    if (selectEditAnggota) {
+        selectEditAnggota.addEventListener('change', function() {
+            const nisTerpilih = this.value;
+            editAnggotaFeedback.textContent = ""; // Kosongkan feedback
+            
+            if (!nisTerpilih) {
+                // Reset form jika memilih "-- Pilih Anggota --"
+                inputEditAnggotaNis.value = "";
+                inputEditAnggotaNama.value = "";
+                inputEditAnggotaKelas.value = "";
+                inputEditAnggotaStatus.value = "";
+                return;
+            }
+            
+            // Cari data anggota di memori
+            const anggota = dataAnggota.find(a => a.nis === nisTerpilih);
+            
+            if (anggota) {
+                inputEditAnggotaNis.value = anggota.nis;
+                inputEditAnggotaNama.value = anggota.nama;
+                inputEditAnggotaKelas.value = anggota.kelas;
+                inputEditAnggotaStatus.value = anggota.status;
+            }
+        });
+    }
+    
+    // === EVENT LISTENER BARU (Tombol Update Anggota) ===
+    if (btnUpdateAnggota) {
+        btnUpdateAnggota.addEventListener('click', async function() {
+            const dataAnggotaBaru = {
+                nis: inputEditAnggotaNis.value.trim(),
+                nama: inputEditAnggotaNama.value.trim(),
+                kelas: inputEditAnggotaKelas.value.trim(),
+                status: inputEditAnggotaStatus.value.trim()
+            };
+            const adminPassword = inputEditAnggotaPassword.value.trim();
+
+            if (!dataAnggotaBaru.nis || !adminPassword) {
+                editAnggotaFeedback.textContent = "Pilih anggota dan masukkan Password Admin.";
+                editAnggotaFeedback.style.color = "red";
+                return;
+            }
+
+            this.disabled = true; btnHapusAnggota.disabled = true;
+            this.textContent = "Mengupdate...";
+            editAnggotaFeedback.textContent = "Menghubungi server...";
+            editAnggotaFeedback.style.color = "blue";
+
+            const dataKirim = {
+                action: "updateAnggota",
+                password: adminPassword,
+                anggota: dataAnggotaBaru
+            };
+
+            const response = await kirimDataKeBackend(dataKirim);
+            
+            editAnggotaFeedback.textContent = response.message;
+            editAnggotaFeedback.style.color = (response.status === "success") ? "green" : "red";
+
+            if (response.status === "success") {
+                // Muat ulang data anggota agar semua dropdown & tabel terupdate
+                await muatDataAnggota(); 
+                // Kosongkan form
+                inputEditAnggotaNis.value = "";
+                inputEditAnggotaNama.value = "";
+                inputEditAnggotaKelas.value = "";
+                inputEditAnggotaStatus.value = "";
+                inputEditAnggotaPassword.value = "";
+            }
+            
+            this.disabled = false; btnHapusAnggota.disabled = false;
+            this.textContent = "Update Anggota";
+        });
+    }
+
+    // === EVENT LISTENER BARU (Tombol Hapus Anggota) ===
+    if (btnHapusAnggota) {
+        btnHapusAnggota.addEventListener('click', async function() {
+            const nis = inputEditAnggotaNis.value.trim();
+            const adminPassword = inputEditAnggotaPassword.value.trim();
+
+            if (!nis || !adminPassword) {
+                editAnggotaFeedback.textContent = "Pilih anggota dan masukkan Password Admin.";
+                editAnggotaFeedback.style.color = "red";
+                return;
+            }
+
+            // Konfirmasi sebelum menghapus
+            if (!confirm(`Apakah Anda yakin ingin menghapus anggota dengan NIS: ${nis}? \n TINDAKAN INI TIDAK BISA DIBATALKAN.`)) {
+                return;
+            }
+
+            this.disabled = true; btnUpdateAnggota.disabled = true;
+            this.textContent = "Menghapus...";
+            editAnggotaFeedback.textContent = "Menghubungi server...";
+            editAnggotaFeedback.style.color = "blue";
+
+            const dataKirim = {
+                action: "hapusAnggota",
+                password: adminPassword,
+                nis: nis
+            };
+
+            const response = await kirimDataKeBackend(dataKirim);
+            
+            editAnggotaFeedback.textContent = response.message;
+            editAnggotaFeedback.style.color = (response.status === "success") ? "green" : "red";
+
+            if (response.status === "success") {
+                // Muat ulang data anggota agar semua dropdown & tabel terupdate
+                await muatDataAnggota(); 
+                // Kosongkan form
+                inputEditAnggotaNis.value = "";
+                inputEditAnggotaNama.value = "";
+                inputEditAnggotaKelas.value = "";
+                inputEditAnggotaStatus.value = "";
+                inputEditAnggotaPassword.value = "";
+            }
+            
+            this.disabled = false; btnUpdateAnggota.disabled = false;
+            this.textContent = "Hapus Anggota";
+        });
+    }
+
+    // (Fungsi kirimDataKeBackend - Tidak ada perubahan)
     async function kirimDataKeBackend(data) {
         try {
             const res = await fetch(urlWebApp, {
