@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlSettings = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=1547395606&single=true&output=csv';
 
     // 2. LINK BACKEND
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbwWiOus2vKJj9H8DUxoSyLyapStIet3-DQgTxGw5jtoLQlGkOBdZhC3wyGPz4Stj4Lb/exec'; // URL Web App Anda
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbwWiOus2vKJj9H8DUxoSyLyapStIet3-DQgTxGw5jtoLQlGkOBdZhC3wyGPz4Stj4Lb/exec'; 
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -119,13 +119,10 @@ document.addEventListener("DOMContentLoaded", function() {
             targetMenuItem.parentElement.classList.add('active');
             targetElement.classList.add('active');
         } else {
-            // Fallback: Jika tidak ada yang cocok, tampilkan katalog
             document.querySelector('.menu-item a[data-target="katalog-buku"]').parentElement.classList.add('active');
             document.getElementById('katalog-buku').classList.add('active');
         }
     }
-    
-    // Logika Navigasi Utama
     if (menuItems.length > 0 && contentSections.length > 0) {
         menuItems.forEach(item => {
             item.addEventListener('click', function(e) {
@@ -144,8 +141,6 @@ document.addEventListener("DOMContentLoaded", function() {
     } else {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
-
-    // Logika Sub-Navigasi Pengaturan
     if (subNavItems.length > 0 && subContentSections.length > 0) {
         subNavItems.forEach(item => {
             item.addEventListener('click', function() {
@@ -162,7 +157,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // == Fungsi Baca Data (Fetch CSV) ==
     // ===========================================
     async function fetchData(url) {
-        // Cek dulu jika URL placeholder
         if (!url || url.includes('PASTE_LINK')) {
              throw new Error(`URL CSV belum diatur.`);
         }
@@ -184,7 +178,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
     
-    // (muatDataBuku & tampilkanDataBukuAgregat)
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
@@ -212,6 +205,7 @@ document.addEventListener("DOMContentLoaded", function() {
         populateBukuDropdowns();
         populateEditBukuSelect();
     }
+    
     function tampilkanDataBukuAgregat(data) {
         if (!tabelBuku) return;
         tabelBuku.innerHTML = '';
@@ -250,7 +244,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (muatDataAnggota & tampilkanDataAnggota)
     async function muatDataAnggota() {
         if (!tabelAnggota && !selectPinjamKelas) return; 
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
@@ -269,6 +262,7 @@ document.addEventListener("DOMContentLoaded", function() {
         populateKelasSelect(); 
         populateEditAnggotaSelect();
     }
+    
     function tampilkanDataAnggota(data) {
         if (!tabelAnggota) return;
         tabelAnggota.innerHTML = '';
@@ -287,7 +281,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (muatDataHistory & tampilkanDataHistory - DENGAN PERBAIKAN TYPO)
     async function muatDataHistory() {
         if (!tabelHistory) return;
         if (urlHistory === 'PASTE_LINK_CSV_HISTORY_ANDA_DI_SINI' || !urlHistory) {
@@ -303,13 +296,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 timestamp: (k[0]||'').trim(), 
                 noInv: (k[1]||'').trim(), 
                 judul: (k[2]||'').trim(), 
-                nis: (k[3]||'').trim(), // <-- PERBAIKAN TYPO DI SINI
+                // === PERBAIKAN 2: Typo 'trim' menjadi '' ===
+                nis: (k[3]||'').trim(), 
                 nama: (k[4]||'').trim(),
                 aksi: (k[5]||'').trim()
             };
         });
         tampilkanDataHistory(dataHistory);
     }
+    
     function tampilkanDataHistory(data) {
         if (!tabelHistory) return;
         tabelHistory.innerHTML = '';
@@ -332,7 +327,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // (muatDataPengaturan)
     async function muatDataPengaturan() {
         if (urlSettings === 'PASTE_LINK_CSV_SETTINGS_ANDA_DI_SINI' || !urlSettings) {
              if (settingFeedback) settingFeedback.textContent = "URL CSV Settings belum diisi di script.js";
@@ -353,7 +347,6 @@ document.addEventListener("DOMContentLoaded", function() {
         if (inputSettingDenda) inputSettingDenda.value = appSettings.DendaPerHari || 1000;
     }
     
-    // (Fungsi helper lainnya - Tidak ada perubahan)
     function updateDashboardStats() {
         if (!totalJudulBukuElement) return;
         const aggregatedData = {};
@@ -378,6 +371,7 @@ document.addEventListener("DOMContentLoaded", function() {
         bukuTersediaElement.textContent = bukuTersedia; 
         bukuDipinjamElement.textContent = bukuDipinjam; 
     }
+    
     function populateBukuDropdowns() {
         if (!selectPinjamInv || !selectKembaliInv) return;
         selectPinjamInv.innerHTML = '<option value="">-- Pilih Buku (Tersedia) --</option>';
@@ -392,6 +386,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+    
     function populateKelasSelect() {
         if (!selectPinjamKelas) return;
         const semuaKelas = dataAnggota.map(anggota => anggota.kelas);
@@ -403,6 +398,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+    
     function populateEditAnggotaSelect() {
         if (!selectEditAnggota) return;
         selectEditAnggota.innerHTML = '<option value="">-- Pilih Anggota --</option>';
@@ -413,6 +409,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+    
     function populateEditBukuSelect() {
         if (!selectEditBuku) return;
         selectEditBuku.innerHTML = '<option value="">-- Pilih Buku (Per No. Inventaris) --</option>';
@@ -423,6 +420,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+
     if (selectPinjamKelas) {
         selectPinjamKelas.addEventListener('change', function() {
             const kelasTerpilih = this.value;
@@ -473,7 +471,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
     // ===========================================
     
-    // (Fungsi Pinjam, Kembali, Simpan Pengaturan, Tambah Buku, Tambah Anggota - Tidak ada perubahan)
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
             if (kembaliDenda) kembaliDenda.value = "";
@@ -655,8 +652,6 @@ document.addEventListener("DOMContentLoaded", function() {
             this.disabled = false; this.textContent = "Tambah Anggota";
         });
     }
-    
-    // (Fungsi Edit/Hapus Anggota - Tidak ada perubahan)
     if (selectEditAnggota) {
         selectEditAnggota.addEventListener('change', function() {
             const nisTerpilih = this.value;
@@ -743,8 +738,6 @@ document.addEventListener("DOMContentLoaded", function() {
             this.textContent = "Hapus Anggota";
         });
     }
-    
-    // === EVENT LISTENER BARU (Dropdown Edit Buku) ===
     if (selectEditBuku) {
         selectEditBuku.addEventListener('change', function() {
             const noInventarisTerpilih = this.value;
@@ -781,6 +774,36 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+    if (btnUpdateBuku) {
+        btnUpdateBuku.addEventListener('click', async function() {
+            const dataBukuBaru = {
+                noInventaris: inputEditBukuInventaris.value.trim(),
+                judul: inputEditBukuJudul.value.trim(),
+                pengarang: inputEditBukuPengarang.value.trim(),
+                penerbit: inputEditBukuPenerbit.value.trim()
+            };
+            const adminPassword = inputEditBukuPassword.value.trim();
 
-    // === EVENT LISTENER BARU (Tom
+            if (!dataBukuBaru.noInventaris || !adminPassword) {
+                editBukuFeedback.textContent = "Pilih buku dan masukkan Password Admin.";
+                editBukuFeedback.style.color = "red";
+                return;
+            }
 
+            this.disabled = true; btnHapusBuku.disabled = true;
+            this.textContent = "Mengupdate...";
+            editBukuFeedback.textContent = "Menghubungi server...";
+            editBukuFeedback.style.color = "blue";
+
+            const dataKirim = {
+                action: "updateBuku",
+                password: adminPassword,
+                buku: dataBukuBaru
+            };
+
+            const response = await kirimDataKeBackend(dataKirim);
+            
+            editBukuFeedback.textContent = response.message;
+            editBukuFeedback.style.color = (response.status === "success") ? "green" : "red";
+
+            if (response.status === "success") {
