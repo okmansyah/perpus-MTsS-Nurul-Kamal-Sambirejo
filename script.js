@@ -13,7 +13,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlSettings = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=1547395606&single=true&output=csv';
 
     // 2. LINK BACKEND
-        const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec';
+        const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec'; 
+
     // ==========================================================
     // == Variabel Global & Elemen ==
     // ==========================================================
@@ -21,7 +22,13 @@ document.addEventListener("DOMContentLoaded", function() {
     let dataBuku = []; 
     let dataAnggota = [];
     let dataHistory = [];
-    let appSettings = {}; 
+    let appSettings = {};
+    
+    // === Variabel Global BARU untuk Grafik ===
+    let dataGrafikBulanan = {}; // Untuk menyimpan data bulanan per tahun
+    let chartBulanan = null; // Untuk menyimpan objek grafik bulanan
+    let chartTahunan = null; // Untuk menyimpan objek grafik tahunan
+    let chartAkuisisi = null; // Untuk menyimpan objek grafik akuisisi
 
     // (Elemen Menu & Tabel)
     const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
@@ -36,6 +43,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const totalJudulBukuElement = document.getElementById('total-judul-buku');
     const bukuTersediaElement = document.getElementById('buku-tersedia');
     const bukuDipinjamElement = document.getElementById('buku-dipinjam');
+
+    // === ELEMEN BARU (Grafik) ===
+    const ctxGrafikBulanan = document.getElementById('grafikBulanan')?.getContext('2d');
+    const ctxGrafikTahunan = document.getElementById('grafikTahunan')?.getContext('2d');
+    const ctxGrafikAkuisisi = document.getElementById('grafikAkuisisiBuku')?.getContext('2d');
+    const filterTahunGrafik = document.getElementById('filterTahunGrafik');
 
     // (Elemen Form Pinjam)
     const btnProsesPinjam = document.getElementById('btn-proses-pinjam');
@@ -93,7 +106,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const btnHapusAnggota = document.getElementById('btn-hapus-anggota');
     const editAnggotaFeedback = document.getElementById('edit-anggota-feedback');
 
-    // === ELEMEN BARU (Form Edit Buku) ===
+    // (Elemen Form Edit Buku)
     const selectEditBuku = document.getElementById('select-edit-buku');
     const inputEditBukuInventaris = document.getElementById('edit-buku-inventaris');
     const inputEditBukuJudul = document.getElementById('edit-buku-judul');
@@ -107,7 +120,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // == Logika Navigasi Menu & Sub-Menu ==
-    // (Tidak ada perubahan)
     // ===========================================
     function activateSection(targetId) {
         menuItems.forEach(i => i.classList.remove('active'));
@@ -151,15 +163,26 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
     }
+    
+    // === EVENT LISTENER BARU (Filter Tahun Grafik) ===
+    if(filterTahunGrafik) {
+        filterTahunGrafik.addEventListener('change', function() {
+            const tahunTerpilih = this.value;
+            renderGrafikBulanan(tahunTerpilih); // Render ulang grafik bulanan
+        });
+    }
 
     // ===========================================
     // == Fungsi Baca Data (Fetch CSV) ==
     // ===========================================
     async function fetchData(url) {
+        if (!url || url.includes('PASTE_LINK')) {
+             throw new Error(`URL CSV belum diatur.`);
+        }
         try {
             const respons = await fetch(url + '&cachebust=' + new Date().getTime());
             if (!respons.ok) {
-                 throw new Error(`Gagal memuat data dari URL: ${url}. Status: ${respons.status} (Not Found)`);
+                 throw new Error(`Gagal memuat data dari URL. Status: ${respons.status} (Not Found)`);
             }
             const dataCsv = await respons.text();
             return dataCsv.split('\n').slice(1).filter(baris => baris.trim() !== '');
@@ -173,9 +196,8 @@ document.addEventListener("DOMContentLoaded", function() {
             return null;
         }
     }
-
-    // === MODIFIKASI: muatDataBuku ===
-    // Sekarang memanggil fungsi baru: populateEditBukuSelect
+    
+    // (muatDataBuku) - Sekarang memanggil prosesGrafikBuku
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
@@ -201,9 +223,10 @@ document.addEventListener("DOMContentLoaded", function() {
             updateDashboardStats(dataBuku); 
         }
         populateBukuDropdowns();
+        populateEditBukuSelect();
         
         // --- PANGGILAN BARU ---
-        populateEditBukuSelect();
+        prosesGrafikBuku(dataBuku);
     }
     
     // (tampilkanDataBukuAgregat - Tidak ada perubahan)
@@ -261,8 +284,8 @@ document.addEventListener("DOMContentLoaded", function() {
             };
         });
         if (tabelAnggota) tampilkanDataAnggota(dataAnggota);
-        populateKelasSelect();
-        populateEditAnggotaSelect(); // (Panggilan ini sudah ada dari sebelumnya)
+        populateKelasSelect(); 
+        populateEditAnggotaSelect();
     }
     function tampilkanDataAnggota(data) {
         if (!tabelAnggota) return;
@@ -282,7 +305,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (muatDataHistory & tampilkanDataHistory - Tidak ada perubahan)
+    // (muatDataHistory) - Sekarang memanggil prosesDataGrafik
     async function muatDataHistory() {
         if (!tabelHistory) return;
         if (urlHistory === 'PASTE_LINK_CSV_HISTORY_ANDA_DI_SINI' || !urlHistory) {
@@ -298,13 +321,18 @@ document.addEventListener("DOMContentLoaded", function() {
                 timestamp: (k[0]||'').trim(), 
                 noInv: (k[1]||'').trim(), 
                 judul: (k[2]||'').trim(), 
-                nis: (k[3]||'trim'), 
+                nis: (k[3]||'').trim(), 
                 nama: (k[4]||'').trim(),
                 aksi: (k[5]||'').trim()
             };
         });
         tampilkanDataHistory(dataHistory);
+
+        // --- PANGGILAN BARU ---
+        prosesDataGrafik(dataHistory);
     }
+    
+    // (tampilkanDataHistory - Tidak ada perubahan)
     function tampilkanDataHistory(data) {
         if (!tabelHistory) return;
         tabelHistory.innerHTML = '';
@@ -326,7 +354,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 </tr>`;
         });
     }
-
+    
     // (muatDataPengaturan - Tidak ada perubahan)
     async function muatDataPengaturan() {
         if (urlSettings === 'PASTE_LINK_CSV_SETTINGS_ANDA_DI_SINI' || !urlSettings) {
@@ -374,7 +402,7 @@ document.addEventListener("DOMContentLoaded", function() {
         bukuDipinjamElement.textContent = bukuDipinjam; 
     }
     
-    // (populateBukuDropdowns & populateKelasSelect - Tidak ada perubahan)
+    // (Fungsi helper dropdown & filter - Tidak ada perubahan)
     function populateBukuDropdowns() {
         if (!selectPinjamInv || !selectKembaliInv) return;
         selectPinjamInv.innerHTML = '<option value="">-- Pilih Buku (Tersedia) --</option>';
@@ -400,8 +428,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-    
-    // (populateEditAnggotaSelect - Tidak ada perubahan)
     function populateEditAnggotaSelect() {
         if (!selectEditAnggota) return;
         selectEditAnggota.innerHTML = '<option value="">-- Pilih Anggota --</option>';
@@ -412,24 +438,16 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-
-    // === FUNGSI BARU: Mengisi Dropdown Edit BUKU ===
     function populateEditBukuSelect() {
         if (!selectEditBuku) return;
-        
         selectEditBuku.innerHTML = '<option value="">-- Pilih Buku (Per No. Inventaris) --</option>';
-        // Urutkan buku berdasarkan No. Inventaris
         const sortedBuku = [...dataBuku].sort((a, b) => a.noInventaris.localeCompare(b.noInventaris, undefined, { numeric: true }));
-        
         sortedBuku.forEach(buku => {
             if (buku.noInventaris && buku.judul) {
                 selectEditBuku.innerHTML += `<option value="${buku.noInventaris}">${buku.noInventaris} - ${buku.judul}</option>`;
             }
         });
     }
-    // === AKHIR FUNGSI BARU ===
-
-    // (Dropdown Pinjam & Filter - Tidak ada perubahan)
     if (selectPinjamKelas) {
         selectPinjamKelas.addEventListener('change', function() {
             const kelasTerpilih = this.value;
@@ -475,12 +493,184 @@ document.addEventListener("DOMContentLoaded", function() {
             tampilkanDataAnggota(dataFilter);
         });
     }
+    
+    // === FUNGSI BARU: Logika & Render Grafik ===
+    
+    // 1. Proses data Peminjaman (dari History)
+    function prosesDataGrafik(historyData) {
+        const pinjamPerTahun = {};
+        const pinjamPerBulan = {};
+        const setTahun = new Set();
+        const tahunSekarang = new Date().getFullYear();
+
+        const dataPinjam = historyData.filter(item => (item.aksi || "").toLowerCase() === 'dipinjam');
+
+        dataPinjam.forEach(item => {
+            // Coba parsing tanggal. Format CSV "7/11/2025 10:30:00" adalah M/D/Y
+            const tgl = new Date(item.timestamp);
+            if (isNaN(tgl.getTime())) { // Skip jika tanggal tidak valid
+                console.warn("Format tanggal tidak valid:", item.timestamp);
+                return; 
+            }
+
+            const tahun = tgl.getFullYear();
+            const bulan = tgl.getMonth(); // 0-11
+            setTahun.add(tahun);
+
+            // Inisialisasi jika belum ada
+            if (!pinjamPerTahun[tahun]) pinjamPerTahun[tahun] = 0;
+            if (!pinjamPerBulan[tahun]) pinjamPerBulan[tahun] = Array(12).fill(0);
+
+            // Tambah hitungan
+            pinjamPerTahun[tahun]++;
+            pinjamPerBulan[tahun][bulan]++;
+        });
+
+        // Simpan data bulanan ke variabel global
+        dataGrafikBulanan = pinjamPerBulan;
+
+        // Isi filter <select>
+        if (filterTahunGrafik) {
+            const tahunSorted = [...setTahun].sort((a, b) => b - a); // Urutkan terbaru di atas
+            filterTahunGrafik.innerHTML = '';
+            tahunSorted.forEach(tahun => {
+                filterTahunGrafik.innerHTML += `<option value="${tahun}" ${tahun === tahunSekarang ? 'selected' : ''}>${tahun}</option>`;
+            });
+            // Jika tidak ada data, tambahkan tahun sekarang
+            if(tahunSorted.length === 0) {
+                 filterTahunGrafik.innerHTML += `<option value="${tahunSekarang}">${tahunSekarang}</option>`;
+            }
+        }
+        
+        // Render grafik
+        renderGrafikTahunan(pinjamPerTahun);
+        renderGrafikBulanan(filterTahunGrafik.value);
+    }
+    
+    // 2. Render Grafik Peminjaman Tahunan
+    function renderGrafikTahunan(data) {
+        if (!ctxGrafikTahunan) return;
+        
+        const labels = Object.keys(data).sort((a,b) => a-b);
+        const values = labels.map(label => data[label]);
+
+        if(chartTahunan) chartTahunan.destroy(); // Hapus grafik lama jika ada
+        
+        chartTahunan = new Chart(ctxGrafikTahunan, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total Peminjaman per Tahun',
+                    data: values,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 } // Pastikan angka bulat
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Render Grafik Peminjaman Bulanan
+    function renderGrafikBulanan(tahun) {
+        if (!ctxGrafikBulanan) return;
+        
+        const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+        const values = dataGrafikBulanan[tahun] || Array(12).fill(0); // Ambil data dari global
+
+        if(chartBulanan) chartBulanan.destroy(); // Hapus grafik lama
+
+        chartBulanan = new Chart(ctxGrafikBulanan, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Total Peminjaman Bulanan ${tahun}`,
+                    data: values,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. Proses data Penambahan Buku (dari Katalog)
+    function prosesGrafikBuku(dataBuku) {
+        const bukuPerTahun = {};
+        
+        dataBuku.forEach(buku => {
+            // Ekstrak 4 digit di akhir No. Inventaris
+            const match = (buku.noInventaris || "").match(/(\d{4})$/); 
+            if (match && match[1]) {
+                const tahun = match[1];
+                if (!bukuPerTahun[tahun]) bukuPerTahun[tahun] = 0;
+                bukuPerTahun[tahun]++;
+            }
+        });
+        
+        renderGrafikAkuisisi(bukuPerTahun);
+    }
+
+    // 5. Render Grafik Penambahan Buku (Akuisisi)
+    function renderGrafikAkuisisi(data) {
+        if (!ctxGrafikAkuisisi) return;
+        
+        const labels = Object.keys(data).sort((a,b) => a-b);
+        const values = labels.map(label => data[label]);
+
+        if(chartAkuisisi) chartAkuisisi.destroy(); // Hapus grafik lama
+
+        chartAkuisisi = new Chart(ctxGrafikAkuisisi, {
+            type: 'line', // Grafik garis untuk "peningkatan"
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Penambahan Kopi Buku per Tahun',
+                    data: values,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
 
     // ===========================================
     // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
+    // (Tidak ada perubahan di semua fungsi ini)
     // ===========================================
     
-    // (Fungsi Pinjam, Kembali, Simpan Pengaturan, Tambah Buku, Tambah Anggota - Tidak ada perubahan)
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
             if (kembaliDenda) kembaliDenda.value = "";
@@ -662,7 +852,6 @@ document.addEventListener("DOMContentLoaded", function() {
             this.disabled = false; this.textContent = "Tambah Anggota";
         });
     }
-    // (Fungsi Edit/Hapus Anggota - Tidak ada perubahan)
     if (selectEditAnggota) {
         selectEditAnggota.addEventListener('change', function() {
             const nisTerpilih = this.value;
@@ -749,15 +938,12 @@ document.addEventListener("DOMContentLoaded", function() {
             this.textContent = "Hapus Anggota";
         });
     }
-    
-    // === EVENT LISTENER BARU (Dropdown Edit Buku) ===
     if (selectEditBuku) {
         selectEditBuku.addEventListener('change', function() {
             const noInventarisTerpilih = this.value;
-            editBukuFeedback.textContent = ""; // Kosongkan feedback
+            editBukuFeedback.textContent = ""; 
             
             if (!noInventarisTerpilih) {
-                // Reset form
                 inputEditBukuInventaris.value = "";
                 inputEditBukuJudul.value = "";
                 inputEditBukuPengarang.value = "";
@@ -767,7 +953,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
             
-            // Cari data buku di memori (dataBuku mentah)
             const buku = dataBuku.find(b => b.noInventaris === noInventarisTerpilih);
             
             if (buku) {
@@ -776,7 +961,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 inputEditBukuPengarang.value = buku.pengarang;
                 inputEditBukuPenerbit.value = buku.penerbit;
 
-                // Pengecekan Keamanan Sisi Klien
                 if (buku.status.toLowerCase() === 'dipinjam') {
                     editBukuFeedback.textContent = "Buku ini sedang dipinjam. Tidak bisa diedit atau dihapus.";
                     editBukuFeedback.style.color = "orange";
@@ -790,8 +974,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
-
-    // === EVENT LISTENER BARU (Tombol Update Buku) ===
     if (btnUpdateBuku) {
         btnUpdateBuku.addEventListener('click', async function() {
             const dataBukuBaru = {
@@ -825,8 +1007,7 @@ document.addEventListener("DOMContentLoaded", function() {
             editBukuFeedback.style.color = (response.status === "success") ? "green" : "red";
 
             if (response.status === "success") {
-                await muatDataBuku(); // Muat ulang semua data buku
-                // Kosongkan form
+                await muatDataBuku(); 
                 inputEditBukuInventaris.value = "";
                 inputEditBukuJudul.value = "";
                 inputEditBukuPengarang.value = "";
@@ -838,8 +1019,6 @@ document.addEventListener("DOMContentLoaded", function() {
             this.textContent = "Update Buku";
         });
     }
-
-    // === EVENT LISTENER BARU (Tombol Hapus Buku) ===
     if (btnHapusBuku) {
         btnHapusBuku.addEventListener('click', async function() {
             const noInventaris = inputEditBukuInventaris.value.trim();
@@ -872,8 +1051,7 @@ document.addEventListener("DOMContentLoaded", function() {
             editBukuFeedback.style.color = (response.status === "success") ? "green" : "red";
 
             if (response.status === "success") {
-                await muatDataBuku(); // Muat ulang semua data buku
-                // Kosongkan form
+                await muatDataBuku(); 
                 inputEditBukuInventaris.value = "";
                 inputEditBukuJudul.value = "";
                 inputEditBukuPengarang.value = "";
@@ -886,7 +1064,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (Fungsi kirimDataKeBackend - Tidak ada perubahan)
     async function kirimDataKeBackend(data) {
         try {
             const res = await fetch(urlWebApp, {
@@ -911,5 +1088,3 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataHistory(); 
     muatDataPengaturan(); 
 });
-
-
