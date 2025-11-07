@@ -61,69 +61,64 @@ document.addEventListener("DOMContentLoaded", function() {
     const btnSimpanPengaturan = document.getElementById('btn-simpan-pengaturan');
     const settingFeedback = document.getElementById('setting-feedback');
 
+    // === ELEMEN BARU (Form Tambah Buku) ===
+    const btnTambahBuku = document.getElementById('btn-tambah-buku');
+    const inputBukuInventaris = document.getElementById('buku-inventaris');
+    const inputBukuJudul = document.getElementById('buku-judul');
+    const inputBukuPengarang = document.getElementById('buku-pengarang');
+    const inputBukuPenerbit = document.getElementById('buku-penerbit');
+    const inputBukuPassword = document.getElementById('buku-password');
+    const bukuFeedback = document.getElementById('buku-feedback');
+
+    // === ELEMEN BARU (Form Tambah Anggota) ===
+    const btnTambahAnggota = document.getElementById('btn-tambah-anggota');
+    const inputAnggotaNis = document.getElementById('anggota-nis');
+    const inputAnggotaNama = document.getElementById('anggota-nama');
+    const inputAnggotaKelas = document.getElementById('anggota-kelas');
+    const inputAnggotaStatus = document.getElementById('anggota-status');
+    const inputAnggotaPassword = document.getElementById('anggota-password');
+    const anggotaFeedback = document.getElementById('anggota-feedback');
 
     // ===========================================
-    // == MODIFIKASI: Logika Navigasi Menu Sidebar ==
+    // == Logika Navigasi Menu Sidebar ==
+    // (Tidak ada perubahan)
     // ===========================================
-    
-    // Fungsi baru untuk mengaktifkan section
     function activateSection(targetId) {
-        // 1. Hapus 'active' dari semua menu dan section
         menuItems.forEach(i => i.classList.remove('active'));
         contentSections.forEach(s => s.classList.remove('active'));
-
-        // 2. Cari menu dan section yang sesuai dengan targetId
         const targetMenuItem = document.querySelector(`.menu-item a[data-target="${targetId}"]`);
         const targetElement = document.getElementById(targetId);
-
-        // 3. Cek jika targetnya valid
         if (targetMenuItem && targetElement) {
-            // Aktifkan menu
             targetMenuItem.parentElement.classList.add('active');
-            // Tampilkan section
             targetElement.classList.add('active');
         } else {
-            // 4. Fallback jika hash tidak valid, kembali ke katalog
             document.querySelector('.menu-item a[data-target="katalog-buku"]').parentElement.classList.add('active');
             document.getElementById('katalog-buku').classList.add('active');
         }
     }
-
     if (menuItems.length > 0 && contentSections.length > 0) {
-        
-        // (A) Atur event klik untuk semua menu
         menuItems.forEach(item => {
             item.addEventListener('click', function(e) {
                 e.preventDefault(); 
                 const targetId = this.querySelector('a').getAttribute('data-target');
-                
-                // Panggil fungsi aktivasi
                 activateSection(targetId);
-                
-                // Simpan status ke URL hash
                 window.location.hash = targetId;
             });
         });
-
-        // (B) Cek URL hash saat halaman pertama kali dimuat
-        const currentHash = window.location.hash.substring(1); // Ambil hash, hapus #
+        const currentHash = window.location.hash.substring(1); 
         if (currentHash) {
-            activateSection(currentHash); // Aktifkan section dari hash
+            activateSection(currentHash); 
         } else {
-            // Jika tidak ada hash, aktifkan default (katalog-buku)
             activateSection("katalog-buku");
         }
-        
     } else {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
-    // === AKHIR MODIFIKASI NAVIGASI ===
-
 
     // ===========================================
-    // Fungsi Baca Data (Fetch CSV)
+    // == Fungsi Baca Data (Fetch CSV) ==
+    // (Tidak ada perubahan)
     // ===========================================
-    
     async function fetchData(url) {
         try {
             const respons = await fetch(url + '&cachebust=' + new Date().getTime());
@@ -142,8 +137,6 @@ document.addEventListener("DOMContentLoaded", function() {
             return null;
         }
     }
-    
-    // (muatDataBuku & tampilkanDataBuku - Tidak ada perubahan)
     async function muatDataBuku() {
         if (!tabelBuku && !selectPinjamInv) return; 
         if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="8" class="loading">Memuat data buku...</td></tr>';
@@ -188,8 +181,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 </tr>`;
         });
     }
-
-    // (muatDataAnggota & tampilkanDataAnggota - Tidak ada perubahan)
     async function muatDataAnggota() {
         if (!tabelAnggota && !selectPinjamKelas) return; 
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
@@ -224,8 +215,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 </tr>`;
         });
     }
-
-    // (muatDataHistory & tampilkanDataHistory - Tidak ada perubahan)
     async function muatDataHistory() {
         if (!tabelHistory) return;
         if (urlHistory === 'PASTE_LINK_CSV_HISTORY_ANDA_DI_SINI' || !urlHistory) {
@@ -269,8 +258,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 </tr>`;
         });
     }
-    
-    // (muatDataPengaturan - Tidak ada perubahan)
     async function muatDataPengaturan() {
         if (urlSettings === 'PASTE_LINK_CSV_SETTINGS_ANDA_DI_SINI' || !urlSettings) {
              if (settingFeedback) settingFeedback.textContent = "URL CSV Settings belum diisi di script.js";
@@ -373,7 +360,11 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // (CRUD Functions: Pinjam, Kembali, Simpan Pengaturan - Tidak ada perubahan)
+    // ===========================================
+    // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
+    // ===========================================
+    
+    // (Fungsi Pinjam - Tidak ada perubahan)
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
             if (kembaliDenda) kembaliDenda.value = "";
@@ -386,16 +377,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 pinjamFeedback.style.color = "red";
                 return;
             }
-            this.disabled = true;
-            this.textContent = "Memproses...";
-            pinjamFeedback.textContent = "Menghubungi server...";
-            pinjamFeedback.style.color = "blue";
-            const dataKirim = {
-                action: "pinjamBuku",
-                noInventaris: noInventaris,
-                nis: nis,
-                password: adminPassword
-            };
+            this.disabled = true; this.textContent = "Memproses...";
+            pinjamFeedback.textContent = "Menghubungi server..."; pinjamFeedback.style.color = "blue";
+            const dataKirim = { action: "pinjamBuku", noInventaris: noInventaris, nis: nis, password: adminPassword };
             const response = await kirimDataKeBackend(dataKirim);
             pinjamFeedback.textContent = response.message;
             pinjamFeedback.style.color = (response.status === "success") ? "green" : "red";
@@ -413,14 +397,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     bukuYangDipinjam.tglPinjam = "Baru Saja"; 
                     bukuYangDipinjam.jatuhTempo = tglJatuhTempoString; 
                 }
-                const newHistoryEntry = {
-                    timestamp: "Baru Saja",
-                    noInv: noInventaris,
-                    judul: bukuYangDipinjam ? bukuYangDipinjam.judul : "N/A",
-                    nis: nis,
-                    nama: namaSiswa,
-                    aksi: "Dipinjam"
-                };
+                const newHistoryEntry = { timestamp: "Baru Saja", noInv: noInventaris, judul: bukuYangDipinjam ? bukuYangDipinjam.judul : "N/A", nis: nis, nama: namaSiswa, aksi: "Dipinjam" };
                 dataHistory.push(newHistoryEntry); 
                 tampilkanDataBuku(dataBuku); 
                 populateBukuDropdowns(); 
@@ -432,10 +409,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 inputPinjamNIS.value = "";
                 inputPinjamPass.value = "";
             }
-            this.disabled = false;
-            this.textContent = "Proses Peminjaman";
+            this.disabled = false; this.textContent = "Proses Peminjaman";
         });
     }
+    // (Fungsi Kembali - Tidak ada perubahan)
     if (btnProsesKembali) {
         btnProsesKembali.addEventListener('click', async function() {
             kembaliDenda.value = "";
@@ -448,15 +425,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 kembaliFeedback.style.color = "red";
                 return;
             }
-            this.disabled = true;
-            this.textContent = "Memproses...";
+            this.disabled = true; this.textContent = "Memproses...";
             kembaliFeedback.textContent = "Menghubungi server... (menghitung denda)";
             kembaliFeedback.style.color = "blue";
-            const dataKirim = {
-                action: "kembalikanBuku",
-                noInventaris: noInventaris,
-                password: adminPassword
-            };
+            const dataKirim = { action: "kembalikanBuku", noInventaris: noInventaris, password: adminPassword };
             const response = await kirimDataKeBackend(dataKirim);
             kembaliFeedback.textContent = response.message;
             kembaliFeedback.style.color = (response.status === "success") ? "green" : "red";
@@ -476,14 +448,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     bukuYangDikembalikan.tglPinjam = "";
                     bukuYangDikembalikan.jatuhTempo = ""; 
                 }
-                const newHistoryEntry = {
-                    timestamp: "Baru Saja",
-                    noInv: noInventaris,
-                    judul: bukuYangDikembalikan ? bukuYangDikembalikan.judul : "N/A",
-                    nis: nisSiswa,
-                    nama: namaSiswa,
-                    aksi: "Dikembalikan"
-                };
+                const newHistoryEntry = { timestamp: "Baru Saja", noInv: noInventaris, judul: bukuYangDikembalikan ? bukuYangDikembalikan.judul : "N/A", nis: nisSiswa, nama: namaSiswa, aksi: "Dikembalikan"};
                 dataHistory.push(newHistoryEntry);
                 tampilkanDataBuku(dataBuku); 
                 populateBukuDropdowns(); 
@@ -492,10 +457,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 selectKembaliInv.value = "";
                 inputKembaliPass.value = "";
             }
-            this.disabled = false;
-            this.textContent = "Proses Pengembalian";
+            this.disabled = false; this.textContent = "Proses Pengembalian";
         });
     }
+    // (Fungsi Simpan Pengaturan - Tidak ada perubahan)
     if (btnSimpanPengaturan) {
         btnSimpanPengaturan.addEventListener('click', async function() {
             const lamaPinjam = inputSettingHari.value.trim();
@@ -506,18 +471,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 settingFeedback.style.color = "red";
                 return;
             }
-            this.disabled = true;
-            this.textContent = "Menyimpan...";
+            this.disabled = true; this.textContent = "Menyimpan...";
             settingFeedback.textContent = "Menghubungi server...";
             settingFeedback.style.color = "blue";
-            const dataKirim = {
-                action: "simpanPengaturan",
-                password: adminPassword,
-                settings: {
-                    lamaPinjam: lamaPinjam,
-                    denda: denda
-                }
-            };
+            const dataKirim = { action: "simpanPengaturan", password: adminPassword, settings: { lamaPinjam: lamaPinjam, denda: denda }};
             const response = await kirimDataKeBackend(dataKirim);
             settingFeedback.textContent = response.message;
             settingFeedback.style.color = (response.status === "success") ? "green" : "red";
@@ -526,10 +483,101 @@ document.addEventListener("DOMContentLoaded", function() {
                 appSettings.DendaPerHari = denda;
                 inputSettingPass.value = ""; 
             }
-            this.disabled = false;
-            this.textContent = "Simpan Pengaturan";
+            this.disabled = false; this.textContent = "Simpan Pengaturan";
         });
     }
+
+    // === EVENT LISTENER BARU (Tambah Buku) ===
+    if (btnTambahBuku) {
+        btnTambahBuku.addEventListener('click', async function() {
+            const dataBuku = {
+                noInventaris: inputBukuInventaris.value.trim(),
+                judul: inputBukuJudul.value.trim(),
+                pengarang: inputBukuPengarang.value.trim(),
+                penerbit: inputBukuPenerbit.value.trim()
+            };
+            const adminPassword = inputBukuPassword.value.trim();
+
+            if (!dataBuku.noInventaris || !dataBuku.judul || !adminPassword) {
+                bukuFeedback.textContent = "No. Inventaris, Judul, dan Password Admin wajib diisi.";
+                bukuFeedback.style.color = "red";
+                return;
+            }
+
+            this.disabled = true; this.textContent = "Menyimpan...";
+            bukuFeedback.textContent = "Menghubungi server..."; bukuFeedback.style.color = "blue";
+
+            const dataKirim = {
+                action: "tambahBuku",
+                password: adminPassword,
+                buku: dataBuku
+            };
+
+            const response = await kirimDataKeBackend(dataKirim);
+
+            bukuFeedback.textContent = response.message;
+            bukuFeedback.style.color = (response.status === "success") ? "green" : "red";
+
+            if (response.status === "success") {
+                // Reset form
+                inputBukuInventaris.value = "";
+                inputBukuJudul.value = "";
+                inputBukuPengarang.value = "";
+                inputBukuPenerbit.value = "";
+                inputBukuPassword.value = "";
+                // Muat ulang data buku agar tabel & dropdown terupdate
+                await muatDataBuku(); 
+            }
+            this.disabled = false; this.textContent = "Tambah Buku";
+        });
+    }
+
+    // === EVENT LISTENER BARU (Tambah Anggota) ===
+    if (btnTambahAnggota) {
+        btnTambahAnggota.addEventListener('click', async function() {
+            const dataAnggota = {
+                nis: inputAnggotaNis.value.trim(),
+                nama: inputAnggotaNama.value.trim(),
+                kelas: inputAnggotaKelas.value.trim(),
+                status: inputAnggotaStatus.value.trim()
+            };
+            const adminPassword = inputAnggotaPassword.value.trim();
+
+            if (!dataAnggota.nis || !dataAnggota.nama || !adminPassword) {
+                anggotaFeedback.textContent = "NIS, Nama Lengkap, dan Password Admin wajib diisi.";
+                anggotaFeedback.style.color = "red";
+                return;
+            }
+
+            this.disabled = true; this.textContent = "Menyimpan...";
+            anggotaFeedback.textContent = "Menghubungi server..."; anggotaFeedback.style.color = "blue";
+
+            const dataKirim = {
+                action: "tambahAnggota",
+                password: adminPassword,
+                anggota: dataAnggota
+            };
+
+            const response = await kirimDataKeBackend(dataKirim);
+
+            anggotaFeedback.textContent = response.message;
+            anggotaFeedback.style.color = (response.status === "success") ? "green" : "red";
+
+            if (response.status === "success") {
+                // Reset form
+                inputAnggotaNis.value = "";
+                inputAnggotaNama.value = "";
+                inputAnggotaKelas.value = "";
+                inputAnggotaStatus.value = "";
+                inputAnggotaPassword.value = "";
+                // Muat ulang data anggota agar tabel & dropdown terupdate
+                await muatDataAnggota(); 
+            }
+            this.disabled = false; this.textContent = "Tambah Anggota";
+        });
+    }
+
+    // (Fungsi kirimDataKeBackend - Tidak ada perubahan)
     async function kirimDataKeBackend(data) {
         try {
             const res = await fetch(urlWebApp, {
@@ -548,7 +596,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // Jalankan Fungsi Saat Halaman Dimuat
-    // =G==========================================
+    // ===========================================
     muatDataBuku();
     muatDataAnggota();
     muatDataHistory(); 
