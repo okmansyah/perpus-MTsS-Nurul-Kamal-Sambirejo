@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
 
     // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbzELZbskArJDmGvVkSeK-6rqx5WRRzCj-fILd0kyF_m-6zIloE0IBtZRzZUob30qQCY/exec';
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbxrrmVcsG5rFCDnTDiys1wcuR6FvoHp2lnMTP7lN80si56rpsuj8pj5-rwDiNxAWIOI/exec';
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -443,4 +443,5 @@ document.addEventListener("DOMContentLoaded", function() {
     muatDataBuku();
     muatDataAnggota();
 });
+
 
