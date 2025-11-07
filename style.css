@@ -38,7 +38,6 @@ body {
 .sidebar-header {
     text-align: left;
     margin-bottom: 10px; 
-    
 }
 
 .sidebar-logo {
@@ -49,7 +48,7 @@ body {
 }
 
 .sidebar-header h2 {
-    margin: 2px 0 0; 
+    margin: 2px 0; 
     color: #66bb6a;
     font-size: 1.5em; 
 }
@@ -124,7 +123,6 @@ body {
 }
 
 .content-area {
-    /* RAPATKAN KE HEADER ATAS: padding atas dikurangi dari 30px menjadi 15px */
     padding: 15px 30px 30px 30px; 
     flex-grow: 1;
     overflow-y: auto; 
@@ -146,7 +144,7 @@ body {
 
 h2 {
     color: #00695c;
-    margin-top: 0; /* RAPATKAN KE HEADER ATAS: Pastikan margin atas 0 */
+    margin-top: 0; 
     margin-bottom: 15px; 
     font-size: 1.6em; 
     border-bottom: 2px solid #00695c;
@@ -250,6 +248,7 @@ tbody tr:hover {
     padding: 15px 25px; 
     border-radius: 8px;
     border: 1px solid #e2e8f0;
+    margin-top: 15px; /* Memberi jarak dari paragraf deskripsi */
 }
 .form-section label {
     display: block;
@@ -299,6 +298,59 @@ tbody tr:hover {
     font-weight: 600;
 }
 
+/* === TAMBAHAN BARU: STYLE UNTUK SUB-MENU === */
+.sub-nav {
+    width: 100%;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+.sub-nav ul {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sub-nav-item {
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #718096; /* Warna non-aktif */
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px; /* Trik agar border menyatu */
+    transition: all 0.3s ease;
+}
+
+.sub-nav-item i {
+    margin-right: 8px;
+}
+
+.sub-nav-item:hover {
+    color: #4a5568;
+}
+
+.sub-nav-item.active {
+    color: #00695c; /* Warna aktif */
+    border-bottom-color: #00695c;
+}
+
+/* Konten sub-menu */
+.sub-content-section {
+    display: none; /* Sembunyikan semua by default */
+}
+
+.sub-content-section.active {
+    display: block; /* Tampilkan yang aktif */
+}
+
+/* Hilangkan <hr> karena sudah tidak dipakai */
+.content-section hr {
+    display: none;
+}
+/* === AKHIR STYLE SUB-MENU === */
+
+
 /* =========================================== */
 /* == KODE RESPONSIVE UNTUK MOBILE == */
 /* =========================================== */
@@ -321,7 +373,7 @@ tbody tr:hover {
     .content-area {
         overflow-y: visible; 
         background-color: #eef2f7; 
-        padding: 15px; /* RAPATKAN DI HP JUGA */
+        padding: 15px; 
     }
 
     .sidebar {
@@ -345,7 +397,8 @@ tbody tr:hover {
         margin-bottom: 0;
     }
 
-    .sidebar-header p {
+    .sidebar-header p,
+    .sidebar-header h2:nth-child(3) { /* Sembunyikan 'Sambirejo' di HP */
         display: none; 
     }
     .sidebar-header h2 {
@@ -384,7 +437,7 @@ tbody tr:hover {
     }
 
     .content-section {
-        padding: 20px;
+        padding: 15px; /* Dibuat lebih rapat di HP */
     }
 
     .top-header {
@@ -414,6 +467,17 @@ tbody tr:hover {
     thead th {
         position: static; 
     }
+    
+    /* === STYLE SUB-NAV RESPONSIVE === */
+    .sub-nav ul {
+        flex-wrap: wrap; /* Biarkan tombol pindah ke bawah jika tidak muat */
+    }
+    .sub-nav-item {
+        padding: 10px 15px;
+        font-size: 0.9em;
+    }
+    /* === AKHIR STYLE === */
+
     .form-section {
         padding: 15px !important;
     }
@@ -427,4 +491,3 @@ tbody tr:hover {
         box-sizing: border-box;
     }
 }
-
