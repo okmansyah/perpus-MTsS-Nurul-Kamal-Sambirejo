@@ -248,7 +248,7 @@ tbody tr:hover {
     padding: 15px 25px; 
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    margin-top: 15px; /* Memberi jarak dari paragraf deskripsi */
+    margin-top: 15px; 
 }
 .form-section label {
     display: block;
@@ -293,12 +293,17 @@ tbody tr:hover {
 .btn-secondary { background-color: #a0aec0; color: white; }
 .btn-secondary:hover { background-color: #718096; }
 
+/* === TAMBAHAN BARU: Style Tombol Hapus === */
+.btn-danger { background-color: #f56565; color: white; }
+.btn-danger:hover { background-color: #e53e3e; }
+
+
 .feedback-message {
     margin-top: 10px; 
     font-weight: 600;
 }
 
-/* === TAMBAHAN BARU: STYLE UNTUK SUB-MENU === */
+/* === STYLE UNTUK SUB-MENU === */
 .sub-nav {
     width: 100%;
     border-bottom: 2px solid #e2e8f0;
@@ -307,6 +312,7 @@ tbody tr:hover {
 
 .sub-nav ul {
     display: flex;
+    flex-wrap: wrap; /* Izinkan wrap di HP */
     list-style: none;
     padding: 0;
     margin: 0;
@@ -316,9 +322,9 @@ tbody tr:hover {
     padding: 10px 20px;
     font-weight: 600;
     cursor: pointer;
-    color: #718096; /* Warna non-aktif */
+    color: #718096; 
     border-bottom: 3px solid transparent;
-    margin-bottom: -2px; /* Trik agar border menyatu */
+    margin-bottom: -2px; 
     transition: all 0.3s ease;
 }
 
@@ -331,24 +337,21 @@ tbody tr:hover {
 }
 
 .sub-nav-item.active {
-    color: #00695c; /* Warna aktif */
+    color: #00695c; 
     border-bottom-color: #00695c;
 }
 
-/* Konten sub-menu */
 .sub-content-section {
-    display: none; /* Sembunyikan semua by default */
+    display: none; 
 }
 
 .sub-content-section.active {
-    display: block; /* Tampilkan yang aktif */
+    display: block; 
 }
 
-/* Hilangkan <hr> karena sudah tidak dipakai */
 .content-section hr {
     display: none;
 }
-/* === AKHIR STYLE SUB-MENU === */
 
 
 /* =========================================== */
@@ -398,7 +401,7 @@ tbody tr:hover {
     }
 
     .sidebar-header p,
-    .sidebar-header h2:nth-child(3) { /* Sembunyikan 'Sambirejo' di HP */
+    .sidebar-header h2:nth-child(3) { 
         display: none; 
     }
     .sidebar-header h2 {
@@ -437,7 +440,7 @@ tbody tr:hover {
     }
 
     .content-section {
-        padding: 15px; /* Dibuat lebih rapat di HP */
+        padding: 15px; 
     }
 
     .top-header {
@@ -468,15 +471,10 @@ tbody tr:hover {
         position: static; 
     }
     
-    /* === STYLE SUB-NAV RESPONSIVE === */
-    .sub-nav ul {
-        flex-wrap: wrap; /* Biarkan tombol pindah ke bawah jika tidak muat */
-    }
     .sub-nav-item {
         padding: 10px 15px;
         font-size: 0.9em;
     }
-    /* === AKHIR STYLE === */
 
     .form-section {
         padding: 15px !important;
