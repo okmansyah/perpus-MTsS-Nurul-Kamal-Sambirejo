@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const btnSimpanPengaturan = document.getElementById('btn-simpan-pengaturan');
     const settingFeedback = document.getElementById('setting-feedback');
 
-    // === ELEMEN BARU (Form Tambah Buku) ===
+    // (Elemen Form Tambah Buku)
     const btnTambahBuku = document.getElementById('btn-tambah-buku');
     const inputBukuInventaris = document.getElementById('buku-inventaris');
     const inputBukuJudul = document.getElementById('buku-judul');
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputBukuPassword = document.getElementById('buku-password');
     const bukuFeedback = document.getElementById('buku-feedback');
 
-    // === ELEMEN BARU (Form Tambah Anggota) ===
+    // (Elemen Form Tambah Anggota)
     const btnTambahAnggota = document.getElementById('btn-tambah-anggota');
     const inputAnggotaNis = document.getElementById('anggota-nis');
     const inputAnggotaNama = document.getElementById('anggota-nama');
@@ -79,9 +79,14 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputAnggotaPassword = document.getElementById('anggota-password');
     const anggotaFeedback = document.getElementById('anggota-feedback');
 
+    // === ELEMEN BARU (Sub-Menu Pengaturan) ===
+    const subNavItems = document.querySelectorAll('.sub-nav-item');
+    const subContentSections = document.querySelectorAll('.sub-content-section');
+    // === AKHIR ELEMEN BARU ===
+
+
     // ===========================================
     // == Logika Navigasi Menu Sidebar ==
-    // (Tidak ada perubahan)
     // ===========================================
     function activateSection(targetId) {
         menuItems.forEach(i => i.classList.remove('active'));
@@ -114,6 +119,29 @@ document.addEventListener("DOMContentLoaded", function() {
     } else {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
+
+    // ===========================================
+    // == TAMBAHAN BARU: Logika Navigasi SUB-MENU Pengaturan ==
+    // ===========================================
+    if (subNavItems.length > 0 && subContentSections.length > 0) {
+        subNavItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const subTargetId = this.getAttribute('data-sub-target');
+                
+                // 1. Hapus 'active' dari semua tombol sub-nav
+                subNavItems.forEach(i => i.classList.remove('active'));
+                // 2. Hapus 'active' dari semua konten sub-nav
+                subContentSections.forEach(s => s.classList.remove('active'));
+                
+                // 3. Tambah 'active' ke tombol yang diklik
+                this.classList.add('active');
+                // 4. Tambah 'active' ke konten yang dituju
+                document.getElementById(subTargetId).classList.add('active');
+            });
+        });
+    }
+    // === AKHIR TAMBAHAN ===
+
 
     // ===========================================
     // == Fungsi Baca Data (Fetch CSV) ==
@@ -519,13 +547,11 @@ document.addEventListener("DOMContentLoaded", function() {
             bukuFeedback.style.color = (response.status === "success") ? "green" : "red";
 
             if (response.status === "success") {
-                // Reset form
                 inputBukuInventaris.value = "";
                 inputBukuJudul.value = "";
                 inputBukuPengarang.value = "";
                 inputBukuPenerbit.value = "";
                 inputBukuPassword.value = "";
-                // Muat ulang data buku agar tabel & dropdown terupdate
                 await muatDataBuku(); 
             }
             this.disabled = false; this.textContent = "Tambah Buku";
@@ -564,13 +590,11 @@ document.addEventListener("DOMContentLoaded", function() {
             anggotaFeedback.style.color = (response.status === "success") ? "green" : "red";
 
             if (response.status === "success") {
-                // Reset form
                 inputAnggotaNis.value = "";
                 inputAnggotaNama.value = "";
                 inputAnggotaKelas.value = "";
                 inputAnggotaStatus.value = "";
                 inputAnggotaPassword.value = "";
-                // Muat ulang data anggota agar tabel & dropdown terupdate
                 await muatDataAnggota(); 
             }
             this.disabled = false; this.textContent = "Tambah Anggota";
