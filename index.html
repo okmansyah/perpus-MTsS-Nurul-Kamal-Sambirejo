@@ -33,6 +33,11 @@
                         <i class="fas fa-chart-line"></i> Dashboard
                     </a>
                 </li>
+                 <li class="menu-item">
+                    <a href="#riwayat-pinjam" data-target="riwayat-pinjam">
+                        <i class="fas fa-history"></i> Riwayat Pinjam
+                    </a>
+                </li>
                 <li class="menu-item">
                     <a href="#sirkulasi-pinjam" data-target="sirkulasi-pinjam">
                         <i class="fas fa-sign-out-alt"></i> Pinjam Buku
@@ -72,7 +77,7 @@
                                     <th>Status</th>
                                     <th>Peminjam (NIS)</th>
                                     <th>Tanggal Pinjam</th>
-                                    </tr>
+                                </tr>
                             </thead>
                             <tbody id="tabel-buku"></tbody>
                         </table>
@@ -115,6 +120,25 @@
                     </div>
                 </section>
 
+                <section id="riwayat-pinjam" class="content-section">
+                    <h2>Riwayat Peminjaman</h2>
+                    <p>Menampilkan 50 transaksi terbaru.</p>
+                    <div class="tabel-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tanggal & Waktu</th>
+                                    <th>No. Inventaris</th>
+                                    <th>Judul Buku</th>
+                                    <th>NIS</th>
+                                    <th>Nama Peminjam</th>
+                                    <th>Status Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-history"></tbody>
+                        </table>
+                    </div>
+                </section>
                 <section id="sirkulasi-pinjam" class="content-section">
                     <h2>Form Peminjaman Buku</h2>
                     <div class="form-section">
