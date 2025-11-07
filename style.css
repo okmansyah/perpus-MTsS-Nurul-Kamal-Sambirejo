@@ -292,8 +292,6 @@ tbody tr:hover {
 .btn-success:hover { background-color: #3182ce; }
 .btn-secondary { background-color: #a0aec0; color: white; }
 .btn-secondary:hover { background-color: #718096; }
-
-/* Style Tombol Hapus */
 .btn-danger { background-color: #f56565; color: white; }
 .btn-danger:hover { background-color: #e53e3e; }
 
@@ -303,7 +301,9 @@ tbody tr:hover {
     font-weight: 600;
 }
 
-/* === STYLE UNTUK SUB-MENU === */
+/* =========================================== */
+/* == MODIFIKASI STYLE UNTUK SUB-MENU == */
+/* =========================================== */
 .sub-nav {
     width: 100%;
     border-bottom: 2px solid #e2e8f0;
@@ -312,24 +312,27 @@ tbody tr:hover {
 
 .sub-nav ul {
     display: flex;
-    flex-wrap: wrap; /* Izinkan wrap di HP */
+    flex-wrap: nowrap; /* LEBIH RAPAT: Paksa agar tidak wrap */
+    overflow-x: auto;  /* LEBIH RAPAT: Tambahkan scroll jika masih tidak muat */
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
 .sub-nav-item {
-    padding: 10px 20px;
+    padding: 10px 12px; /* LEBIH RAPAT: Padding kiri/kanan (dari 20px) */
     font-weight: 600;
     cursor: pointer;
     color: #718096; 
     border-bottom: 3px solid transparent;
     margin-bottom: -2px; 
     transition: all 0.3s ease;
+    font-size: 0.9em; /* LEBIH RAPAT: Ukuran font dikecilkan */
+    white-space: nowrap; /* LEBIH RAPAT: Pastikan teks tidak pindah baris */
 }
 
 .sub-nav-item i {
-    margin-right: 8px;
+    margin-right: 5px; /* LEBIH RAPAT: Jarak ikon ke teks (dari 8px) */
 }
 
 .sub-nav-item:hover {
@@ -352,6 +355,7 @@ tbody tr:hover {
 .content-section hr {
     display: none;
 }
+/* === AKHIR STYLE SUB-MENU === */
 
 
 /* =========================================== */
@@ -471,6 +475,9 @@ tbody tr:hover {
         position: static; 
     }
     
+    .sub-nav ul {
+        flex-wrap: wrap; /* Di HP, biarkan wrap jika tidak muat */
+    }
     .sub-nav-item {
         padding: 10px 15px;
         font-size: 0.9em;
