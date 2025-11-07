@@ -8,14 +8,12 @@
 body {
     font-family: 'Poppins', sans-serif;
     line-height: 1.6;
-    /* PERUBAHAN 6: Latar belakang gelap (bingkai) */
     background-color: #37474f; 
     margin: 0;
     color: #333;
     min-height: 100vh;
 }
 
-/* APP CONTAINER - Mengunci tinggi ke layar */
 .app-container {
     display: flex;
     width: 100%;
@@ -28,9 +26,9 @@ body {
 /* =========================================== */
 .sidebar {
     width: 250px;
-    background-color: #1a202c; /* Tetap gelap, kontras */
+    background-color: #1a202c;
     color: white;
-    padding: 20px;
+    padding: 15px 20px; /* DIUBAH: Padding atas/bawah dikurangi dari 20px */
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
@@ -39,8 +37,8 @@ body {
 
 .sidebar-header {
     text-align: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
+    margin-bottom: 15px; /* DIUBAH: Dirapatkan ke menu (dari 30px) */
+    padding-bottom: 15px; /* DIUBAH: Dirapatkan ke menu (dari 20px) */
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
@@ -48,11 +46,11 @@ body {
     max-width: 100px;
     border-radius: 50%;
     border: 3px solid #66bb6a; 
-    margin-bottom: 10px;
+    margin-bottom: 5px; /* DIUBAH: Dirapatkan ke teks (dari 10px) */
 }
 
 .sidebar-header h2 {
-    margin: 10px 0 5px;
+    margin: 5px 0 5px; /* DIUBAH: Margin atas dikurangi (dari 10px) */
     color: #66bb6a;
     font-size: 1.6em;
 }
@@ -70,7 +68,7 @@ body {
 }
 
 .menu-item {
-    margin-bottom: 10px;
+    margin-bottom: 5px; /* DIUBAH: Antar menu dirapatkan (dari 10px) */
 }
 
 .menu-item a {
@@ -113,33 +111,29 @@ body {
 }
 
 .top-header {
-    /* PERUBAHAN 1: Latar berani & lebih tipis */
-    background-color: #00695c; /* Hijau-teal kuat */
+    background-color: #00695c;
     color: white;
-    padding: 10px 30px; /* Dibuat lebih tipis (compact) */
-    
+    padding: 10px 30px; 
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     flex-shrink: 0; 
 }
 
 .top-header h1 {
     margin: 0;
-    font-size: 1.5em; /* Dikecilkan agar 'compact' */
+    font-size: 1.5em;
     font-weight: 600;
 }
 
-/* Area konten utama yang bisa di-scroll */
 .content-area {
     padding: 30px;
     flex-grow: 1;
     overflow-y: auto; 
-    /* PERUBAHAN 6: Latar belakang konten (di dalam bingkai) */
-    background-color: #eef2f7; /* Biru-keabuan muda (menyatu dgn body lama) */
+    background-color: #eef2f7; 
 }
 
 .content-section {
-    background: #ffffff; /* Kartu konten tetap putih bersih */
-    padding: 25px; /* Sedikit lebih 'compact' */
+    background: #ffffff; 
+    padding: 25px; 
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     display: none; 
@@ -151,13 +145,12 @@ body {
 }
 
 h2 {
-    /* PERUBAHAN 2: Judul section lebih 'compact' */
-    color: #00695c; /* Warna berani (konsisten dgn header) */
+    color: #00695c;
     margin-top: 0;
-    margin-bottom: 20px; /* Dirapatkan */
-    font-size: 1.6em; /* Dikecilkan */
+    margin-bottom: 20px;
+    font-size: 1.6em; 
     border-bottom: 2px solid #00695c;
-    padding-bottom: 8px; /* Dirapatkan */
+    padding-bottom: 8px; 
 }
 
 /* =========================================== */
@@ -165,17 +158,15 @@ h2 {
 /* =========================================== */
 
 #filterBuku, #filterAnggota {
-    /* PERUBAHAN 3: Kolom pencarian lebih 'compact' */
     width: 100%;
-    padding: 10px 15px; /* Dibuat lebih tipis */
-    margin-bottom: 20px; /* Dirapatkan */
-    border: 2px solid #00695c; /* Border berani */
+    padding: 10px 15px; 
+    margin-bottom: 20px; 
+    border: 2px solid #00695c; 
     border-radius: 8px;
     box-sizing: border-box;
-    font-size: 0.9em; /* Dikecilkan */
+    font-size: 0.9em; 
 }
 
-/* Container tabel dengan scroll internal */
 .tabel-container {
     max-height: 60vh; 
     overflow-y: auto; 
@@ -185,17 +176,15 @@ h2 {
     position: relative; 
 }
 
-/* Header tabel 'lengket' */
 thead th {
-    /* PERUBAHAN 4: Judul kolom lebih 'compact' & berani */
     position: sticky; 
     top: -1px; 
-    background-color: #004d40; /* Hijau sangat gelap (berani) */
+    background-color: #004d40; 
     color: #ffffff; 
-    padding: 12px 15px; /* Dibuat lebih tipis */
+    padding: 12px 15px; 
     z-index: 10; 
     box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
-    font-size: 0.9em; /* Dikecilkan */
+    font-size: 0.9em; 
 }
 
 table {
@@ -204,23 +193,18 @@ table {
 }
 
 th, td {
-    padding: 12px 15px; /* Dibuat lebih tipis */
+    padding: 12px 15px;
     border: 1px solid #ebf4f1;
     text-align: left;
     vertical-align: middle;
 }
 
-thead {
-    /* (Kosong) */
-}
-
-/* PERUBAHAN 5: Warna tabel lebih berani */
 tbody tr:nth-child(even) {
-    background-color: #e0f2f1; /* Hijau-teal muda (lebih terlihat) */
+    background-color: #e0f2f1;
 }
 
 tbody tr:hover {
-    background-color: #b2dfdb; /* Hijau-teal saat hover */
+    background-color: #b2dfdb;
 }
 
 .status {
@@ -241,7 +225,6 @@ tbody tr:hover {
     padding: 20px;
 }
 
-/* Kartu Dashboard */
 .statistik-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -271,7 +254,6 @@ tbody tr:hover {
 .card.bg-red { background-color: #fee2e2; }
 .card.bg-red p { color: #991b1b; }
 
-/* Form Sirkulasi */
 .form-section {
     background-color: #f9fafb;
     padding: 25px;
@@ -284,8 +266,11 @@ tbody tr:hover {
     font-weight: 600;
     color: #4a5568;
 }
+
+/* Ini adalah perbaikan dari dropdown yang melebar sebelumnya */
 .form-section input[type="text"],
 .form-section input[type="password"],
+.form-section input[type="number"], /* Ditambahkan untuk form pengaturan */
 .form-section select {
     width: 100%;
     padding: 12px 15px;
@@ -330,7 +315,7 @@ tbody tr:hover {
 @media (max-width: 768px) {
 
     body {
-        background-color: #eef2f7; /* Di HP, kembalikan ke latar terang */
+        background-color: #eef2f7; 
     }
 
     .app-container {
@@ -344,14 +329,14 @@ tbody tr:hover {
     }
     .content-area {
         overflow-y: visible; 
-        background-color: #eef2f7; /* Latar terang di HP */
+        background-color: #eef2f7; 
     }
 
-    /* Jadikan sidebar sebagai 'Top Bar' */
     .sidebar {
         width: 100%;
         box-sizing: border-box;
         height: auto;
+        padding: 10px 15px; /* Disesuaikan untuk HP */
     }
 
     .sidebar-header {
@@ -373,16 +358,16 @@ tbody tr:hover {
     }
     .sidebar-header h2 {
         font-size: 1.2em;
+        margin: 0; /* Dirapatkan di HP */
     }
 
-    /* Ubah Menu jadi Horizontal dan Bisa Scroll */
     .sidebar-menu {
         display: flex;
         flex-direction: row;
         overflow-x: auto; 
         white-space: nowrap;
         border-top: 1px solid rgba(255,255,255,0.1);
-        margin-top: 15px;
+        margin-top: 10px; /* Dirapatkan (dari 15px) */
         padding-top: 10px;
     }
 
@@ -432,7 +417,6 @@ tbody tr:hover {
         font-size: 0.9em;
     }
 
-    /* Matikan 'max-height' dan 'sticky' di HP */
     .tabel-container {
         max-height: none;
         overflow-y: visible;
@@ -444,13 +428,14 @@ tbody tr:hover {
     .form-section {
         padding: 15px !important;
     }
+    
+    /* Ini adalah perbaikan dari kode responsif sebelumnya */
     .form-section input[type="text"],
     .form-section input[type="password"],
-    form-section select {
+    .form-section input[type="number"],
+    .form-section select { /* <-- DIPERBAIKI (titik) & ditambah number */
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box;
     }
 }
-
-
