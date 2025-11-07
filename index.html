@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perpustakaan MTsS Nurul Kamal</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https.cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https.cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -129,18 +129,19 @@
                     </div>
 
                     <div class="statistik-grid">
-                        <div class="chart-container" style="background: #fff; padding: 15px; border-radius: 8px;">
+                        <div class="chart-container">
                             <canvas id="grafikBulanan"></canvas>
                         </div>
-                        <div class="chart-container" style="background: #fff; padding: 15px; border-radius: 8px;">
+                        <div class="chart-container">
                             <canvas id="grafikTahunan"></canvas>
                         </div>
                     </div>
                     
-                    <div class="chart-container" style="background: #fff; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <div class="chart-container" style="margin-top: 20px;">
                         <canvas id="grafikAkuisisiBuku"></canvas>
                     </div>
                     </section>
+
                 <section id="riwayat-pinjam" class="content-section">
                     <h2>Riwayat Peminjaman</h2>
                     <p>Menampilkan 50 transaksi terbaru.</p>
@@ -203,6 +204,7 @@
 
                 <section id="admin-pengaturan" class="content-section">
                     <h2>Pengaturan & Admin</h2>
+
                     <div class="sub-nav">
                         <ul>
                             <li class="sub-nav-item active" data-sub-target="sub-denda"><i class="fas fa-sliders-h"></i> Pengaturan Denda</li>
@@ -212,6 +214,7 @@
                             <li class="sub-nav-item" data-sub-target="sub-edit-anggota"><i class="fas fa-edit"></i> Manajemen Anggota</li>
                         </ul>
                     </div>
+
                     <div id="sub-denda" class="sub-content-section active">
                         <p>Ubah pengaturan denda dan lama peminjaman di sini.</p>
                         <div class="form-section">
@@ -225,6 +228,7 @@
                             <p id="setting-feedback" class="feedback-message"></p>
                         </div>
                     </div>
+                    
                     <div id="sub-tambah-buku" class="sub-content-section">
                         <p>Tambahkan buku baru ke Google Sheet "Katalog Buku".</p>
                         <div class="form-section">
@@ -242,6 +246,7 @@
                             <p id="buku-feedback" class="feedback-message"></p>
                         </div>
                     </div>
+
                     <div id="sub-tambah-anggota" class="sub-content-section">
                         <p>Tambahkan siswa baru ke Google Sheet "Anggota".</p>
                         <div class="form-section">
@@ -259,6 +264,7 @@
                             <p id="anggota-feedback" class="feedback-message"></p>
                         </div>
                     </div>
+                    
                     <div id="sub-edit-buku" class="sub-content-section">
                         <p>Pilih buku berdasarkan No. Inventaris unik untuk mengubah atau menghapus datanya.</p>
                         <div class="form-section">
@@ -283,6 +289,7 @@
                             <p id="edit-buku-feedback" class="feedback-message"></p>
                         </div>
                     </div>
+
                     <div id="sub-edit-anggota" class="sub-content-section">
                         <p>Pilih anggota dari daftar untuk mengubah atau menghapus data.</p>
                         <div class="form-section">
