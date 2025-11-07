@@ -5,13 +5,11 @@ document.addEventListener("DOMContentLoaded", function() {
     // ==========================================================
 
     // 1. LINK CSV (UNTUK BACA DATA / WEBVIEW)
-    // PASTIKAN LINK INI BENAR DAN SUDAH "PUBLISH TO THE WEB"
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
 
     // 2. LINK BACKEND (UNTUK TULIS DATA / CRUD)
-    // PASTIKAN INI ADALAH URL DEPLOYMENT TERBARU ANDA
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbwM1VqMNd4WbL36c1aXNO6KfI3Vz0a459I22UX2NjJZck-UVRqssIeEKK6opOImPF9R/exec';
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycby5pdDgSdHqxIT0-OGE7Qr5w92o59yjRp515wX-7paou6c3_Bj4sXhYW-dtMI3EtQH0/exec';
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -32,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const bukuTersediaElement = document.getElementById('buku-tersedia');
     const bukuDipinjamElement = document.getElementById('buku-dipinjam');
 
-    // Elemen Form Pinjam (Sudah diubah ke <select>)
+    // Elemen Form Pinjam
     const btnProsesPinjam = document.getElementById('btn-proses-pinjam');
     const selectPinjamInv = document.getElementById('pinjam-no-inventaris');
     const selectPinjamKelas = document.getElementById('pinjam-kelas');
@@ -41,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputPinjamPass = document.getElementById('pinjam-password'); 
     const pinjamFeedback = document.getElementById('pinjam-feedback');
     
-    // Elemen Form Kembali (Sudah diubah ke <select>)
+    // Elemen Form Kembali
     const btnProsesKembali = document.getElementById('btn-proses-kembali');
     const selectKembaliInv = document.getElementById('kembali-no-inventaris');
     const inputKembaliPass = document.getElementById('kembali-password'); 
@@ -50,7 +48,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // ===========================================
     // Logika Navigasi Menu Sidebar
     // ===========================================
-    // Kode ini WAJIB berjalan agar menu bisa diklik
     if (menuItems.length > 0 && contentSections.length > 0) {
         menuItems.forEach(item => {
             item.addEventListener('click', function(e) {
@@ -78,32 +75,33 @@ document.addEventListener("DOMContentLoaded", function() {
     
     async function fetchData(url) {
         try {
-            const respons = await fetch(url);
+            // Tambahkan parameter acak untuk mencegah cache
+            const respons = await fetch(url + '&cachebust=' + new Date().getTime());
             if (!respons.ok) {
-                 // Ganti error 404 generik menjadi pesan spesifik
                  throw new Error(`Gagal memuat data dari URL: ${url}. Status: ${respons.status} (Not Found)`);
             }
             const dataCsv = await respons.text();
             return dataCsv.split('\n').slice(1).filter(baris => baris.trim() !== '');
         } catch (error) {
             console.error('Error di fungsi fetchData:', error);
-            // Tampilkan error di tabel agar pengguna tahu
-            if(tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="5" class="loading" style="color:red;">Error: ${error.message}. Cek link CSV.</td></tr>`;
+            if(tabelBuku) tabelBuku.innerHTML = `<tr><td colspan="7" class="loading" style="color:red;">Error: ${error.message}. Cek link CSV.</td></tr>`;
             if(tabelAnggota) tabelAnggota.innerHTML = `<tr><td colspan="4" class="loading" style="color:red;">Error: ${error.message}. Cek link CSV.</td></tr>`;
             return null;
         }
     }
     
     async function muatDataBuku() {
-        if (!tabelBuku && !selectPinjamInv) return; // Cek jika elemen ada
+        if (!tabelBuku && !selectPinjamInv) return; 
 
-        if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Memuat data buku...</td></tr>';
+        if(tabelBuku) tabelBuku.innerHTML = '<tr><td colspan="7" class="loading">Memuat data buku...</td></tr>';
         
         const dataCsv = await fetchData(urlBuku);
         if (!dataCsv) {
-            // Pesan error sudah ditangani di dalam fetchData
             return;
         }
+
+        // --- INI ADALAH MODIFIKASI ---
+        // Membaca 7 kolom, bukan 5
         dataBuku = dataCsv.map(baris => {
             const k = baris.split(',');
             return { 
@@ -111,9 +109,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 judul: (k[1]||'').trim(), 
                 pengarang: (k[2]||'').trim(), 
                 penerbit: (k[3]||'').trim(), 
-                status: (k[4]||'').trim() 
+                status: (k[4]||'').trim(),
+                // Tambahan 2 kolom baru
+                peminjamNis: (k[5]||'').trim(),
+                tglPinjam: (k[6]||'').trim()
             };
         });
+        // --- AKHIR MODIFIKASI ---
 
         if (tabelBuku) {
             tampilkanDataBuku(dataBuku);
@@ -122,7 +124,6 @@ document.addEventListener("DOMContentLoaded", function() {
             updateDashboardStats();
         }
         
-        // Panggil fungsi untuk mengisi dropdown buku
         populateBukuDropdowns();
     }
 
@@ -130,11 +131,14 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!tabelBuku) return;
         tabelBuku.innerHTML = '';
         if (data.length === 0) {
-            tabelBuku.innerHTML = '<tr><td colspan="5" class="loading">Data tidak ditemukan.</td></tr>';
+            tabelBuku.innerHTML = '<tr><td colspan="7" class="loading">Data tidak ditemukan.</td></tr>';
             return;
         }
         data.forEach(buku => {
             const statusClass = (buku.status || "").toLowerCase() === 'tersedia' ? 'status-tersedia' : 'status-dipinjam';
+            
+            // --- INI ADALAH MODIFIKASI ---
+            // Menampilkan 7 kolom, bukan 5
             tabelBuku.innerHTML += `
                 <tr>
                     <td>${buku.noInventaris}</td>
@@ -142,18 +146,20 @@ document.addEventListener("DOMContentLoaded", function() {
                     <td>${buku.pengarang}</td>
                     <td>${buku.penerbit}</td>
                     <td><span class="status ${statusClass}">${buku.status}</span></td>
+                    <td>${buku.peminjamNis}</td>
+                    <td>${buku.tglPinjam}</td>
                 </tr>`;
+            // --- AKHIR MODIFIKASI ---
         });
     }
 
     async function muatDataAnggota() {
-        if (!tabelAnggota && !selectPinjamKelas) return; // Cek jika elemen ada
+        if (!tabelAnggota && !selectPinjamKelas) return; 
 
         if(tabelAnggota) tabelAnggota.innerHTML = '<tr><td colspan="4" class="loading">Memuat data anggota...</td></tr>';
         
         const dataCsv = await fetchData(urlAnggota);
         if (!dataCsv) {
-            // Pesan error sudah ditangani di dalam fetchData
             return;
         }
         dataAnggota = dataCsv.map(baris => {
@@ -170,7 +176,6 @@ document.addEventListener("DOMContentLoaded", function() {
             tampilkanDataAnggota(dataAnggota);
         }
 
-        // Panggil fungsi untuk mengisi dropdown kelas
         populateKelasSelect();
     }
     
@@ -204,27 +209,23 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // ===========================================
-    // == FUNGSI BARU UNTUK DROPDOWN SIRKULASI ==
+    // == FUNGSI DROPDOWN SIRKULASI ==
     // ===========================================
 
     function populateBukuDropdowns() {
         if (!selectPinjamInv || !selectKembaliInv) return;
 
-        // Kosongkan dulu
         selectPinjamInv.innerHTML = '<option value="">-- Pilih Buku (Tersedia) --</option>';
         selectKembaliInv.innerHTML = '<option value="">-- Pilih Buku (Dipinjam) --</option>';
 
-        // Urutkan buku berdasarkan No. Inventaris
         const sortedData = [...dataBuku].sort((a, b) => a.noInventaris.localeCompare(b.noInventaris, undefined, { numeric: true }));
 
         sortedData.forEach(buku => {
             const optionText = `${buku.noInventaris} - ${buku.judul}`;
             
             if ((buku.status || "").toLowerCase() === 'tersedia') {
-                // Tambahkan ke dropdown Pinjam
                 selectPinjamInv.innerHTML += `<option value="${buku.noInventaris}">${optionText}</option>`;
             } else {
-                // Tambahkan ke dropdown Kembali
                 selectKembaliInv.innerHTML += `<option value="${buku.noInventaris}">${optionText}</option>`;
             }
         });
@@ -233,39 +234,34 @@ document.addEventListener("DOMContentLoaded", function() {
     function populateKelasSelect() {
         if (!selectPinjamKelas) return;
 
-        // Dapatkan semua kelas unik dari dataAnggota
         const semuaKelas = dataAnggota.map(anggota => anggota.kelas);
-        const kelasUnik = [...new Set(semuaKelas)].sort(); // Urutkan kelas
+        const kelasUnik = [...new Set(semuaKelas)].sort(); 
 
         selectPinjamKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
         kelasUnik.forEach(kelas => {
-            if (kelas) { // Hindari jika ada kelas kosong
+            if (kelas) { 
                 selectPinjamKelas.innerHTML += `<option value="${kelas}">${kelas}</option>`;
             }
         });
     }
 
-    // --- Tambahkan Event Listener untuk Dropdown Bertingkat ---
     if (selectPinjamKelas) {
         selectPinjamKelas.addEventListener('change', function() {
             const kelasTerpilih = this.value;
             
-            // Kosongkan dropdown nama dan NIS
             selectPinjamNama.innerHTML = '<option value="">-- Pilih Nama --</option>';
-            inputPinjamNIS.value = ""; // Pastikan input NIS dikosongkan
+            inputPinjamNIS.value = ""; 
 
-            if (!kelasTerpilih) return; // Jika memilih "-- Pilih Kelas --"
+            if (!kelasTerpilih) return; 
 
-            // Filter anggota berdasarkan kelas terpilih
             const anggotaDiKelas = dataAnggota
                 .filter(anggota => anggota.kelas === kelasTerpilih)
-                .sort((a, b) => a.nama.localeCompare(b.nama)); // Urutkan nama
+                .sort((a, b) => a.nama.localeCompare(b.nama)); 
 
             if (anggotaDiKelas.length === 0) {
                 selectPinjamNama.innerHTML = '<option value="">-- Tidak ada siswa di kelas ini --</option>';
             } else {
                 anggotaDiKelas.forEach(siswa => {
-                    // Value dari option ini adalah NIS-nya
                     selectPinjamNama.innerHTML += `<option value="${siswa.nis}">${siswa.nama}</option>`;
                 });
             }
@@ -274,7 +270,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (selectPinjamNama) {
         selectPinjamNama.addEventListener('change', function() {
-            // Tampilkan NIS di input readonly
             inputPinjamNIS.value = this.value;
         });
     }
@@ -288,7 +283,9 @@ document.addEventListener("DOMContentLoaded", function() {
             const dataFilter = dataBuku.filter(buku => 
                 (buku.judul || "").toLowerCase().includes(kataKunci) ||
                 (buku.pengarang || "").toLowerCase().includes(kataKunci) ||
-                (buku.penerbit || "").toLowerCase().includes(kataKunci)
+                (buku.penerbit || "").toLowerCase().includes(kataKunci) ||
+                // Tambah filter berdasarkan NIS Peminjam
+                (buku.peminjamNis || "").toLowerCase().includes(kataKunci)
             );
             tampilkanDataBuku(dataFilter);
         });
@@ -312,8 +309,8 @@ document.addEventListener("DOMContentLoaded", function() {
     
     if (btnProsesPinjam) {
         btnProsesPinjam.addEventListener('click', async function() {
-            const noInventaris = selectPinjamInv.value; // Diambil dari <select>
-            const nis = inputPinjamNIS.value.trim();    // Diambil dari input (readonly)
+            const noInventaris = selectPinjamInv.value; 
+            const nis = inputPinjamNIS.value.trim();    
             const adminPassword = inputPinjamPass.value.trim();
             
             if (!noInventaris || !nis || !adminPassword) {
@@ -346,8 +343,22 @@ document.addEventListener("DOMContentLoaded", function() {
                 selectPinjamNama.innerHTML = '<option value="">-- Pilih kelas terlebih dahulu --</option>';
                 inputPinjamNIS.value = "";
                 inputPinjamPass.value = "";
-                // Muat ulang data agar dropdown buku juga ter-update
-                await muatDataBuku(); 
+                
+                // --- INI ADALAH MODIFIKASI (Solusi Delay 5 Menit) ---
+                // Alih-alih memuat ulang, kita update data di memori
+                
+                // 1. Ubah data di memori (variable 'dataBuku')
+                const bukuYangDipinjam = dataBuku.find(b => b.noInventaris === noInventaris);
+                if (bukuYangDipinjam) {
+                    bukuYangDipinjam.status = "Dipinjam";
+                    bukuYangDipinjam.peminjamNis = nis;
+                    bukuYangDipinjam.tglPinjam = "Baru Saja"; // Tampilan instan
+                }
+                // 2. Gambar ulang semua yang bergantung pada 'dataBuku'
+                tampilkanDataBuku(dataBuku); 
+                populateBukuDropdowns(); 
+                updateDashboardStats(); 
+                // --- AKHIR MODIFIKASI ---
             }
             
             this.disabled = false;
@@ -357,7 +368,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (btnProsesKembali) {
         btnProsesKembali.addEventListener('click', async function() {
-            const noInventaris = selectKembaliInv.value; // Diambil dari <select>
+            const noInventaris = selectKembaliInv.value; 
             const adminPassword = inputKembaliPass.value.trim(); 
             
             if (!noInventaris || !adminPassword) {
@@ -386,8 +397,20 @@ document.addEventListener("DOMContentLoaded", function() {
                 // Reset form
                 selectKembaliInv.value = "";
                 inputKembaliPass.value = "";
-                // Muat ulang data agar dropdown buku juga ter-update
-                await muatDataBuku(); 
+
+                // --- INI ADALAH MODIFIKASI (Solusi Delay 5 Menit) ---
+                // 1. Ubah data di memori (variable 'dataBuku')
+                const bukuYangDikembalikan = dataBuku.find(b => b.noInventaris === noInventaris);
+                if (bukuYangDikembalikan) {
+                    bukuYangDikembalikan.status = "Tersedia";
+                    bukuYangDikembalikan.peminjamNis = "";
+                    bukuYangDikembalikan.tglPinjam = "";
+                }
+                // 2. Gambar ulang semua yang bergantung pada 'dataBuku'
+                tampilkanDataBuku(dataBuku); 
+                populateBukuDropdowns(); 
+                updateDashboardStats(); 
+                // --- AKHIR MODIFIKASI ---
             }
             
             this.disabled = false;
@@ -400,7 +423,6 @@ document.addEventListener("DOMContentLoaded", function() {
             const res = await fetch(urlWebApp, {
                 method: "POST",
                 body: JSON.stringify(data)
-                // PERBAIKAN 'FAILED TO FETCH': Header 'Content-Type' dihapus
             });
             
             if (!res.ok) {
@@ -411,7 +433,6 @@ document.addEventListener("DOMContentLoaded", function() {
             
         } catch (error) {
             console.error("Error saat mengirim data:", error);
-            // Ini adalah pesan error jika server (Google) mati atau URL salah
             return { status: "error", message: "Gagal terhubung ke server. Pastikan URL Web App benar dan server di-deploy." };
         }
     }
