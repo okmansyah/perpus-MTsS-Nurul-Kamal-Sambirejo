@@ -1,7 +1,6 @@
 /* Import Font dari Google Fonts */
-@import url('https.fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-/* ... (SEMUA KODE CSS DARI ATAS SAMPAI .feedback-message) ... */
 /* =========================================== */
 /* == PENGATURAN DASAR & LAYOUT UTAMA == */
 /* =========================================== */
@@ -220,7 +219,7 @@ tbody tr:hover {
 /* (Kartu Dashboard) */
 .statistik-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Ukuran min disesuaikan */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
     gap: 20px;
 }
 .card {
@@ -357,13 +356,13 @@ tbody tr:hover {
 
 /* Wrapper untuk tombol edit/hapus di DESKTOP */
 .button-group .btn {
-    margin-top: 5px; /* (Kembalikan margin-top default) */
+    margin-top: 5px; 
 }
 .button-group .btn-danger {
     margin-left: 10px; 
 }
 
-/* === TAMBAHAN BARU: WADAH GRAFIK === */
+/* (Wadah Grafik) */
 .chart-container {
     position: relative;
     width: 100%;
@@ -373,6 +372,26 @@ tbody tr:hover {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     overflow-x: auto;
 }
+
+/* === TAMBAHAN BARU: Style Grup Input Inventaris === */
+.inventaris-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px; /* Jaga jarak yang sama dgn input lain */
+}
+/* Input pertama (range) dibuat lebih kecil */
+.inventaris-group #buku-inv-range {
+    flex-basis: 120px;
+    flex-grow: 0;
+    margin-bottom: 0; /* Hapus margin-bottom karena sudah di wrapper */
+}
+/* Input kedua (suffix) mengambil sisa ruang */
+.inventaris-group #buku-inv-suffix {
+    flex-grow: 1;
+    margin-bottom: 0; /* Hapus margin-bottom */
+}
+/* === AKHIR TAMBAHAN === */
 
 
 /* =========================================== */
@@ -515,5 +534,13 @@ tbody tr:hover {
         margin: 0 !important; 
         padding: 8px 10px; 
     }
-}
 
+    /* === MODIFIKASI: Grup Inventaris di HP === */
+    .inventaris-group {
+        flex-direction: column; /* Tumpuk secara vertikal */
+        gap: 8px; /* Beri jarak vertikal */
+    }
+    .inventaris-group #buku-inv-range {
+        flex-basis: auto; /* Biarkan lebarnya 100% */
+    }
+}
