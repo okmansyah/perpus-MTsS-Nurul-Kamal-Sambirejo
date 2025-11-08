@@ -168,10 +168,11 @@ document.addEventListener("DOMContentLoaded", function() {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
 
-    // ==== BLOK LOGIKA SUB-MENU DIGANTI TOTAL ====
+    // ==== BLOK LOGIKA SUB-MENU (DROPDOWN) ====
     if (dropdownButtons.length > 0 && dropdownItems.length > 0 && subContentSections.length > 0) {
 
         // 1. Logika untuk Tombol Dropdown (Membuka/Menutup)
+        // Logika ini tetap berfungsi meski hanya ada 1 tombol
         dropdownButtons.forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -213,7 +214,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const parentDropdown = this.closest('.dropdown');
                 const correspondingButton = parentDropdown.querySelector('.dropdown-btn');
                 
-                // Ambil ikon lama dari tombol (fa-book atau fa-users)
+                // Ambil ikon lama dari tombol
                 const iconClass = correspondingButton.querySelector('i:first-child').className;
 
                 // Set HTML tombol
@@ -227,28 +228,20 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // 3. Menutup dropdown jika klik di luar
         window.addEventListener('click', function(e) {
-            // Cek jika target klik BUKAN tombol dropdown ATAU BUKAN anak dari tombol dropdown
             if (!e.target.matches('.dropdown-btn') && !e.target.closest('.dropdown-btn')) {
                 document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
                 dropdownButtons.forEach(b => b.classList.remove('active'));
             }
         });
 
-        // 4. Inisialisasi Tampilan Awal
-        // (Set teks tombol dropdown "Buku" sesuai section 'sub-denda' yang aktif by default)
+        // 4. Inisialisasi Tampilan Awal (DIEDIT)
+        // (Set teks tombol dropdown "Buku" sesuai section 'sub-tambah-buku' yang aktif by default)
         try {
-            const defaultItemBuku = document.querySelector('.dropdown-item[data-sub-target="sub-denda"]');
-            if (defaultItemBuku) {
-                const newText = defaultItemBuku.textContent;
-                const btn = defaultItemBuku.closest('.dropdown').querySelector('.dropdown-btn');
-                const iconClass = btn.querySelector('i:first-child').className;
-                btn.innerHTML = `<i class="${iconClass}"></i> ${newText} <i class="fas fa-caret-down"></i>`;
-            }
-            // (Set teks tombol "Anggota" ke item pertamanya)
-            const defaultItemAnggota = document.querySelector('.dropdown-item[data-sub-target="sub-edit-anggota"]');
-             if (defaultItemAnggota) {
-                const newText = defaultItemAnggota.textContent;
-                const btn = defaultItemAnggota.closest('.dropdown').querySelector('.dropdown-btn');
+            // User requested "Tambah Buku" as default
+            const defaultItem = document.querySelector('.dropdown-item[data-sub-target="sub-tambah-buku"]'); 
+            if (defaultItem) {
+                const newText = defaultItem.textContent;
+                const btn = defaultItem.closest('.dropdown').querySelector('.dropdown-btn');
                 const iconClass = btn.querySelector('i:first-child').className;
                 btn.innerHTML = `<i class="${iconClass}"></i> ${newText} <i class="fas fa-caret-down"></i>`;
             }
@@ -302,7 +295,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 noInventaris: (k[0]||'').trim(), 
                 judul: (k[1]||'').trim(), 
                 pengarang: (k[2]||'').trim(), 
-                penerbit: (k[3]||'').trim(), 
+                penerbit: (k[3]||').trim(), 
                 status: (k[4]||'').trim(),
                 peminjamNis: (k[5]||'').trim(),
                 tglPinjam: (k[6]||'').trim(), 
@@ -1110,8 +1103,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
             this.disabled = true; btnUpdateBuku.disabled = true;
             this.textContent = "Menghapus...";
-            editBukaFeedback.textContent = "Menghubungi server...";
-            editBukaFeedback.style.color = "blue";
+            editBukuFeedback.textContent = "Menghubungi server...";
+            editBukuFeedback.style.color = "blue";
 
             const dataKirim = {
                 action: "hapusBuku",
