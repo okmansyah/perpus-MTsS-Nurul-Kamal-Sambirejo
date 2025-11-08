@@ -96,9 +96,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputAnggotaPassword = document.getElementById('anggota-password');
     const anggotaFeedback = document.getElementById('anggota-feedback');
     
-    // (Elemen Sub-Menu Pengaturan)
-    const subNavItems = document.querySelectorAll('.sub-nav-item');
+    // ==== PERUBAHAN DEKLARASI ELEMEN SUB-MENU ====
+    const dropdownButtons = document.querySelectorAll('.dropdown-btn');
+    const dropdownItems = document.querySelectorAll('.dropdown-item');
     const subContentSections = document.querySelectorAll('.sub-content-section');
+    // ==== AKHIR PERUBAHAN DEKLARASI ====
     
     // (Elemen Form Edit Anggota)
     const selectEditAnggota = document.getElementById('select-edit-anggota');
@@ -165,17 +167,97 @@ document.addEventListener("DOMContentLoaded", function() {
     } else {
         console.error("Error: Elemen sidebar (menuItems) tidak ditemukan.");
     }
-    if (subNavItems.length > 0 && subContentSections.length > 0) {
-        subNavItems.forEach(item => {
-            item.addEventListener('click', function() {
-                const subTargetId = this.getAttribute('data-sub-target');
-                subNavItems.forEach(i => i.classList.remove('active'));
-                subContentSections.forEach(s => s.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById(subTargetId).classList.add('active');
+
+    // ==== BLOK LOGIKA SUB-MENU DIGANTI TOTAL ====
+    if (dropdownButtons.length > 0 && dropdownItems.length > 0 && subContentSections.length > 0) {
+
+        // 1. Logika untuk Tombol Dropdown (Membuka/Menutup)
+        dropdownButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const dropdownId = this.getAttribute('data-dropdown-id');
+                const targetDropdown = document.getElementById(dropdownId);
+
+                // Cek apakah dropdown ini sedang terbuka
+                const isOpening = !targetDropdown.classList.contains('show');
+
+                // Tutup semua dropdown & tombol non-aktif dulu
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                dropdownButtons.forEach(b => b.classList.remove('active'));
+
+                // Buka dropdown yang ditargetkan JIKA tadi tertutup
+                if (isOpening) {
+                    targetDropdown.classList.add('show');
+                    this.classList.add('active'); // Tandai tombol yg aktif
+                }
             });
         });
+
+        // 2. Logika untuk Item di dalam Dropdown (Memilih Menu)
+        dropdownItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const subTargetId = this.getAttribute('data-sub-target');
+                const targetElement = document.getElementById(subTargetId);
+                
+                // Sembunyikan semua section konten
+                subContentSections.forEach(s => s.classList.remove('active'));
+                
+                // Tampilkan section yang ditarget
+                if (targetElement) {
+                    targetElement.classList.add('active');
+                }
+
+                // Update teks tombol dropdown
+                const newText = this.textContent;
+                const parentDropdown = this.closest('.dropdown');
+                const correspondingButton = parentDropdown.querySelector('.dropdown-btn');
+                
+                // Ambil ikon lama dari tombol (fa-book atau fa-users)
+                const iconClass = correspondingButton.querySelector('i:first-child').className;
+
+                // Set HTML tombol
+                correspondingButton.innerHTML = `<i class="${iconClass}"></i> ${newText} <i class="fas fa-caret-down"></i>`;
+
+                // Tutup semua dropdown
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                dropdownButtons.forEach(b => b.classList.remove('active'));
+            });
+        });
+
+        // 3. Menutup dropdown jika klik di luar
+        window.addEventListener('click', function(e) {
+            // Cek jika target klik BUKAN tombol dropdown ATAU BUKAN anak dari tombol dropdown
+            if (!e.target.matches('.dropdown-btn') && !e.target.closest('.dropdown-btn')) {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                dropdownButtons.forEach(b => b.classList.remove('active'));
+            }
+        });
+
+        // 4. Inisialisasi Tampilan Awal
+        // (Set teks tombol dropdown "Buku" sesuai section 'sub-denda' yang aktif by default)
+        try {
+            const defaultItemBuku = document.querySelector('.dropdown-item[data-sub-target="sub-denda"]');
+            if (defaultItemBuku) {
+                const newText = defaultItemBuku.textContent;
+                const btn = defaultItemBuku.closest('.dropdown').querySelector('.dropdown-btn');
+                const iconClass = btn.querySelector('i:first-child').className;
+                btn.innerHTML = `<i class="${iconClass}"></i> ${newText} <i class="fas fa-caret-down"></i>`;
+            }
+            // (Set teks tombol "Anggota" ke item pertamanya)
+            const defaultItemAnggota = document.querySelector('.dropdown-item[data-sub-target="sub-edit-anggota"]');
+             if (defaultItemAnggota) {
+                const newText = defaultItemAnggota.textContent;
+                const btn = defaultItemAnggota.closest('.dropdown').querySelector('.dropdown-btn');
+                const iconClass = btn.querySelector('i:first-child').className;
+                btn.innerHTML = `<i class="${iconClass}"></i> ${newText} <i class="fas fa-caret-down"></i>`;
+            }
+        } catch(err) {
+            console.error("Gagal set default dropdown text:", err);
+        }
+
     }
+    // ==== AKHIR BLOK LOGIKA SUB-MENU ====
     
     if(filterTahunGrafik) {
         filterTahunGrafik.addEventListener('change', function() {
@@ -1028,8 +1110,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
             this.disabled = true; btnUpdateBuku.disabled = true;
             this.textContent = "Menghapus...";
-            editBukuFeedback.textContent = "Menghubungi server...";
-            editBukuFeedback.style.color = "blue";
+            editBukaFeedback.textContent = "Menghubungi server...";
+            editBukaFeedback.style.color = "blue";
 
             const dataKirim = {
                 action: "hapusBuku",
@@ -1096,4 +1178,3 @@ document.addEventListener("DOMContentLoaded", function() {
     // Panggil fungsi inisialisasi utama
     inisialisasiAplikasi();
 });
-
