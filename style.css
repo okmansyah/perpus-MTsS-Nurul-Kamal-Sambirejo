@@ -301,46 +301,80 @@ tbody tr:hover {
     font-weight: 600;
 }
 
-/* === STYLE UNTUK SUB-MENU === */
+/* === STYLE UNTUK SUB-MENU (DROPDOWN BARU) === */
 .sub-nav {
-    width: 100%;
-    border-bottom: 2px solid #e2e8f0;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dua kolom sama rata */
+    gap: 10px;
     margin-bottom: 20px;
 }
 
-.sub-nav ul {
-    display: flex;
-    flex-wrap: nowrap; 
-    overflow-x: auto;  
-    list-style: none;
-    padding: 0;
-    margin: 0;
+.dropdown {
+    position: relative; /* Penting untuk .dropdown-content */
 }
 
-.sub-nav-item {
-    padding: 10px 12px; 
+.dropdown-btn {
+    background-color: #ffffff;
+    border: 2px solid #00695c;
+    color: #00695c;
+    padding: 10px 15px;
+    width: 100%;
+    text-align: left;
+    font-size: 1em;
     font-weight: 600;
+    border-radius: 8px;
     cursor: pointer;
-    color: #718096; 
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px; 
-    transition: all 0.3s ease;
-    font-size: 0.9em; 
-    white-space: nowrap; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease;
 }
 
-.sub-nav-item i {
-    margin-right: 5px; 
+.dropdown-btn:hover {
+    background-color: #f4f4f4;
 }
 
-.sub-nav-item:hover {
-    color: #4a5568;
+.dropdown-btn .fa-caret-down {
+    transition: transform 0.3s ease;
+}
+/* Efek putar saat dropdown aktif */
+.dropdown-btn.active .fa-caret-down {
+    transform: rotate(180deg);
 }
 
-.sub-nav-item.active {
-    color: #00695c; 
-    border-bottom-color: #00695c;
+.dropdown-content {
+    display: none; /* Sembunyi by default */
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 100%; /* Lebar sama dgn tombol */
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 100;
+    border-radius: 8px;
+    overflow: hidden; /* Agar border-radius-nya "motong" */
+    margin-top: 5px;
+    border: 1px solid #e2e8f0;
 }
+
+/* Kelas 'show' untuk menampilkan dropdown (via JS) */
+.dropdown-content.show {
+    display: block;
+}
+
+.dropdown-item {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-weight: 500;
+    font-size: 0.95em;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: #e0f2f1; /* Warna hover senada dgn tabel */
+    color: #004d40;
+}
+/* === AKHIR STYLE SUB-MENU (DROPDOWN BARU) === */
 
 .sub-content-section {
     display: none; 
@@ -501,13 +535,17 @@ tbody tr:hover {
         position: static; 
     }
     
-    .sub-nav ul {
-        flex-wrap: wrap; 
+    /* === PERUBAHAN CSS DROPDOWN DI MOBILE === */
+    .sub-nav {
+        grid-template-columns: 1fr; /* Stack dropdown di mobile */
     }
     .sub-nav-item {
+        /* (Style lama ini sudah tidak terpakai, tapi aman dibiarkan) */
         padding: 10px 15px;
         font-size: 0.9em;
     }
+    /* === AKHIR PERUBAHAN CSS DROPDOWN DI MOBILE === */
+
 
     .form-section {
         padding: 15px !important;
