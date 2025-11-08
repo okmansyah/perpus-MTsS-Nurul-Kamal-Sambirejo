@@ -206,15 +206,29 @@
                     <h2>Pengaturan & Admin</h2>
 
                     <div class="sub-nav">
-                        <ul>
-                            <li class="sub-nav-item active" data-sub-target="sub-denda"><i class="fas fa-sliders-h"></i> Pengaturan Denda</li>
-                            <li class="sub-nav-item" data-sub-target="sub-tambah-buku"><i class="fas fa-plus-circle"></i> Tambah Buku</li>
-                            <li class="sub-nav-item" data-sub-target="sub-tambah-anggota"><i class="fas fa-user-plus"></i> Tambah Anggota</li>
-                            <li class="sub-nav-item" data-sub-target="sub-edit-buku"><i class="fas fa-book-medical"></i> Manajemen Buku</li>
-                            <li class="sub-nav-item" data-sub-target="sub-edit-anggota"><i class="fas fa-edit"></i> Manajemen Anggota</li>
-                        </ul>
-                    </div>
+                        
+                        <div class="dropdown">
+                            <button class="dropdown-btn" data-dropdown-id="buku-dropdown">
+                                <i class="fas fa-book"></i> Pilihan... <i class="fas fa-caret-down"></i>
+                            </button>
+                            <div id="buku-dropdown" class="dropdown-content">
+                                <a href="#" class="dropdown-item" data-sub-target="sub-edit-buku">Manajemen Buku</a>
+                                <a href="#" class="dropdown-item" data-sub-target="sub-tambah-buku">Tambah Buku</a>
+                                <a href="#" class="dropdown-item" data-sub-target="sub-denda">Pengaturan Denda</a>
+                            </div>
+                        </div>
 
+                        <div class="dropdown">
+                            <button class="dropdown-btn" data-dropdown-id="anggota-dropdown">
+                                <i class="fas fa-users"></i> Pilihan... <i class="fas fa-caret-down"></i>
+                            </button>
+                            <div id="anggota-dropdown" class="dropdown-content">
+                                <a href="#" class="dropdown-item" data-sub-target="sub-edit-anggota">Manajemen Anggota</a>
+                                <a href="#" class="dropdown-item" data-sub-target="sub-tambah-anggota">Tambah Anggota</a>
+                            </div>
+                        </div>
+
+                    </div>
                     <div id="sub-denda" class="sub-content-section active">
                         <p>Ubah pengaturan denda dan lama peminjaman di sini.</p>
                         <div class="form-section">
