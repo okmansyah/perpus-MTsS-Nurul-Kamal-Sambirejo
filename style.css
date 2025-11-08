@@ -303,9 +303,7 @@ tbody tr:hover {
 
 /* === STYLE UNTUK SUB-MENU (DROPDOWN BARU) === */
 .sub-nav {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Dua kolom sama rata */
-    gap: 10px;
+    /* Menghapus 'display: grid' agar kembali normal (hanya 1 item) */
     margin-bottom: 20px;
 }
 
@@ -535,15 +533,13 @@ tbody tr:hover {
         position: static; 
     }
     
-    /* === PERUBAHAN CSS DROPDOWN DI MOBILE === */
-    .sub-nav {
-        grid-template-columns: 1fr; /* Stack dropdown di mobile */
-    }
+    /* === PERUBAHAN CSS DROPDOWN DI MOBILE (HAPUS STACK) === */
     .sub-nav-item {
         /* (Style lama ini sudah tidak terpakai, tapi aman dibiarkan) */
         padding: 10px 15px;
         font-size: 0.9em;
     }
+    /* (Rule .sub-nav { grid-template-columns: 1fr; } dihapus) */
     /* === AKHIR PERUBAHAN CSS DROPDOWN DI MOBILE === */
 
 
