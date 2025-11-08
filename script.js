@@ -4,17 +4,14 @@ document.addEventListener("DOMContentLoaded", function() {
     // == PENGATURAN UTAMA ==
     // ==========================================================
 
-    // 1. LINK CSV
-    // PASTIKAN ANDA MENGGANTI 4 LINK DI BAWAH INI
+    // 1. LINK CSV (Diambil dari file Anda)
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
-    const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; // <-- PASTIKAN INI SUDAH BENAR
-    
-    // === TAMBAHAN BARU: PASTE LINK CSV "Settings" ANDA DI SINI ===
+    const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; 
     const urlSettings = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=1547395606&single=true&output=csv';
 
-    // 2. LINK BACKEND
-        const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec';  
+    // 2. LINK BACKEND (Diambil dari file Anda)
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec';  
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -28,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let dataGrafikBulanan = {}; 
     let dataGrafikTahunan = {}; 
     let dataGrafikAkuisisi = {}; 
-    let sudahRenderGrafik = false; // Flag
+    let sudahRenderGrafik = false; 
     
     let chartBulanan = null; 
     let chartTahunan = null; 
@@ -48,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const bukuTersediaElement = document.getElementById('buku-tersedia');
     const bukuDipinjamElement = document.getElementById('buku-dipinjam');
 
-    // (Elemen Grafik) - Sekarang akan ditemukan karena index.html sudah benar
+    // (Elemen Grafik)
     const ctxGrafikBulanan = document.getElementById('grafikBulanan')?.getContext('2d');
     const ctxGrafikTahunan = document.getElementById('grafikTahunan')?.getContext('2d');
     const ctxGrafikAkuisisi = document.getElementById('grafikAkuisisiBuku')?.getContext('2d');
@@ -77,9 +74,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const btnSimpanPengaturan = document.getElementById('btn-simpan-pengaturan');
     const settingFeedback = document.getElementById('setting-feedback');
 
-    // (Elemen Form Tambah Buku)
+    // === MODIFIKASI: Elemen Form Tambah Buku ===
     const btnTambahBuku = document.getElementById('btn-tambah-buku');
-    const inputBukuInventaris = document.getElementById('buku-inventaris');
+    const inputBukuInvRange = document.getElementById('buku-inv-range'); // <-- BARU
+    const inputBukuInvSuffix = document.getElementById('buku-inv-suffix'); // <-- BARU
+    // const inputBukuInventaris = document.getElementById('buku-inventaris'); // <-- LAMA (dihapus)
     const inputBukuJudul = document.getElementById('buku-judul');
     const inputBukuPengarang = document.getElementById('buku-pengarang');
     const inputBukuPenerbit = document.getElementById('buku-penerbit');
@@ -124,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // == Logika Navigasi Menu & Sub-Menu ==
-    // === PERBAIKAN LOGIKA GRAFIK ===
+    // (Tidak ada perubahan)
     // ===========================================
     function activateSection(targetId) {
         menuItems.forEach(i => i.classList.remove('active'));
@@ -136,11 +135,9 @@ document.addEventListener("DOMContentLoaded", function() {
             targetMenuItem.parentElement.classList.add('active');
             targetElement.classList.add('active');
             
-            // --- INI PERBAIKANNYA ---
             if (targetId === 'dashboard-statistik' && !sudahRenderGrafik) {
                 renderSemuaGrafik();
             }
-            // --- AKHIR PERBAIKAN ---
 
         } else {
             document.querySelector('.menu-item a[data-target="katalog-buku"]').parentElement.classList.add('active');
@@ -237,7 +234,7 @@ document.addEventListener("DOMContentLoaded", function() {
         populateBukuDropdowns();
         populateEditBukuSelect();
         
-        prosesGrafikBuku(dataBuku); // (Hanya proses data)
+        prosesGrafikBuku(dataBuku); 
     }
     
     function tampilkanDataBukuAgregat(data) {
@@ -330,13 +327,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 timestamp: (k[0]||'').trim(), 
                 noInv: (k[1]||'').trim(), 
                 judul: (k[2]||'').trim(), 
-                nis: (k[3]||'').trim(), // <-- PERBAIKAN TYPO
+                nis: (k[3]||'').trim(), // (Perbaikan typo)
                 nama: (k[4]||'').trim(),
                 aksi: (k[5]||'').trim()
             };
         });
         tampilkanDataHistory(dataHistory);
-        prosesDataGrafik(dataHistory); // (Hanya proses data)
+        prosesDataGrafik(dataHistory); 
     }
     
     function tampilkanDataHistory(data) {
@@ -502,7 +499,6 @@ document.addEventListener("DOMContentLoaded", function() {
     // == FUNGSI GRAFIK (Semua logika dipindah ke sini) ==
     // ===========================================
     
-    // 1. Proses data Peminjaman (dari History)
     function prosesDataGrafik(historyData) {
         const pinjamPerTahun = {};
         const pinjamPerBulan = {};
@@ -527,7 +523,6 @@ document.addEventListener("DOMContentLoaded", function() {
         dataGrafikTahunan = pinjamPerTahun; 
     }
     
-    // 2. Render Grafik Peminjaman Tahunan
     function renderGrafikTahunan(data) {
         if (!ctxGrafikTahunan) return;
         const labels = Object.keys(data).sort((a,b) => a-b);
@@ -549,7 +544,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 3. Render Grafik Peminjaman Bulanan
     function renderGrafikBulanan(tahun) {
         if (!ctxGrafikBulanan) return;
         const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -571,8 +565,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 4. Proses data Penambahan Buku (dari Katalog)
-    // (MODIFIKASI: SEKARANG MENGISI FILTER TAHUN)
     function prosesGrafikBuku(dataBuku) {
         const bukuPerTahun = {};
         const setTahun = new Set();
@@ -582,35 +574,29 @@ document.addEventListener("DOMContentLoaded", function() {
             const match = (buku.noInventaris || "").match(/(\d{4})$/); 
             if (match && match[1]) {
                 const tahun = match[1];
-                setTahun.add(tahun); // Tambahkan tahun ke Set
+                setTahun.add(tahun); 
                 if (!bukuPerTahun[tahun]) bukuPerTahun[tahun] = 0;
                 bukuPerTahun[tahun]++;
             }
         });
         
-        dataGrafikAkuisisi = bukuPerTahun; // Simpan data ke global
+        dataGrafikAkuisisi = bukuPerTahun; 
 
-        // --- INI PERBAIKAN FILTERNYA ---
         if (filterTahunGrafik) {
-            const tahunSorted = [...setTahun].sort((a, b) => b - a); 
-            filterTahunGrafik.innerHTML = '';
-            
-            // Tambahkan juga tahun-tahun dari data peminjaman
             Object.keys(dataGrafikTahunan).forEach(tahun => setTahun.add(tahun));
-
+            
             const semuaTahunSorted = [...setTahun].sort((a, b) => b - a);
+            filterTahunGrafik.innerHTML = '';
 
             semuaTahunSorted.forEach(tahun => {
                 filterTahunGrafik.innerHTML += `<option value="${tahun}" ${parseInt(tahun) === tahunSekarang ? 'selected' : ''}>${tahun}</option>`;
             });
-            // Jika tidak ada data sama sekali
             if(semuaTahunSorted.length === 0) {
                  filterTahunGrafik.innerHTML += `<option value="${tahunSekarang}">${tahunSekarang}</option>`;
             }
         }
     }
 
-    // 5. Render Grafik Penambahan Buku (Akuisisi)
     function renderGrafikAkuisisi(data) {
         if (!ctxGrafikAkuisisi) return;
         const labels = Object.keys(data).sort((a,b) => a-b);
@@ -634,10 +620,8 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 6. FUNGSI BARU: MASTER RENDER GRAFIK
     function renderSemuaGrafik() {
         if (!ctxGrafikBulanan || sudahRenderGrafik) return; 
-
         try {
             if (Object.keys(dataGrafikTahunan).length > 0) {
                 renderGrafikTahunan(dataGrafikTahunan);
@@ -648,18 +632,15 @@ document.addEventListener("DOMContentLoaded", function() {
             if (Object.keys(dataGrafikAkuisisi).length > 0) {
                 renderGrafikAkuisisi(dataGrafikAkuisisi);
             }
-            
-            sudahRenderGrafik = true; // Tandai sudah dirender
+            sudahRenderGrafik = true; 
         } catch (e) {
             console.error("Gagal merender grafik:", e);
-            // Tambahkan pesan error di UI jika perlu
         }
     }
     
     
     // ===========================================
     // == FUNGSI CRUD (KIRIM DATA KE APPS SCRIPT) ==
-    // (Tidak ada perubahan di semua fungsi ini)
     // ===========================================
     
     if (btnProsesPinjam) {
@@ -781,37 +762,55 @@ document.addEventListener("DOMContentLoaded", function() {
             this.disabled = false; this.textContent = "Simpan Pengaturan";
         });
     }
+    
+    // === MODIFIKASI: Event Listener Tambah Buku ===
     if (btnTambahBuku) {
         btnTambahBuku.addEventListener('click', async function() {
             const dataBuku = {
-                noInventaris: inputBukuInventaris.value.trim(),
+                // Mengambil dari input range dan suffix baru
+                range: inputBukuInvRange.value.trim(),
+                suffix: inputBukuInvSuffix.value.trim(),
                 judul: inputBukuJudul.value.trim(),
                 pengarang: inputBukuPengarang.value.trim(),
                 penerbit: inputBukuPenerbit.value.trim()
             };
             const adminPassword = inputBukuPassword.value.trim();
-            if (!dataBuku.noInventaris || !dataBuku.judul || !adminPassword) {
-                bukuFeedback.textContent = "No. Inventaris, Judul, dan Password Admin wajib diisi.";
+
+            // Validasi baru
+            if (!dataBuku.range || !dataBuku.suffix || !dataBuku.judul || !adminPassword) {
+                bukuFeedback.textContent = "Rentang, Akhiran, Judul, dan Password Admin wajib diisi.";
                 bukuFeedback.style.color = "red";
                 return;
             }
+
             this.disabled = true; this.textContent = "Menyimpan...";
             bukuFeedback.textContent = "Menghubungi server..."; bukuFeedback.style.color = "blue";
-            const dataKirim = { action: "tambahBuku", password: adminPassword, buku: dataBuku };
+
+            const dataKirim = {
+                action: "tambahBuku",
+                password: adminPassword,
+                buku: dataBuku
+            };
+
             const response = await kirimDataKeBackend(dataKirim);
+
             bukuFeedback.textContent = response.message;
             bukuFeedback.style.color = (response.status === "success") ? "green" : "red";
+
             if (response.status === "success") {
-                inputBukuInventaris.value = "";
+                // Reset form
+                inputBukuInvRange.value = "";
+                inputBukuInvSuffix.value = "";
                 inputBukuJudul.value = "";
                 inputBukuPengarang.value = "";
                 inputBukuPenerbit.value = "";
                 inputBukuPassword.value = "";
                 await muatDataBuku(); 
             }
-            this.disabled = false; this.textContent = "Tambah Buku";
+            this.disabled = false; this.textContent = "Tambah Buku Massal";
         });
     }
+
     if (btnTambahAnggota) {
         btnTambahAnggota.addEventListener('click', async function() {
             const dataAnggota = {
@@ -1073,7 +1072,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // ===========================================
     // Jalankan Fungsi Saat Halaman Dimuat
-    // === MODIFIKASI: Menangani Refresh di Tab Grafik ===
     // ===========================================
     
     async function inisialisasiAplikasi() {
