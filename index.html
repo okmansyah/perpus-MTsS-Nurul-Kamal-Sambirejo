@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perpustakaan MTsS Nurul Kamal</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https.cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -140,7 +140,7 @@
                     <div class="chart-container" style="margin-top: 20px;">
                         <canvas id="grafikAkuisisiBuku"></canvas>
                     </div>
-                    </section>
+                </section>
 
                 <section id="riwayat-pinjam" class="content-section">
                     <h2>Riwayat Peminjaman</h2>
@@ -230,23 +230,31 @@
                     </div>
                     
                     <div id="sub-tambah-buku" class="sub-content-section">
-                        <p>Tambahkan buku baru ke Google Sheet "Katalog Buku".</p>
+                        <p>Tambahkan buku baru secara massal (batch) menggunakan rentang No. Inventaris.</p>
                         <div class="form-section">
-                            <label for="buku-inventaris">No. Inventaris:</label>
-                            <input type="text" id="buku-inventaris" placeholder="Contoh: 001/MTs/2025">
+                            
+                            <label for="buku-inv-range">No. Inventaris (Rentang/Range):</label>
+                            <div class="inventaris-group">
+                                <input type="text" id="buku-inv-range" placeholder="Contoh: 01-20">
+                                <input type="text" id="buku-inv-suffix" placeholder="Contoh: /MTsS-NK/SB/VII/2025">
+                            </div>
+                    
                             <label for="buku-judul">Judul Buku:</label>
                             <input type="text" id="buku-judul" placeholder="Contoh: Bahasa Indonesia Kelas VII">
+
                             <label for="buku-pengarang">Pengarang:</label>
                             <input type="text" id="buku-pengarang" placeholder="Contoh: Budi">
+
                             <label for="buku-penerbit">Penerbit:</label>
                             <input type="text" id="buku-penerbit" placeholder="Contoh: Erlangga">
+                            
                             <label for="buku-password">Password Admin (Wajib):</label>
                             <input type="password" id="buku-password" placeholder="Masukkan password admin...">
-                            <button id="btn-tambah-buku" class="btn btn-primary">Tambah Buku</button>
+                            
+                            <button id="btn-tambah-buku" class="btn btn-primary">Tambah Buku Massal</button>
                             <p id="buku-feedback" class="feedback-message"></p>
                         </div>
                     </div>
-
                     <div id="sub-tambah-anggota" class="sub-content-section">
                         <p>Tambahkan siswa baru ke Google Sheet "Anggota".</p>
                         <div class="form-section">
@@ -324,4 +332,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
