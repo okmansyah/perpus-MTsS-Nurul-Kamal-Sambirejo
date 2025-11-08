@@ -234,14 +234,15 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
 
-        // 4. Inisialisasi Tampilan Awal (DIEDIT)
+        // 4. Inisialisasi Tampilan Awal (DIPERBAIKI)
         // (Set teks tombol dropdown "Buku" sesuai section 'sub-tambah-buku' yang aktif by default)
         try {
             // User requested "Tambah Buku" as default
             const defaultItem = document.querySelector('.dropdown-item[data-sub-target="sub-tambah-buku"]'); 
             if (defaultItem) {
                 const newText = defaultItem.textContent;
-                const btn = defaultItem.closest('.dropdown').querySelector('.dropdown-btn');
+                // Menargetkan tombol dropdown satu-satunya
+                const btn = document.querySelector('.dropdown-btn[data-dropdown-id="admin-dropdown"]');
                 const iconClass = btn.querySelector('i:first-child').className;
                 btn.innerHTML = `<i class="${iconClass}"></i> ${newText} <i class="fas fa-caret-down"></i>`;
             }
@@ -295,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 noInventaris: (k[0]||'').trim(), 
                 judul: (k[1]||'').trim(), 
                 pengarang: (k[2]||'').trim(), 
-                penerbit: (k[3]||').trim(), 
+                penerbit: (k[3]||'').trim(), 
                 status: (k[4]||'').trim(),
                 peminjamNis: (k[5]||'').trim(),
                 tglPinjam: (k[6]||'').trim(), 
@@ -976,7 +977,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (btnHapusAnggota) {
         btnHapusAnggota.addEventListener('click', async function() {
             const nis = inputEditAnggotaNis.value.trim();
-            const adminPassword = inputEditAnggotaPassword.value.trim();
+            const adminPassword = inputEditAngg-otaPassword.value.trim();
             if (!nis || !adminPassword) {
                 editAnggotaFeedback.textContent = "Pilih anggota dan masukkan Password Admin.";
                 editAnggotaFeedback.style.color = "red";
