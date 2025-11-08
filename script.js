@@ -7,11 +7,13 @@ document.addEventListener("DOMContentLoaded", function() {
     // 1. LINK CSV (Diambil dari file Anda)
     const urlBuku = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=0&single=true&output=csv'; 
     const urlAnggota = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=485044064&single=true&output=csv'; 
-    const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; 
+    const urlHistory = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=658377134&single=true&output=csv'; // <-- PASTIKAN INI SUDAH BENAR
+    
+    // === TAMBAHAN BARU: PASTE LINK CSV "Settings" ANDA DI SINI ===
     const urlSettings = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?gid=1547395606&single=true&output=csv';
 
-    // 2. LINK BACKEND (Diambil dari file Anda)
-    const urlWebApp = 'https://script.google.com/macros/s/AKfycbzqFbSQw94EZRkAuxrJj6bOn9pEuhJAGL8AXLLqndvU679NdpH4WpWCbdn-r6IAZcFX/exec';  
+    // 2. LINK BACKEND
+    const urlWebApp = 'https://script.google.com/macros/s/AKfycbyOMWss6R-8AwAQccwBwqG8MusRPYGVv7MOk-90Z658RJnd3Aukd8t2dQA3j167lzBo/exec';  
 
     // ==========================================================
     // == Variabel Global & Elemen ==
@@ -1094,3 +1096,4 @@ document.addEventListener("DOMContentLoaded", function() {
     // Panggil fungsi inisialisasi utama
     inisialisasiAplikasi();
 });
+
