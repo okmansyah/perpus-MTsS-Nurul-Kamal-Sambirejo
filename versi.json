@@ -1,6 +1,6 @@
 {
- "versi": 6,
- "catatan": "Scan kamera untuk pinjam & kembali (kartu anggota dan label buku)",
+ "versi": 7,
+ "catatan": "Backup data otomatis mingguan + tombol Backup Sekarang",
  "files": [
   "index.html",
   "logo.png",

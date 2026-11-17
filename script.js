@@ -22,7 +22,7 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
-const VERSI_WEB = 6;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const VERSI_WEB = 7;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
 const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
 const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
 const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
@@ -1702,6 +1702,31 @@ $('#btn-sk-senter').addEventListener('click', async function () {
     } catch (e) { toast('Senter tidak didukung di perangkat ini.', 'info'); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') skBerhenti(); });
+
+// ==========================================================
+// == BACKUP DATA (admin) ==
+// ==========================================================
+async function muatInfoBackup() {
+    const el = $('#backup-info');
+    if (!navigator.onLine) { el.textContent = 'Butuh internet untuk melihat info backup.'; return; }
+    const r = await kirimAkun({ action: 'infoBackup' });
+    if (r.status !== 'success') { el.textContent = r.message || 'Info backup tidak tersedia.'; return; }
+    const t = r.terakhir, g = r.gagal;
+    let h = r.jadwal ? `Jadwal otomatis: <b>${esc(r.jadwal)}</b>.<br>` : '<span style="color:#b45309"><b>Jadwal otomatis belum dipasang.</b> Jalankan fungsi <span class="mono">pasangBackupMingguan</span> sekali di editor Apps Script.</span><br>';
+    h += t ? `Backup terakhir: <b>${esc(new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }))}</b> · ${t.jumlah} salinan tersimpan · <a href="${esc(t.folderUrl)}" target="_blank" rel="noopener">Buka folder backup</a>` : 'Belum pernah ada backup.';
+    if (g && (!t || new Date(g.waktu) > new Date(t.waktu))) h += `<br><span style="color:#b91c1c"><b>Backup otomatis terakhir gagal</b> (${esc(new Date(g.waktu).toLocaleString('id-ID'))}): ${esc(g.pesan)}</span>`;
+    el.innerHTML = h;
+}
+$('#btn-muat-backup').addEventListener('click', muatInfoBackup);
+$('#btn-backup-sekarang').addEventListener('click', async function () {
+    if (!navigator.onLine) return toast('Backup butuh koneksi internet.', 'err');
+    busy(this, true, 'Membuat backup... (bisa 10-30 detik)');
+    const r = await kirimAkun({ action: 'backupSekarang' });
+    busy(this, false);
+    laporHasil(r);
+    if (r.status === 'success') muatInfoBackup();
+});
+$$('#kelola-tabs .tab').forEach(t => t.addEventListener('click', () => { if (t.dataset.tab === 'tab-denda' && isSuperAdmin()) muatInfoBackup(); }));
 
 // Pengaturan denda
 $('#btn-simpan-set').addEventListener('click', async function () {

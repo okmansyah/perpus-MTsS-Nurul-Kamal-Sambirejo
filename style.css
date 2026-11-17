@@ -405,3 +405,7 @@ body.is-utama .only-petugas { display: none !important; }
 .sk-lanjut { margin: 0 0 12px; }
 .scan-frame.err { border-color: #ef4444; }
 #btn-sk-senter.aktif { background: #fef3c7; color: #92400e; }
+
+/* ===== v7: backup ===== */
+.backup-box { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border); }
+.backup-box .muted a { color: var(--primary, #0f6b45); font-weight: 600; }
