@@ -22,7 +22,7 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
-const VERSI_WEB = 7;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const VERSI_WEB = 8;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
 const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
 const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
 const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
@@ -1713,7 +1713,7 @@ async function muatInfoBackup() {
     if (r.status !== 'success') { el.textContent = r.message || 'Info backup tidak tersedia.'; return; }
     const t = r.terakhir, g = r.gagal;
     let h = r.jadwal ? `Jadwal otomatis: <b>${esc(r.jadwal)}</b>.<br>` : '<span style="color:#b45309"><b>Jadwal otomatis belum dipasang.</b> Jalankan fungsi <span class="mono">pasangBackupMingguan</span> sekali di editor Apps Script.</span><br>';
-    h += t ? `Backup terakhir: <b>${esc(new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }))}</b> · ${t.jumlah} salinan tersimpan · <a href="${esc(t.folderUrl)}" target="_blank" rel="noopener">Buka folder backup</a>` : 'Belum pernah ada backup.';
+    h += t ? `Backup terakhir: <b>${esc(new Date(t.waktu).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }))}</b> · ${t.jumlah} backup tersimpan (maks. 8) · <a href="${esc(t.url || t.folderUrl)}" target="_blank" rel="noopener">Buka file backup</a>` : 'Belum pernah ada backup.';
     if (g && (!t || new Date(g.waktu) > new Date(t.waktu))) h += `<br><span style="color:#b91c1c"><b>Backup otomatis terakhir gagal</b> (${esc(new Date(g.waktu).toLocaleString('id-ID'))}): ${esc(g.pesan)}</span>`;
     el.innerHTML = h;
 }

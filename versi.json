@@ -1,6 +1,6 @@
 {
- "versi": 7,
- "catatan": "Backup data otomatis mingguan + tombol Backup Sekarang",
+ "versi": 8,
+ "catatan": "Backup otomatis ke file spreadsheet khusus (tanpa izin Drive)",
  "files": [
   "index.html",
   "logo.png",
