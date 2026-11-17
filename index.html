@@ -3,338 +3,421 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perpustakaan MTsS Nurul Kamal</title>
+    <meta name="theme-color" content="#0f5132">
+    <title>Perpustakaan MTsS Nurul Kamal Sambirejo</title>
+    <link rel="icon" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
 
-    <div class="app-container">
-        
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <img src="logo.png" alt="Logo MTsS Nurul Kamal" class="sidebar-logo">
-                <h2>MTsS Nurul Kamal</h2>
-                <h2>Sambirejo</h2>
-                <p>Perpustakaan Digital</p>
+<div class="app">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <img src="logo.png" alt="Logo MTsS Nurul Kamal">
+            <div>
+                <strong>MTsS Nurul Kamal</strong>
+                <span>Perpustakaan Digital</span>
             </div>
-            <ul class="sidebar-menu">
-                <li class="menu-item"> 
-                    <a href="#katalog-buku" data-target="katalog-buku">
-                        <i class="fas fa-book"></i> Katalog Buku
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#anggota" data-target="anggota">
-                        <i class="fas fa-users"></i> Data Anggota
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#dashboard-statistik" data-target="dashboard-statistik">
-                        <i class="fas fa-chart-line"></i> Dashboard
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#riwayat-pinjam" data-target="riwayat-pinjam">
-                        <i class="fas fa-history"></i> Riwayat Pinjam
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#sirkulasi-pinjam" data-target="sirkulasi-pinjam">
-                        <i class="fas fa-sign-out-alt"></i> Pinjam Buku
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#sirkulasi-kembali" data-target="sirkulasi-kembali">
-                        <i class="fas fa-sign-in-alt"></i> Kembalikan Buku
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#admin-pengaturan" data-target="admin-pengaturan">
-                        <i class="fas fa-cog"></i> Pengaturan
-                    </a>
-                </li>
-            </ul>
+        </div>
+
+        <nav class="nav">
+            <p class="nav-label">Umum</p>
+            <a href="#dashboard" data-page="dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+            <a href="#katalog" data-page="katalog"><i class="fa-solid fa-book"></i> Katalog Buku</a>
+
+            <p class="nav-label">Sirkulasi</p>
+            <a href="#pinjam" data-page="pinjam" data-admin><i class="fa-solid fa-arrow-right-from-bracket"></i> Pinjam Buku</a>
+            <a href="#kembali" data-page="kembali" data-admin><i class="fa-solid fa-arrow-right-to-bracket"></i> Kembalikan Buku</a>
+            <a href="#terlambat" data-page="terlambat" data-admin><i class="fa-solid fa-clock"></i> Terlambat &amp; Denda <span class="nav-badge" id="badge-telat" hidden>0</span></a>
+            <a href="#riwayat" data-page="riwayat" data-admin><i class="fa-solid fa-clock-rotate-left"></i> Riwayat</a>
+
+            <p class="nav-label">Data &amp; Cetak</p>
+            <a href="#anggota" data-page="anggota" data-admin><i class="fa-solid fa-users"></i> Data Anggota</a>
+            <a href="#laporan" data-page="laporan" data-admin><i class="fa-solid fa-file-lines"></i> Laporan Bulanan</a>
+            <a href="#kartu" data-page="kartu" data-admin><i class="fa-solid fa-id-card"></i> Kartu Anggota</a>
+            <a href="#label" data-page="label" data-admin><i class="fa-solid fa-barcode"></i> Label Buku</a>
+
+            <p class="nav-label">Admin</p>
+            <a href="#kelola" data-page="kelola" data-admin><i class="fa-solid fa-sliders"></i> Kelola Data</a>
         </nav>
 
-        <div class="main-content">
-            <header class="top-header">
-                <h1>Sistem Informasi Perpustakaan</h1>
-            </header>
-
-            <main class="content-area">
-                
-                <section id="katalog-buku" class="content-section">
-                    <h2>Katalog Buku (Ringkasan Stok)</h2>
-                    <input type="text" id="filterBuku" placeholder="Cari judul, pengarang, atau penerbit..." autocomplete="tulis-acak-disini">
-                    <div class="tabel-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Judul Buku</th>
-                                    <th>Pengarang</th>
-                                    <th>Penerbit</th>
-                                    <th>Total Stok</th>
-                                    <th>Stok Tersedia</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabel-buku"></tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section id="anggota" class="content-section">
-                    <h2>Data Anggota</h2>
-                    <input type="text" id="filterAnggota" placeholder="Cari nama, NIS, atau kelas..." autocomplete="tulis-acak-disini">
-                    <div class="tabel-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>NIS</th>
-                                    <th>Nama Lengkap</th>
-                                    <th>Kelas</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabel-anggota"></tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section id="dashboard-statistik" class="content-section">
-                    <h2>Dashboard Statistik</h2>
-                    <div class="statistik-grid">
-                        <div class="card bg-green">
-                            <h3>Total Judul Buku</h3>
-                            <p id="total-judul-buku">0</p>
-                        </div>
-                        <div class="card bg-blue">
-                            <h3>Buku Tersedia</h3>
-                            <p id="buku-tersedia">0</p>
-                        </div>
-                        <div class="card bg-red">
-                            <h3>Buku Dipinjam</h3>
-                            <p id="buku-dipinjam">0</p>
-                        </div>
-                    </div>
-
-                    <hr style="margin: 30px 0;">
-
-                    <h2>Statistik Peminjaman & Penambahan Buku</h2>
-                    
-                    <div class="form-section" style="padding: 10px 15px 5px 15px; margin-bottom: 20px;">
-                        <label for="filterTahunGrafik">Tampilkan Grafik Peminjaman Bulanan untuk Tahun:</label>
-                        <select id="filterTahunGrafik"></select>
-                    </div>
-
-                    <div class="statistik-grid">
-                        <div class="chart-container">
-                            <canvas id="grafikBulanan"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="grafikTahunan"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="chart-container" style="margin-top: 20px;">
-                        <canvas id="grafikAkuisisiBuku"></canvas>
-                    </div>
-                </section>
-
-                <section id="riwayat-pinjam" class="content-section">
-                    <h2>Riwayat Peminjaman</h2>
-                    <p>Menampilkan 50 transaksi terbaru.</p>
-                    <div class="tabel-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tanggal & Waktu</th>
-                                    <th>No. Inventaris</th>
-                                    <th>Judul Buku</th>
-                                    <th>NIS</th>
-                                    <th>Nama Peminjam</th>
-                                    <th>Status Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabel-history"></tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section id="sirkulasi-pinjam" class="content-section">
-                    <h2>Form Peminjaman Buku</h2>
-                    <div class="form-section">
-                        <label for="pinjam-no-inventaris">1. Pilih Buku (Hanya buku tersedia):</label>
-                        <select id="pinjam-no-inventaris">
-                            <option value="">-- Memuat data buku... --</option>
-                        </select>
-                        <label for="pinjam-kelas">2. Pilih Kelas Peminjam:</label>
-                        <select id="pinjam-kelas">
-                            <option value="">-- Memuat data anggota... --</option>
-                        </select>
-                        <label for="pinjam-nama">3. Pilih Nama Peminjam:</label>
-                        <select id="pinjam-nama">
-                            <option value="">-- Pilih kelas terlebih dahulu --</option>
-                        </select>
-                        <label for="pinjam-nis">4. NIS Peminjam (Otomatis):</label>
-                        <input type="text" id="pinjam-nis" placeholder="NIS akan muncul di sini..." readonly>
-                        <label for="pinjam-password">5. Password Admin:</label>
-                        <input type="password" id="pinjam-password" placeholder="Masukkan password admin...">
-                        <button id="btn-proses-pinjam" class="btn btn-primary">Proses Peminjaman</button>
-                        <p id="pinjam-feedback" class="feedback-message"></p>
-                    </div>
-                </section>
-                
-                <section id="sirkulasi-kembali" class="content-section">
-                    <h2>Form Pengembalian Buku</h2>
-                    <div class="form-section">
-                        <label for="kembali-no-inventaris">1. Pilih Buku (Hanya buku dipinjam):</label>
-                        <select id="kembali-no-inventaris">
-                            <option value="">-- Memuat data buku... --</option>
-                        </select>
-                        <label for="kembali-password">2. Password Admin:</label>
-                        <input type="password" id="kembali-password" placeholder="Masukkan password admin...">
-                        <label for="kembali-denda">3. Denda Keterlambatan (Otomatis):</label>
-                        <input type="text" id="kembali-denda" placeholder="Denda akan muncul di sini..." readonly style="background-color: #eee; color: #991b1b; font-weight: bold;">
-                        <button id="btn-proses-kembali" class="btn btn-warning">Proses Pengembalian</button>
-                        <p id="kembali-feedback" class="feedback-message"></p>
-                    </div>
-                </section>
-
-                <section id="admin-pengaturan" class="content-section">
-                    <h2>Pengaturan & Admin</h2>
-
-                    <div class="sub-nav">
-                        
-                        <div class="dropdown">
-                            <button class="dropdown-btn" data-dropdown-id="admin-dropdown">
-                                <i class="fas fa-tasks"></i> Pilihan... <i class="fas fa-caret-down"></i>
-                            </button>
-                            <div id="admin-dropdown" class="dropdown-content">
-                                <a href="#" class="dropdown-item" data-sub-target="sub-tambah-buku">Tambah Buku</a>
-                                <a href="#" class="dropdown-item" data-sub-target="sub-edit-buku">Manajemen Buku</a>
-                                <a href="#" class="dropdown-item" data-sub-target="sub-tambah-anggota">Tambah Anggota</a>
-                                <a href="#" class="dropdown-item" data-sub-target="sub-edit-anggota">Manajemen Anggota</a>
-                                <a href="#" class="dropdown-item" data-sub-target="sub-denda">Pengaturan Denda</a>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div id="sub-denda" class="sub-content-section">
-                        <p>Ubah pengaturan denda dan lama peminjaman di sini.</p>
-                        <div class="form-section">
-                            <label for="setting-hari">1. Lama Peminjaman (Hari):</label>
-                            <input type="number" id="setting-hari" placeholder="Contoh: 7">
-                            <label for="setting-denda">2. Denda per Hari (Rupiah):</label>
-                            <input type="number" id="setting-denda" placeholder="Contoh: 1000">
-                            <label for="setting-password">3. Password Admin (Wajib):</label>
-                            <input type="password" id="setting-password" placeholder="Masukkan password admin...">
-                            <button id="btn-simpan-pengaturan" class="btn btn-success">Simpan Pengaturan</button>
-                            <p id="setting-feedback" class="feedback-message"></p>
-                        </div>
-                    </div>
-                    
-                    <div id="sub-tambah-buku" class="sub-content-section active">
-                        <p>Tambahkan buku baru secara massal (batch) menggunakan rentang No. Inventaris.</p>
-                        <div class="form-section">
-                            
-                            <label for="buku-inv-range">No. Inventaris (Rentang/Range):</label>
-                            <div class="inventaris-group">
-                                <input type="text" id="buku-inv-range" placeholder="Contoh: 01-20">
-                                <input type="text" id="buku-inv-suffix" placeholder="Contoh: /MTsS-NK/SB/VII/2025">
-                            </div>
-                    
-                            <label for="buku-judul">Judul Buku:</label>
-                            <input type="text" id="buku-judul" placeholder="Contoh: Bahasa Indonesia Kelas VII">
-
-                            <label for="buku-pengarang">Pengarang:</label>
-                            <input type="text" id="buku-pengarang" placeholder="Contoh: Budi">
-
-                            <label for="buku-penerbit">Penerbit:</label>
-                            <input type="text" id="buku-penerbit" placeholder="Contoh: Erlangga">
-                            
-                            <label for="buku-password">Password Admin (Wajib):</label>
-                            <input type="password" id="buku-password" placeholder="Masukkan password admin...">
-                            
-                            <button id="btn-tambah-buku" class="btn btn-primary">Tambah Buku Massal</button>
-                            <p id="buku-feedback" class="feedback-message"></p>
-                        </div>
-                    </div>
-                    <div id="sub-tambah-anggota" class="sub-content-section">
-                        <p>Tambahkan siswa baru ke Google Sheet "Anggota".</p>
-                        <div class="form-section">
-                            <label for="anggota-nis">NIS:</label>
-                            <input type="text" id="anggota-nis" placeholder="Contoh: 123456">
-                            <label for="anggota-nama">Nama Lengkap:</label>
-                            <input type="text" id="anggota-nama" placeholder="Contoh: Budi Setiawan">
-                            <label for="anggota-kelas">Kelas:</label>
-                            <input type="text" id="anggota-kelas" placeholder="Contoh: VII-A">
-                            <label for="anggota-status">Status (Opsional):</label>
-                            <input type="text" id="anggota-status" placeholder="Contoh: Aktif">
-                            <label for="anggota-password">Password Admin (Wajib):</label>
-                            <input type="password" id="anggota-password" placeholder="Masukkan password admin...">
-                            <button id="btn-tambah-anggota" class="btn btn-primary">Tambah Anggota</button>
-                            <p id="anggota-feedback" class="feedback-message"></p>
-                        </div>
-                    </div>
-                    
-                    <div id="sub-edit-buku" class="sub-content-section">
-                        <p>Pilih buku berdasarkan No. Inventaris unik untuk mengubah atau menghapus datanya.</p>
-                        <div class="form-section">
-                            <label for="select-edit-buku">1. Pilih Buku (berdasarkan No. Inventaris):</label>
-                            <select id="select-edit-buku">
-                                <option value="">-- Memuat data buku... --</option>
-                            </select>
-                            <label for="edit-buku-inventaris">No. Inventaris (Kunci Utama - Tidak bisa diubah):</label>
-                            <input type="text" id="edit-buku-inventaris" readonly style="background-color: #eee;">
-                            <label for="edit-buku-judul">Judul Buku:</label>
-                            <input type="text" id="edit-buku-judul" placeholder="Judul akan muncul di sini...">
-                            <label for="edit-buku-pengarang">Pengarang:</label>
-                            <input type="text" id="edit-buku-pengarang" placeholder="Pengarang akan muncul di sini...">
-                            <label for="edit-buku-penerbit">Penerbit:</label>
-                            <input type="text" id="edit-buku-penerbit" placeholder="Penerbit akan muncul di sini...">
-                            <label for="edit-buku-password">Password Admin (Wajib):</label>
-                            <input type="password" id="edit-buku-password" placeholder="Masukkan password admin...">
-                            <div class="button-group">
-                                <button id="btn-update-buku" class="btn btn-success">Update Buku</button>
-                                <button id="btn-hapus-buku" class="btn btn-danger">Hapus Buku</button>
-                            </div>
-                            <p id="edit-buku-feedback" class="feedback-message"></p>
-                        </div>
-                    </div>
-
-                    <div id="sub-edit-anggota" class="sub-content-section">
-                        <p>Pilih anggota dari daftar untuk mengubah atau menghapus data.</p>
-                        <div class="form-section">
-                            <label for="select-edit-anggota">1. Pilih Anggota:</label>
-                            <select id="select-edit-anggota">
-                                <option value="">-- Memuat data anggota... --</option>
-                            </select>
-                            <label for="edit-anggota-nis">NIS (Kunci Utama - Tidak bisa diubah):</label>
-                            <input type="text" id="edit-anggota-nis" readonly style="background-color: #eee;">
-                            <label for="edit-anggota-nama">Nama Lengkap:</label>
-                            <input type="text" id="edit-anggota-nama" placeholder="Nama akan muncul di sini...">
-                            <label for="edit-anggota-kelas">Kelas:</label>
-                            <input type="text" id="edit-anggota-kelas" placeholder="Kelas akan muncul di sini...">
-                            <label for="edit-anggota-status">Status:</label>
-                            <input type="text" id="edit-anggota-status" placeholder="Status akan muncul di sini...">
-                            <label for="edit-anggota-password">Password Admin (Wajib):</label>
-                            <input type="password" id="edit-anggota-password" placeholder="Masukkan password admin...">
-                            <div class="button-group">
-                                <button id="btn-update-anggota" class="btn btn-success">Update Anggota</button>
-                                <button id="btn-hapus-anggota" class="btn btn-danger">Hapus Anggota</button>
-                            </div>
-                            <p id="edit-anggota-feedback" class="feedback-message"></p>
-                        </div>
-                    </div>
-
-                </section>
-
-            </main>
+        <div class="sidebar-foot">
+            <button class="btn btn-ghost-light w-100" id="btn-auth"><i class="fa-solid fa-lock"></i> <span>Login Admin</span></button>
+            <small>Dikembangkan oleh Okmansyah</small>
         </div>
-    </div>
+    </aside>
+    <div class="backdrop" id="backdrop"></div>
 
-    <script src="script.js"></script>
+    <!-- ================= MAIN ================= -->
+    <div class="main">
+        <header class="topbar">
+            <button class="icon-btn only-mobile" id="btn-menu" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+            <div class="topbar-title">
+                <h1 id="page-title">Dashboard</h1>
+                <p id="page-sub">Sistem Informasi Perpustakaan</p>
+            </div>
+            <div class="topbar-actions">
+                <span class="chip chip-admin" id="chip-admin" hidden><i class="fa-solid fa-user-shield"></i> Admin</span>
+                <button class="icon-btn" id="btn-refresh" title="Muat ulang data"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+        </header>
+
+        <main class="content">
+
+            <!-- ============ DASHBOARD ============ -->
+            <section class="page" id="page-dashboard">
+                <div class="stats">
+                    <div class="stat"><div class="stat-ico green"><i class="fa-solid fa-book-bookmark"></i></div><div><span>Judul Buku</span><strong id="st-judul">–</strong></div></div>
+                    <div class="stat"><div class="stat-ico blue"><i class="fa-solid fa-layer-group"></i></div><div><span>Eksemplar</span><strong id="st-eks">–</strong></div></div>
+                    <div class="stat"><div class="stat-ico teal"><i class="fa-solid fa-circle-check"></i></div><div><span>Tersedia</span><strong id="st-tersedia">–</strong></div></div>
+                    <div class="stat"><div class="stat-ico amber"><i class="fa-solid fa-hand-holding"></i></div><div><span>Dipinjam</span><strong id="st-dipinjam">–</strong></div></div>
+                    <div class="stat"><div class="stat-ico red"><i class="fa-solid fa-triangle-exclamation"></i></div><div><span>Terlambat</span><strong id="st-telat">–</strong></div></div>
+                    <div class="stat"><div class="stat-ico purple"><i class="fa-solid fa-users"></i></div><div><span>Anggota</span><strong id="st-anggota">–</strong></div></div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-head">
+                            <h3>Peminjaman per Bulan</h3>
+                            <select id="filter-tahun" class="input input-sm"></select>
+                        </div>
+                        <div class="chart-box"><canvas id="ch-bulanan"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h3>Peminjaman per Tahun</h3></div>
+                        <div class="chart-box"><canvas id="ch-tahunan"></canvas></div>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-head"><h3>Penambahan Koleksi per Tahun</h3></div>
+                        <div class="chart-box"><canvas id="ch-akuisisi"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h3>Buku Paling Sering Dipinjam</h3></div>
+                        <ol class="rank-list" id="top-buku"><li class="muted">Belum ada data.</li></ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============ KATALOG ============ -->
+            <section class="page" id="page-katalog">
+                <div class="card">
+                    <div class="toolbar">
+                        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="cari-buku" class="input" placeholder="Cari judul, pengarang, atau penerbit..." autocomplete="off"></div>
+                        <select id="filter-stok" class="input">
+                            <option value="">Semua stok</option>
+                            <option value="ada">Ada yang tersedia</option>
+                            <option value="habis">Stok habis</option>
+                        </select>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Judul Buku</th><th>Pengarang</th><th>Penerbit</th><th class="t-center">Total</th><th class="t-center">Tersedia</th></tr></thead>
+                            <tbody id="tb-katalog"><tr><td colspan="5" class="loading">Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
+                    <p class="table-foot" id="info-katalog"></p>
+                </div>
+            </section>
+
+            <!-- ============ PINJAM ============ -->
+            <section class="page" id="page-pinjam">
+                <div class="grid-form">
+                    <div class="card">
+                        <div class="card-head"><h3><i class="fa-solid fa-arrow-right-from-bracket"></i> Form Peminjaman</h3></div>
+                        <label class="lbl" for="pinjam-buku">No. Inventaris / Judul Buku <small>(bisa ketik atau scan barcode label)</small></label>
+                        <input id="pinjam-buku" class="input" list="dl-buku-tersedia" placeholder="Ketik no. inventaris atau judul..." autocomplete="off">
+                        <datalist id="dl-buku-tersedia"></datalist>
+
+                        <label class="lbl" for="pinjam-anggota">Peminjam <small>(ketik nama / NIS, atau scan kartu anggota)</small></label>
+                        <input id="pinjam-anggota" class="input" list="dl-anggota" placeholder="Ketik nama atau NIS..." autocomplete="off">
+                        <datalist id="dl-anggota"></datalist>
+
+                        <div class="preview" id="pinjam-preview" hidden></div>
+                        <button class="btn btn-primary btn-lg w-100" id="btn-pinjam"><i class="fa-solid fa-check"></i> Proses Peminjaman</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h3><i class="fa-solid fa-circle-info"></i> Aturan</h3></div>
+                        <ul class="info-list">
+                            <li>Lama pinjam: <b id="info-lama">–</b> hari</li>
+                            <li>Denda keterlambatan: <b id="info-denda">–</b> per hari</li>
+                            <li>Hanya buku berstatus <b>Tersedia</b> yang bisa dipinjam.</li>
+                            <li>Scanner barcode USB bisa langsung dipakai di kolom isian.</li>
+                        </ul>
+                        <div id="pinjam-warning"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============ KEMBALI ============ -->
+            <section class="page" id="page-kembali">
+                <div class="grid-form">
+                    <div class="card">
+                        <div class="card-head"><h3><i class="fa-solid fa-arrow-right-to-bracket"></i> Form Pengembalian</h3></div>
+                        <label class="lbl" for="kembali-buku">No. Inventaris / Judul Buku yang Dipinjam</label>
+                        <input id="kembali-buku" class="input" list="dl-buku-dipinjam" placeholder="Ketik atau scan no. inventaris..." autocomplete="off">
+                        <datalist id="dl-buku-dipinjam"></datalist>
+                        <div class="preview" id="kembali-preview" hidden></div>
+                        <button class="btn btn-warning btn-lg w-100" id="btn-kembali"><i class="fa-solid fa-rotate-left"></i> Proses Pengembalian</button>
+                        <div class="result-box" id="kembali-hasil" hidden></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h3>Sedang Dipinjam</h3><span class="chip" id="jml-dipinjam">0</span></div>
+                        <div class="table-wrap compact">
+                            <table>
+                                <thead><tr><th>No. Inv</th><th>Judul</th><th>Peminjam</th><th>Jatuh Tempo</th></tr></thead>
+                                <tbody id="tb-dipinjam"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============ TERLAMBAT ============ -->
+            <section class="page" id="page-terlambat">
+                <div class="stats stats-3">
+                    <div class="stat"><div class="stat-ico red"><i class="fa-solid fa-book-skull"></i></div><div><span>Buku Terlambat</span><strong id="tl-jml">0</strong></div></div>
+                    <div class="stat"><div class="stat-ico amber"><i class="fa-solid fa-coins"></i></div><div><span>Perkiraan Total Denda</span><strong id="tl-total">Rp 0</strong></div></div>
+                    <div class="stat"><div class="stat-ico blue"><i class="fa-solid fa-calendar-day"></i></div><div><span>Jatuh Tempo 3 Hari Lagi</span><strong id="tl-segera">0</strong></div></div>
+                </div>
+                <div class="card">
+                    <div class="toolbar">
+                        <h3>Daftar Keterlambatan</h3>
+                        <button class="btn btn-outline" id="btn-cetak-telat"><i class="fa-solid fa-print"></i> Cetak Daftar</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>No. Inventaris</th><th>Judul</th><th>Peminjam</th><th>Kelas</th><th>Tgl Pinjam</th><th>Jatuh Tempo</th><th class="t-center">Telat</th><th class="t-right">Denda</th></tr></thead>
+                            <tbody id="tb-telat"></tbody>
+                        </table>
+                    </div>
+                    <p class="table-foot">Denda dihitung otomatis: hari terlambat × tarif denda per hari (dari Pengaturan). Angka final tetap dihitung server saat buku dikembalikan.</p>
+                </div>
+            </section>
+
+            <!-- ============ RIWAYAT ============ -->
+            <section class="page" id="page-riwayat">
+                <div class="card">
+                    <div class="toolbar">
+                        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="cari-riwayat" class="input" placeholder="Cari judul, nama, NIS, no. inventaris..."></div>
+                        <select id="filter-aksi" class="input">
+                            <option value="">Semua aksi</option>
+                            <option value="dipinjam">Dipinjam</option>
+                            <option value="dikembalikan">Dikembalikan</option>
+                        </select>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Tanggal &amp; Waktu</th><th>No. Inventaris</th><th>Judul Buku</th><th>NIS</th><th>Nama</th><th>Aksi</th></tr></thead>
+                            <tbody id="tb-riwayat"></tbody>
+                        </table>
+                    </div>
+                    <p class="table-foot" id="info-riwayat"></p>
+                </div>
+            </section>
+
+            <!-- ============ ANGGOTA ============ -->
+            <section class="page" id="page-anggota">
+                <div class="card">
+                    <div class="toolbar">
+                        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="cari-anggota" class="input" placeholder="Cari nama, NIS, atau kelas..."></div>
+                        <select id="filter-kelas-anggota" class="input"><option value="">Semua kelas</option></select>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>NIS</th><th>Nama Lengkap</th><th>Kelas</th><th>Status</th><th class="t-center">Sedang Pinjam</th></tr></thead>
+                            <tbody id="tb-anggota"></tbody>
+                        </table>
+                    </div>
+                    <p class="table-foot" id="info-anggota"></p>
+                </div>
+            </section>
+
+            <!-- ============ LAPORAN ============ -->
+            <section class="page" id="page-laporan">
+                <div class="card">
+                    <div class="toolbar wrap">
+                        <div class="field-inline">
+                            <label for="lap-bulan">Bulan</label>
+                            <select id="lap-bulan" class="input"></select>
+                        </div>
+                        <div class="field-inline">
+                            <label for="lap-tahun">Tahun</label>
+                            <select id="lap-tahun" class="input"></select>
+                        </div>
+                        <button class="btn btn-outline" id="btn-ttd"><i class="fa-solid fa-signature"></i> Penanda Tangan</button>
+                        <button class="btn btn-primary" id="btn-cetak-laporan"><i class="fa-solid fa-print"></i> Cetak / PDF</button>
+                    </div>
+                </div>
+                <div class="paper" id="laporan-preview"></div>
+            </section>
+
+            <!-- ============ KARTU ============ -->
+            <section class="page" id="page-kartu">
+                <div class="card">
+                    <div class="toolbar wrap">
+                        <div class="field-inline">
+                            <label for="kartu-kelas">Kelas</label>
+                            <select id="kartu-kelas" class="input"></select>
+                        </div>
+                        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="kartu-cari" class="input" placeholder="Cari nama / NIS..."></div>
+                        <div class="field-inline">
+                            <label for="kartu-kode">Kode</label>
+                            <select id="kartu-kode" class="input">
+                                <option value="qr">QR Code</option>
+                                <option value="barcode">Barcode</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="btn-cetak-kartu"><i class="fa-solid fa-print"></i> Cetak Kartu</button>
+                    </div>
+                    <p class="table-foot" id="info-kartu"></p>
+                </div>
+                <div class="cards-grid" id="kartu-preview"></div>
+            </section>
+
+            <!-- ============ LABEL ============ -->
+            <section class="page" id="page-label">
+                <div class="card">
+                    <div class="toolbar wrap">
+                        <div class="search grow"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="label-cari" class="input" placeholder="Filter judul atau no. inventaris (kosong = semua)..."></div>
+                        <div class="field-inline">
+                            <label for="label-tahun">Tahun</label>
+                            <select id="label-tahun" class="input"><option value="">Semua</option></select>
+                        </div>
+                        <button class="btn btn-primary" id="btn-cetak-label"><i class="fa-solid fa-print"></i> Cetak Label</button>
+                    </div>
+                    <p class="table-foot" id="info-label"></p>
+                </div>
+                <div class="labels-grid" id="label-preview"></div>
+            </section>
+
+            <!-- ============ KELOLA ============ -->
+            <section class="page" id="page-kelola">
+                <div class="tabs" id="kelola-tabs">
+                    <button class="tab active" data-tab="tab-tambah-buku"><i class="fa-solid fa-plus"></i> Tambah Buku</button>
+                    <button class="tab" data-tab="tab-edit-buku"><i class="fa-solid fa-pen"></i> Edit Buku</button>
+                    <button class="tab" data-tab="tab-tambah-anggota"><i class="fa-solid fa-user-plus"></i> Tambah Anggota</button>
+                    <button class="tab" data-tab="tab-edit-anggota"><i class="fa-solid fa-user-pen"></i> Edit Anggota</button>
+                    <button class="tab" data-tab="tab-denda"><i class="fa-solid fa-gear"></i> Pinjam &amp; Denda</button>
+                </div>
+
+                <div class="card tab-panel active" id="tab-tambah-buku">
+                    <p class="muted">Tambahkan buku secara massal menggunakan rentang No. Inventaris.</p>
+                    <div class="form-grid">
+                        <div><label class="lbl" for="buku-range">Rentang No. Inventaris</label><input id="buku-range" class="input" placeholder="Contoh: 01-20"></div>
+                        <div><label class="lbl" for="buku-suffix">Akhiran</label><input id="buku-suffix" class="input" placeholder="Contoh: /MTs-NK/SB/VII/2025"></div>
+                        <div class="span-2"><label class="lbl" for="buku-judul">Judul Buku</label><input id="buku-judul" class="input" placeholder="Contoh: Bahasa Indonesia Kelas VII"></div>
+                        <div><label class="lbl" for="buku-pengarang">Pengarang</label><input id="buku-pengarang" class="input" placeholder="Contoh: Budi, dkk"></div>
+                        <div><label class="lbl" for="buku-penerbit">Penerbit</label><input id="buku-penerbit" class="input" placeholder="Contoh: Erlangga"></div>
+                    </div>
+                    <p class="hint" id="buku-range-hint"></p>
+                    <button class="btn btn-primary" id="btn-tambah-buku"><i class="fa-solid fa-floppy-disk"></i> Tambah Buku Massal</button>
+                </div>
+
+                <div class="card tab-panel" id="tab-edit-buku">
+                    <label class="lbl" for="edit-buku-pilih">Pilih Buku (No. Inventaris)</label>
+                    <input id="edit-buku-pilih" class="input" list="dl-buku-semua" placeholder="Ketik no. inventaris atau judul..." autocomplete="off">
+                    <datalist id="dl-buku-semua"></datalist>
+                    <div class="form-grid">
+                        <div class="span-2"><label class="lbl" for="edit-buku-judul">Judul Buku</label><input id="edit-buku-judul" class="input"></div>
+                        <div><label class="lbl" for="edit-buku-pengarang">Pengarang</label><input id="edit-buku-pengarang" class="input"></div>
+                        <div><label class="lbl" for="edit-buku-penerbit">Penerbit</label><input id="edit-buku-penerbit" class="input"></div>
+                    </div>
+                    <p class="hint" id="edit-buku-hint"></p>
+                    <div class="btn-row">
+                        <button class="btn btn-success" id="btn-update-buku"><i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan</button>
+                        <button class="btn btn-danger" id="btn-hapus-buku"><i class="fa-solid fa-trash"></i> Hapus Buku</button>
+                    </div>
+                </div>
+
+                <div class="card tab-panel" id="tab-tambah-anggota">
+                    <div class="form-grid">
+                        <div><label class="lbl" for="anggota-nis">NIS</label><input id="anggota-nis" class="input" placeholder="Contoh: 123456"></div>
+                        <div><label class="lbl" for="anggota-nama">Nama Lengkap</label><input id="anggota-nama" class="input" placeholder="Contoh: Budi Setiawan"></div>
+                        <div><label class="lbl" for="anggota-kelas">Kelas</label><input id="anggota-kelas" class="input" list="dl-kelas" placeholder="Contoh: 7A"><datalist id="dl-kelas"></datalist></div>
+                        <div><label class="lbl" for="anggota-status">Status</label><input id="anggota-status" class="input" value="Aktif"></div>
+                    </div>
+                    <button class="btn btn-primary" id="btn-tambah-anggota"><i class="fa-solid fa-user-plus"></i> Tambah Anggota</button>
+                </div>
+
+                <div class="card tab-panel" id="tab-edit-anggota">
+                    <label class="lbl" for="edit-anggota-pilih">Pilih Anggota</label>
+                    <input id="edit-anggota-pilih" class="input" list="dl-anggota" placeholder="Ketik nama atau NIS..." autocomplete="off">
+                    <div class="form-grid">
+                        <div><label class="lbl" for="edit-anggota-nama">Nama Lengkap</label><input id="edit-anggota-nama" class="input"></div>
+                        <div><label class="lbl" for="edit-anggota-kelas">Kelas</label><input id="edit-anggota-kelas" class="input" list="dl-kelas"></div>
+                        <div><label class="lbl" for="edit-anggota-status">Status</label><input id="edit-anggota-status" class="input"></div>
+                    </div>
+                    <p class="hint" id="edit-anggota-hint"></p>
+                    <div class="btn-row">
+                        <button class="btn btn-success" id="btn-update-anggota"><i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan</button>
+                        <button class="btn btn-danger" id="btn-hapus-anggota"><i class="fa-solid fa-trash"></i> Hapus Anggota</button>
+                    </div>
+                </div>
+
+                <div class="card tab-panel" id="tab-denda">
+                    <div class="form-grid">
+                        <div><label class="lbl" for="set-hari">Lama Peminjaman (hari)</label><input type="number" min="1" id="set-hari" class="input"></div>
+                        <div><label class="lbl" for="set-denda">Denda per Hari (Rp)</label><input type="number" min="0" step="500" id="set-denda" class="input"></div>
+                    </div>
+                    <button class="btn btn-success" id="btn-simpan-set"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<!-- ================= LOGIN MODAL ================= -->
+<div class="modal" id="modal-login" hidden>
+    <form class="modal-box" id="form-login" autocomplete="off">
+        <img src="logo.png" alt="" class="modal-logo">
+        <h2>Login Admin</h2>
+        <p class="muted">Masuk sekali untuk mengelola sirkulasi, data, dan cetak. Sesi berakhir otomatis setelah 30 menit tidak aktif atau saat browser ditutup.</p>
+        <div class="pw-wrap">
+            <input type="password" id="login-pass" class="input input-lg" placeholder="Password admin" autocomplete="new-password" required>
+            <button type="button" class="pw-eye" id="pw-eye" aria-label="Tampilkan password"><i class="fa-solid fa-eye"></i></button>
+        </div>
+        <p class="form-error" id="login-error"></p>
+        <div class="btn-row">
+            <button type="button" class="btn btn-ghost" id="btn-login-batal">Batal</button>
+            <button type="submit" class="btn btn-primary grow" id="btn-login"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>
+        </div>
+    </form>
+</div>
+
+<!-- ================= TTD MODAL ================= -->
+<div class="modal" id="modal-ttd" hidden>
+    <form class="modal-box wide" id="form-ttd">
+        <h2>Penanda Tangan Laporan</h2>
+        <p class="muted">Tersimpan di perangkat ini.</p>
+        <div class="form-grid">
+            <div><label class="lbl" for="ttd-kamad">Kepala Madrasah</label><input id="ttd-kamad" class="input"></div>
+            <div><label class="lbl" for="ttd-kamad-nip">NIP Kepala Madrasah</label><input id="ttd-kamad-nip" class="input" placeholder="Kosongkan jika tidak ada"></div>
+            <div><label class="lbl" for="ttd-kapus">Kepala Perpustakaan</label><input id="ttd-kapus" class="input"></div>
+            <div><label class="lbl" for="ttd-kapus-nip">NIP Kepala Perpustakaan</label><input id="ttd-kapus-nip" class="input" placeholder="Kosongkan jika tidak ada"></div>
+            <div class="span-2"><label class="lbl" for="ttd-tempat">Tempat (untuk tanggal surat)</label><input id="ttd-tempat" class="input"></div>
+        </div>
+        <div class="btn-row">
+            <button type="button" class="btn btn-ghost" data-close>Batal</button>
+            <button type="submit" class="btn btn-primary grow">Simpan</button>
+        </div>
+    </form>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<div id="print-area"></div>
+
+<script src="script.js"></script>
 </body>
 </html>
