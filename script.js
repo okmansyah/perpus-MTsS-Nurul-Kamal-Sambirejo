@@ -22,7 +22,7 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
-const VERSI_WEB = 5;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const VERSI_WEB = 6;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
 const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
 const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
 const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
@@ -1556,6 +1556,152 @@ $('#scan-file').addEventListener('change', async e => {
 });
 $('#modal-scan').addEventListener('click', e => { if (e.target.id === 'modal-scan') tutupScan(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') berhentiKamera(); });
+
+// ==========================================================
+// == SCAN KAMERA UNTUK PINJAM & KEMBALI ==
+// Kartu anggota berisi NIS (QR / barcode), label buku berisi No. Inventaris (CODE128)
+// ==========================================================
+const SK = { mode: '', stream: null, timer: null, detector: null, reader: null, terakhir: '', jedaSampai: 0, buku: null, anggota: null };
+const SK_LANJUT_KEY = 'perpus_scan_langsung';
+
+function bunyi(ok = true) {
+    try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)(), o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = ok ? 1250 : 330; o.type = 'sine'; g.gain.value = .12;
+        o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + (ok ? .09 : .25));
+        setTimeout(() => ac.close(), 400);
+    } catch (e) {}
+    try { navigator.vibrate && navigator.vibrate(ok ? 60 : [80, 60, 80]); } catch (e) {}
+}
+function skStatus(t, jenis = '') { const el = $('#sk-status'); el.textContent = t; el.className = 'scan-status ' + jenis; }
+function skChips() {
+    const b = SK.buku, a = SK.anggota;
+    const chipBuku = `<div class="sk-chip ${b ? (SK.mode === 'pinjam' && !isTersedia(b) ? 'err' : 'ok') : ''}">Buku${b ? `<b>${esc(b.judul)}</b><span class="mono">${esc(b.noInv)}</span>` : '<b>— belum —</b>'}</div>`;
+    if (SK.mode === 'kembali') { $('#sk-chips').className = 'sk-chips satu'; $('#sk-chips').innerHTML = chipBuku; return; }
+    $('#sk-chips').className = 'sk-chips';
+    $('#sk-chips').innerHTML = `<div class="sk-chip ${a ? 'ok' : ''}">Peminjam${a ? `<b>${esc(a.nama)}</b><span>${esc(a.kelas)} · NIS ${esc(a.nis)}</span>` : '<b>— belum —</b>'}</div>` + chipBuku;
+}
+function skBerhenti() {
+    clearInterval(SK.timer); SK.timer = null;
+    if (SK.stream) { SK.stream.getTracks().forEach(t => t.stop()); SK.stream = null; }
+}
+function skTutup() { skBerhenti(); $('#modal-sirkulasi').hidden = true; }
+
+function skSiapkanPembaca() {
+    if (SK.detector === null && 'BarcodeDetector' in window) {
+        try { SK.detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'ean_13'] }); } catch (e) { SK.detector = false; }
+    }
+    if (!SK.reader && window.ZXing) {
+        const r = new ZXing.MultiFormatReader(), h = new Map();
+        h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.QR_CODE, ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.EAN_13]);
+        h.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        r.setHints(h); SK.reader = r;
+    }
+}
+async function skBaca(v) {
+    skSiapkanPembaca();
+    if (SK.detector) {
+        try { const h = await SK.detector.detect(v); if (h.length) return h[0].rawValue; } catch (e) {}
+    }
+    if (!SK.reader) return null;
+    const cv = $('#sk-canvas'), sk = Math.min(1, 1000 / v.videoWidth);
+    cv.width = Math.round(v.videoWidth * sk); cv.height = Math.round(v.videoHeight * sk);
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(v, 0, 0, cv.width, cv.height);
+    try { return SK.reader.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(cv)))).getText(); }
+    catch (e) { return null; }
+}
+
+async function bukaScanSirkulasi(mode) {
+    if (!S.loaded) return toast('Data belum dimuat.', 'err');
+    Object.assign(SK, { mode, terakhir: '', jedaSampai: 0, buku: null, anggota: null });
+    if (mode === 'pinjam') {
+        SK.buku = bukuByInv($('#pinjam-buku').value.trim()) || null;
+        SK.anggota = cariAnggota($('#pinjam-anggota').value) || null;
+    }
+    $('#sk-judul').innerHTML = mode === 'pinjam' ? '<i class="fa-solid fa-qrcode"></i> Scan Peminjaman' : '<i class="fa-solid fa-barcode"></i> Scan Pengembalian';
+    $('#sk-lanjut-wrap').hidden = mode !== 'pinjam';
+    $('#sk-lanjut').checked = !!lsGet(SK_LANJUT_KEY, false);
+    $('#btn-sk-senter').hidden = true;
+    skChips();
+    $('#modal-sirkulasi').hidden = false;
+    skStatus('Menyalakan kamera...');
+    try {
+        SK.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+        const v = $('#sk-video'); v.srcObject = SK.stream; await v.play().catch(() => {});
+        try {
+            const t = SK.stream.getVideoTracks()[0], c = t.getCapabilities ? t.getCapabilities() : {};
+            if (c.focusMode && c.focusMode.includes('continuous')) t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+            if (c.torch) $('#btn-sk-senter').hidden = false;
+        } catch (e) {}
+        skStatus(mode === 'pinjam' ? 'Arahkan kamera ke kartu anggota atau label buku (urutan bebas).' : 'Arahkan kamera ke barcode label buku.');
+        let jalan = false;
+        SK.timer = setInterval(async () => {
+            const vv = $('#sk-video');
+            if (jalan || !vv.videoWidth || Date.now() < SK.jedaSampai) return;
+            jalan = true;
+            const kode = await skBaca(vv);
+            jalan = false;
+            if (kode) skProses(String(kode).trim());
+        }, 250);
+    } catch (e) {
+        skStatus('Kamera tidak bisa dibuka. Izinkan akses kamera, atau ketik / pakai scanner USB.', 'err');
+    }
+}
+
+function skProses(kode) {
+    if (!kode || (kode === SK.terakhir && Date.now() < SK.jedaSampai + 2500)) return;
+    SK.terakhir = kode; SK.jedaSampai = Date.now() + 1200;
+    const b = bukuByInv(kode);
+    const a = !b && SK.mode === 'pinjam' ? anggotaByNis(kode) : null;
+    const frame = $('#sk-frame');
+    const kedip = ok => { frame.classList.add(ok ? 'ok' : 'err'); setTimeout(() => frame.classList.remove('ok', 'err'), 600); };
+
+    if (SK.mode === 'kembali') {
+        if (!b) { bunyi(false); kedip(false); return skStatus(`Kode "${kode}" bukan nomor inventaris yang terdaftar.`, 'err'); }
+        if (!isDipinjam(b)) { bunyi(false); kedip(false); SK.buku = b; skChips(); return skStatus(`${b.noInv} tidak sedang dipinjam (status: ${b.status}).`, 'err'); }
+        bunyi(true); kedip(true); SK.buku = b; skChips();
+        $('#kembali-buku').value = b.noInv; $('#kembali-hasil').hidden = true;
+        skTutup(); previewKembali();
+        $('#btn-kembali').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#btn-kembali').focus({ preventScroll: true });
+        return toast('Buku terbaca. Periksa denda, lalu tekan Proses Pengembalian.', 'ok', 3500);
+    }
+
+    if (b) {
+        SK.buku = b; $('#pinjam-buku').value = b.noInv;
+        if (!isTersedia(b)) { bunyi(false); kedip(false); skStatus(`${b.noInv} berstatus "${b.status}", tidak bisa dipinjam. Scan buku lain.`, 'err'); skChips(); previewPinjam(); return; }
+        bunyi(true); kedip(true);
+    } else if (a) {
+        SK.anggota = a; $('#pinjam-anggota').value = a.nis; bunyi(true); kedip(true);
+        const telat = pinjamanAktif().filter(x => x.nis === a.nis && x.telat > 0);
+        if (telat.length) skStatus(`Perhatian: ${a.nama} punya ${telat.length} buku terlambat.`, 'err');
+    } else {
+        bunyi(false); kedip(false);
+        return skStatus(`Kode "${kode}" tidak dikenal sebagai kartu anggota atau label buku.`, 'err');
+    }
+    skChips(); previewPinjam();
+    if (SK.buku && SK.anggota && isTersedia(SK.buku)) {
+        skTutup();
+        if ($('#sk-lanjut').checked) { $('#btn-pinjam').click(); return; }
+        $('#btn-pinjam').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#btn-pinjam').focus({ preventScroll: true });
+        toast('Kartu dan buku terbaca. Tekan Proses Peminjaman.', 'ok', 3500);
+    } else if (!$('#sk-status').classList.contains('err')) {
+        skStatus(SK.anggota ? 'Peminjam terbaca. Sekarang scan label buku.' : 'Buku terbaca. Sekarang scan kartu anggota.', 'ok');
+    }
+}
+
+$('#btn-scan-pinjam').addEventListener('click', () => bukaScanSirkulasi('pinjam'));
+$('#btn-scan-kembali').addEventListener('click', () => bukaScanSirkulasi('kembali'));
+$('#btn-sk-tutup').addEventListener('click', skTutup);
+$('#modal-sirkulasi').addEventListener('click', e => { if (e.target.id === 'modal-sirkulasi') skTutup(); });
+$('#sk-lanjut').addEventListener('change', e => lsSet(SK_LANJUT_KEY, e.target.checked));
+$('#btn-sk-senter').addEventListener('click', async function () {
+    try {
+        const t = SK.stream.getVideoTracks()[0], nyala = !this.classList.contains('aktif');
+        await t.applyConstraints({ advanced: [{ torch: nyala }] }); this.classList.toggle('aktif', nyala);
+    } catch (e) { toast('Senter tidak didukung di perangkat ini.', 'info'); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') skBerhenti(); });
 
 // Pengaturan denda
 $('#btn-simpan-set').addEventListener('click', async function () {

@@ -137,6 +137,7 @@
                 <div class="grid-form">
                     <div class="card">
                         <div class="card-head"><h3><i class="fa-solid fa-arrow-right-from-bracket"></i> Form Peminjaman</h3></div>
+                        <button type="button" class="btn btn-primary btn-lg w-100 btn-scan-besar" id="btn-scan-pinjam"><i class="fa-solid fa-qrcode"></i> Scan Kartu Anggota &amp; Label Buku</button>
                         <label class="lbl" for="pinjam-buku">No. Inventaris / Judul Buku <small>(bisa ketik atau scan barcode label)</small></label>
                         <input id="pinjam-buku" class="input" list="dl-buku-tersedia" placeholder="Ketik no. inventaris atau judul..." autocomplete="off">
                         <datalist id="dl-buku-tersedia"></datalist>
@@ -166,6 +167,7 @@
                 <div class="grid-form">
                     <div class="card">
                         <div class="card-head"><h3><i class="fa-solid fa-arrow-right-to-bracket"></i> Form Pengembalian</h3></div>
+                        <button type="button" class="btn btn-warning btn-lg w-100 btn-scan-besar" id="btn-scan-kembali"><i class="fa-solid fa-barcode"></i> Scan Label Buku</button>
                         <label class="lbl" for="kembali-buku">No. Inventaris / Judul Buku yang Dipinjam</label>
                         <input id="kembali-buku" class="input" list="dl-buku-dipinjam" placeholder="Ketik atau scan no. inventaris..." autocomplete="off">
                         <datalist id="dl-buku-dipinjam"></datalist>
@@ -517,6 +519,25 @@
         </div>
         <input type="file" id="scan-file" accept="image/*" hidden>
         <canvas id="scan-canvas" hidden></canvas>
+    </div>
+</div>
+
+<!-- ================= SCAN SIRKULASI MODAL ================= -->
+<div class="modal" id="modal-sirkulasi" hidden>
+    <div class="modal-box wide scan-box">
+        <h2 id="sk-judul"><i class="fa-solid fa-qrcode"></i> Scan</h2>
+        <div class="sk-chips" id="sk-chips"></div>
+        <div class="scan-view">
+            <video id="sk-video" playsinline muted autoplay></video>
+            <div class="scan-frame sk-frame" id="sk-frame"></div>
+        </div>
+        <p class="scan-status" id="sk-status">Menyalakan kamera...</p>
+        <label class="check sk-lanjut" id="sk-lanjut-wrap" hidden><input type="checkbox" id="sk-lanjut"> Langsung proses setelah kartu &amp; buku terbaca</label>
+        <div class="btn-row">
+            <button type="button" class="btn btn-ghost" id="btn-sk-senter" hidden><i class="fa-solid fa-lightbulb"></i> Senter</button>
+            <button type="button" class="btn btn-primary grow" id="btn-sk-tutup">Selesai</button>
+        </div>
+        <canvas id="sk-canvas" hidden></canvas>
     </div>
 </div>
 

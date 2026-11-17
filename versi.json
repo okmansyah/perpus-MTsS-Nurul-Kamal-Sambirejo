@@ -1,6 +1,6 @@
 {
- "versi": 5,
- "catatan": "Privasi: data siswa hanya lewat server dengan login",
+ "versi": 6,
+ "catatan": "Scan kamera untuk pinjam & kembali (kartu anggota dan label buku)",
  "files": [
   "index.html",
   "logo.png",
