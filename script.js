@@ -22,7 +22,7 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
-const VERSI_WEB = 8;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const VERSI_WEB = 9;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
 const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
 const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
 const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
@@ -446,7 +446,7 @@ async function muatServer(opsi = {}) {
         status: k[4] || '', nis: k[5] || '', tglPinjamRaw: k[6] || '', jatuhTempoRaw: k[7] || '', tglMasukRaw: k[8] || '',
         isbn: k[9] || '', kategori: k[10] || '', rak: k[11] || '', sumber: k[12] || '', harga: k[13] || '', kondisi: k[14] || '', tahunTerbit: k[15] || ''
     })).filter(b => b.noInv);
-    S.anggota = (data.anggota || []).map(k => ({ nis: k[0] || '', nama: k[1] || '', kelas: k[2] || '', status: k[3] || '' })).filter(a => a.nis || a.nama);
+    S.anggota = (data.anggota || []).map(k => ({ nis: k[0] || '', nama: k[1] || '', kelas: k[2] || '', status: k[3] || '', hp: k[4] || '' })).filter(a => a.nis || a.nama);
     S.history = (data.history || []).map(k => ({ ts: k[0] || '', tgl: parseTanggal(k[0]), noInv: k[1] || '', judul: k[2] || '', nis: k[3] || '', nama: k[4] || '', aksi: k[5] || '', petugas: k[6] || '' }));
     S.history.sort((a, b) => (a.tgl || 0) - (b.tgl || 0));   // transaksi offline bisa masuk belakangan
     (data.settings || []).forEach(k => { if (k[0]) S.settings[String(k[0]).trim()] = String(k[1] || '').trim(); });
@@ -804,7 +804,8 @@ function renderTerlambat() {
             <td>${tglPendek(x.jatuhTempo)}</td>
             <td class="t-center"><span class="badge b-red">${x.telat} hari</span></td>
             <td class="t-right"><b>${rupiah(x.denda)}</b></td>
-        </tr>`).join('') : '<tr><td colspan="8" class="loading"><i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Tidak ada buku yang terlambat.</td></tr>';
+            <td class="t-center">${tombolWA(x.nis)}</td>
+        </tr>`).join('') : '<tr><td colspan="9" class="loading"><i class="fa-solid fa-circle-check" style="color:#16a34a"></i> Tidak ada buku yang terlambat.</td></tr>';
 }
 $('#btn-cetak-telat').addEventListener('click', () => {
     const telat = pinjamanAktif().filter(x => x.telat > 0).sort((a, b) => (a.kelas || '').localeCompare(b.kelas || '', 'id', { numeric: true }) || a.nama.localeCompare(b.nama));
@@ -845,16 +846,17 @@ function renderAnggota() {
     const ak = pinjamanAktif();
     let list = [...S.anggota].sort((a, b) => a.kelas.localeCompare(b.kelas, 'id', { numeric: true }) || a.nama.localeCompare(b.nama, 'id'));
     if (k) list = list.filter(a => a.kelas === k);
-    if (q) list = list.filter(a => (a.nama + ' ' + a.nis + ' ' + a.kelas).toLowerCase().includes(q));
+    if (q) list = list.filter(a => (a.nama + ' ' + a.nis + ' ' + a.kelas + ' ' + (a.hp || '')).toLowerCase().includes(q));
     $('#tb-anggota').innerHTML = list.length ? list.map(a => {
         const n = ak.filter(x => x.nis === a.nis); const t = n.some(x => x.telat > 0);
         return `<tr>
             <td class="mono">${esc(a.nis)}</td>
             <td><b>${esc(a.nama)}</b></td>
             <td>${esc(a.kelas)}</td>
+            <td class="mono">${a.hp ? `<a href="${waLink(a.hp, '')}" target="_blank" rel="noopener" class="wa-mini" title="Buka WhatsApp"><i class="fa-brands fa-whatsapp"></i> ${esc(a.hp)}</a>` : '<span class="muted">–</span>'}</td>
             <td><span class="badge ${/aktif/i.test(a.status) && !/non|tidak/i.test(a.status) ? 'b-green' : 'b-gray'}">${esc(a.status) || '–'}</span></td>
             <td class="t-center">${n.length ? `<span class="badge ${t ? 'b-red' : 'b-amber'}">${n.length}</span>` : '<span class="muted">0</span>'}</td>
-        </tr>`; }).join('') : '<tr><td colspan="5" class="loading">Tidak ada anggota yang cocok.</td></tr>';
+        </tr>`; }).join('') : '<tr><td colspan="6" class="loading">Tidak ada anggota yang cocok.</td></tr>';
     $('#info-anggota').textContent = `${list.length} dari ${S.anggota.length} anggota ditampilkan.`;
 }
 $('#cari-anggota').addEventListener('input', renderAnggota);
@@ -1147,14 +1149,14 @@ $('#btn-hapus-buku').addEventListener('click', async function () {
 
 // Tambah anggota
 $('#btn-tambah-anggota').addEventListener('click', async function () {
-    const anggota = { nis: $('#anggota-nis').value.trim(), nama: $('#anggota-nama').value.trim(), kelas: $('#anggota-kelas').value.trim(), status: $('#anggota-status').value.trim() };
+    const anggota = { nis: $('#anggota-nis').value.trim(), nama: $('#anggota-nama').value.trim(), kelas: $('#anggota-kelas').value.trim(), status: $('#anggota-status').value.trim(), hp: $('#anggota-hp').value.trim() };
     if (!anggota.nis || !anggota.nama) return toast('NIS dan nama wajib diisi.', 'err');
     if (anggotaByNis(anggota.nis)) return toast('NIS ini sudah terdaftar.', 'err');
     busy(this, true, 'Menyimpan...');
     const res = await aksi({ action: 'tambahAnggota', anggota });
     busy(this, false);
     if (laporHasil(res, 'Anggota ditambahkan.')) {
-        ['#anggota-nis', '#anggota-nama'].forEach(s => $(s).value = '');
+        ['#anggota-nis', '#anggota-nama', '#anggota-hp'].forEach(s => $(s).value = '');
         $('#anggota-nis').focus();
     }
 });
@@ -1165,6 +1167,7 @@ function isiEditAnggota() {
     $('#edit-anggota-nama').value = a ? a.nama : '';
     $('#edit-anggota-kelas').value = a ? a.kelas : '';
     $('#edit-anggota-status').value = a ? a.status : '';
+    $('#edit-anggota-hp').value = a ? (a.hp || '') : '';
     $('#btn-update-anggota').disabled = !a;
     $('#btn-hapus-anggota').disabled = !a;
     $('#edit-anggota-hint').textContent = a ? `NIS ${a.nis} (tidak bisa diubah)` : '';
@@ -1173,7 +1176,7 @@ $('#edit-anggota-pilih').addEventListener('input', isiEditAnggota);
 $('#btn-update-anggota').addEventListener('click', async function () {
     const a = cariAnggota($('#edit-anggota-pilih').value);
     if (!a) return toast('Pilih anggota terlebih dahulu.', 'err');
-    const anggota = { nis: a.nis, nama: $('#edit-anggota-nama').value.trim(), kelas: $('#edit-anggota-kelas').value.trim(), status: $('#edit-anggota-status').value.trim() };
+    const anggota = { nis: a.nis, nama: $('#edit-anggota-nama').value.trim(), kelas: $('#edit-anggota-kelas').value.trim(), status: $('#edit-anggota-status').value.trim(), hp: $('#edit-anggota-hp').value.trim() };
     busy(this, true, 'Menyimpan...');
     const res = await aksi({ action: 'updateAnggota', anggota });
     busy(this, false);
@@ -1727,6 +1730,43 @@ $('#btn-backup-sekarang').addEventListener('click', async function () {
     if (r.status === 'success') muatInfoBackup();
 });
 $$('#kelola-tabs .tab').forEach(t => t.addEventListener('click', () => { if (t.dataset.tab === 'tab-denda' && isSuperAdmin()) muatInfoBackup(); }));
+
+// ==========================================================
+// == PENGINGAT WHATSAPP ==
+// ==========================================================
+const WA_KEY = 'perpus_wa_template';
+const WA_BAWAAN = "Assalamu'alaikum warahmatullahi wabarakatuh.\n\nYth. Bapak/Ibu wali dari *{nama}* (kelas {kelas}).\nKami dari Perpustakaan MTsS Nurul Kamal Sambirejo memberitahukan bahwa per {tanggal} ananda belum mengembalikan {jumlah} buku berikut:\n{daftar}\n\nPerkiraan denda saat ini: *{total}*.\nMohon buku dapat segera dikembalikan ke perpustakaan. Terima kasih.\n\nPetugas Perpustakaan MTsS Nurul Kamal";
+function waTemplate() { return lsGet(WA_KEY, '') || WA_BAWAAN; }
+/** Nomor HP Indonesia -> format internasional untuk wa.me (628xxxx) */
+function nomorWA(hp) {
+    let d = String(hp || '').replace(/[^0-9]/g, '');
+    if (!d) return '';
+    if (d.startsWith('0')) d = '62' + d.slice(1);
+    else if (d.startsWith('8')) d = '62' + d;
+    return d.length >= 10 && d.length <= 15 ? d : '';
+}
+function waLink(hp, pesan) { const n = nomorWA(hp); return n ? `https://wa.me/${n}${pesan ? '?text=' + encodeURIComponent(pesan) : ''}` : '#'; }
+function pesanPengingat(nis) {
+    const a = anggotaByNis(nis) || {};
+    const telat = pinjamanAktif().filter(x => x.nis === nis && x.telat > 0);
+    const daftar = telat.map((x, i) => `${i + 1}. ${x.buku.judul} (${x.buku.noInv}), jatuh tempo ${tglPanjang(x.jatuhTempo)}, terlambat ${x.telat} hari`).join('\n');
+    const isi = { nama: a.nama || (telat[0] && telat[0].nama) || nis, kelas: a.kelas || '-', daftar, jumlah: String(telat.length), total: rupiah(telat.reduce((s, x) => s + x.denda, 0)), tanggal: tglPanjang(new Date()) };
+    return waTemplate().replace(/\{(nama|kelas|daftar|jumlah|total|tanggal)\}/g, (m, k) => isi[k]);
+}
+function tombolWA(nis) {
+    const a = anggotaByNis(nis);
+    if (!a || !nomorWA(a.hp)) return `<span class="muted" title="No. HP belum diisi di data anggota" style="font-size:12px">No. HP<br>belum ada</span>`;
+    return `<a class="btn btn-wa btn-xs" href="${waLink(a.hp, pesanPengingat(nis))}" target="_blank" rel="noopener" title="Kirim pengingat ke ${esc(a.hp)}"><i class="fa-brands fa-whatsapp"></i> Kirim</a>`;
+}
+$('#wa-template').value = waTemplate();
+$('#btn-wa-simpan').addEventListener('click', () => {
+    const t = $('#wa-template').value.trim();
+    if (!t) return toast('Pesan tidak boleh kosong.', 'err');
+    lsSet(WA_KEY, t === WA_BAWAAN ? '' : t);
+    toast('Pesan pengingat disimpan di perangkat ini.', 'ok');
+    if (currentPage() === 'terlambat') renderTerlambat();
+});
+$('#btn-wa-reset').addEventListener('click', () => { $('#wa-template').value = WA_BAWAAN; lsSet(WA_KEY, ''); toast('Pesan dikembalikan ke bawaan.', 'info'); });
 
 // Pengaturan denda
 $('#btn-simpan-set').addEventListener('click', async function () {

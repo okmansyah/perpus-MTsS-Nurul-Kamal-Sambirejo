@@ -1,6 +1,6 @@
 {
- "versi": 8,
- "catatan": "Backup otomatis ke file spreadsheet khusus (tanpa izin Drive)",
+ "versi": 9,
+ "catatan": "No. HP anggota & pengingat keterlambatan lewat WhatsApp",
  "files": [
   "index.html",
   "logo.png",

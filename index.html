@@ -202,7 +202,7 @@
                     </div>
                     <div class="table-wrap">
                         <table>
-                            <thead><tr><th>No. Inventaris</th><th>Judul</th><th>Peminjam</th><th>Kelas</th><th>Tgl Pinjam</th><th>Jatuh Tempo</th><th class="t-center">Telat</th><th class="t-right">Denda</th></tr></thead>
+                            <thead><tr><th>No. Inventaris</th><th>Judul</th><th>Peminjam</th><th>Kelas</th><th>Tgl Pinjam</th><th>Jatuh Tempo</th><th class="t-center">Telat</th><th class="t-right">Denda</th><th class="t-center">Pengingat</th></tr></thead>
                             <tbody id="tb-telat"></tbody>
                         </table>
                     </div>
@@ -267,7 +267,7 @@
                     </div>
                     <div class="table-wrap">
                         <table>
-                            <thead><tr><th>NIS</th><th>Nama Lengkap</th><th>Kelas</th><th>Status</th><th class="t-center">Sedang Pinjam</th></tr></thead>
+                            <thead><tr><th>NIS</th><th>Nama Lengkap</th><th>Kelas</th><th>No. HP / WA</th><th>Status</th><th class="t-center">Sedang Pinjam</th></tr></thead>
                             <tbody id="tb-anggota"></tbody>
                         </table>
                     </div>
@@ -408,6 +408,7 @@
                         <div><label class="lbl" for="anggota-nama">Nama Lengkap</label><input id="anggota-nama" class="input" placeholder="Contoh: Budi Setiawan"></div>
                         <div><label class="lbl" for="anggota-kelas">Kelas</label><input id="anggota-kelas" class="input" list="dl-kelas" placeholder="Contoh: 7A"><datalist id="dl-kelas"></datalist></div>
                         <div><label class="lbl" for="anggota-status">Status</label><input id="anggota-status" class="input" value="Aktif"></div>
+                        <div class="span-2"><label class="lbl" for="anggota-hp">No. HP / WhatsApp <small>(siswa atau wali, opsional)</small></label><input id="anggota-hp" class="input" inputmode="tel" placeholder="Contoh: 0812 3456 7890"></div>
                     </div>
                     <button class="btn btn-primary" id="btn-tambah-anggota"><i class="fa-solid fa-user-plus"></i> Tambah Anggota</button>
                 </div>
@@ -419,6 +420,7 @@
                         <div><label class="lbl" for="edit-anggota-nama">Nama Lengkap</label><input id="edit-anggota-nama" class="input"></div>
                         <div><label class="lbl" for="edit-anggota-kelas">Kelas</label><input id="edit-anggota-kelas" class="input" list="dl-kelas"></div>
                         <div><label class="lbl" for="edit-anggota-status">Status</label><input id="edit-anggota-status" class="input"></div>
+                        <div><label class="lbl" for="edit-anggota-hp">No. HP / WhatsApp</label><input id="edit-anggota-hp" class="input" inputmode="tel" placeholder="Contoh: 0812 3456 7890"></div>
                     </div>
                     <p class="hint" id="edit-anggota-hint"></p>
                     <div class="btn-row">
@@ -433,6 +435,15 @@
                         <div><label class="lbl" for="set-denda">Denda per Hari (Rp)</label><input type="number" min="0" step="500" id="set-denda" class="input"></div>
                     </div>
                     <button class="btn btn-success" id="btn-simpan-set"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan</button>
+                    <div class="backup-box">
+                        <div class="card-head"><h3><i class="fa-brands fa-whatsapp"></i> Pesan Pengingat WhatsApp</h3></div>
+                        <p class="muted">Dipakai tombol WhatsApp di halaman Terlambat &amp; Denda. Kode yang bisa dipakai: <span class="mono">{nama}</span>, <span class="mono">{kelas}</span>, <span class="mono">{daftar}</span> (daftar buku telat), <span class="mono">{jumlah}</span>, <span class="mono">{total}</span> (perkiraan denda), <span class="mono">{tanggal}</span>. Tersimpan di perangkat ini.</p>
+                        <textarea id="wa-template" class="input" rows="8"></textarea>
+                        <div class="btn-row" style="margin-top:10px">
+                            <button class="btn btn-success" id="btn-wa-simpan"><i class="fa-solid fa-floppy-disk"></i> Simpan Pesan</button>
+                            <button class="btn btn-ghost" id="btn-wa-reset">Kembalikan bawaan</button>
+                        </div>
+                    </div>
                     <div class="backup-box">
                         <div class="card-head"><h3><i class="fa-solid fa-cloud-arrow-up"></i> Backup Data</h3><button class="btn btn-outline btn-sm" id="btn-muat-backup" title="Muat ulang info"><i class="fa-solid fa-rotate"></i></button></div>
                         <p class="muted" id="backup-info">Memuat info backup...</p>
