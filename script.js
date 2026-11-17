@@ -27,7 +27,7 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
-const VERSI_WEB = 3;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const VERSI_WEB = 4;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
 const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
 const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
 const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
@@ -1075,10 +1075,20 @@ $('#buku-suffix').addEventListener('input', hintRange);
 $('#btn-tambah-buku').addEventListener('click', async function () {
     const buku = { range: $('#buku-range').value.trim(), suffix: $('#buku-suffix').value.trim(), judul: $('#buku-judul').value.trim(), pengarang: $('#buku-pengarang').value.trim(), penerbit: $('#buku-penerbit').value.trim(), ...bacaEkstra('buku-') };
     if (!buku.range || !buku.suffix || !buku.judul) return toast('Rentang, akhiran, dan judul wajib diisi.', 'err');
+    const m = buku.range.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (!m) return toast('Format rentang salah. Contoh: 01-20.', 'err');
+    const n = Math.abs(+m[2] - +m[1]) + 1;
+    const ringkas = `Simpan ${n} eksemplar?\n\nJudul: ${buku.judul}\nPengarang: ${buku.pengarang || '-'}\nPenerbit: ${buku.penerbit || '-'}` +
+        (buku.isbn ? `\nISBN: ${buku.isbn}` : '') + `\nNo. inventaris: ${m[1]}${buku.suffix} s.d. ${m[2]}${buku.suffix}`;
+    if (!confirm(ringkas)) return;
     busy(this, true, 'Menyimpan...');
     const res = await aksi({ action: 'tambahBuku', buku });
     busy(this, false);
     if (laporHasil(res, 'Buku ditambahkan.')) {
+        lsSet(SUFFIX_KEY, buku.suffix);
+        $('#auto-isi-info').hidden = true;
+        $$('#tab-tambah-buku .auto-isi').forEach(el => el.classList.remove('auto-isi'));
+        ['#buku-kategori', '#buku-sumber', '#buku-kondisi'].forEach(s => $(s).value = '');
         ['#buku-range', '#buku-judul', '#buku-pengarang', '#buku-penerbit', '#buku-isbn', '#buku-harga', '#buku-tahun'].forEach(s => $(s).value = '');
         hintRange();
     }
@@ -1282,6 +1292,252 @@ $('#btn-ganti-pw').addEventListener('click', async function () {
     $('#pw-baru').value = ''; $('#pw-baru2').value = '';
 });
 $$('#kelola-tabs .tab').forEach(t => t.addEventListener('click', () => { if (t.dataset.tab === 'tab-petugas' && isSuperAdmin()) muatPetugas(); }));
+
+// ==========================================================
+// == ISI OTOMATIS: SCAN ISBN -> DATABASE BUKU, ATAU FOTO SAMPUL -> AI ==
+// ==========================================================
+const SUFFIX_KEY = 'perpus_suffix_terakhir';
+const SC = { stream: null, timer: null, isbn: '', sibuk: false, detector: null, reader: null, selesai: false };
+
+/** ISBN-10/13 -> ISBN-13 yang valid, atau null */
+function normalIsbn(t) {
+    const x = String(t || '').toUpperCase().replace(/[^0-9X]/g, '');
+    if (x.length === 13 && /^97[89]\d{10}$/.test(x)) {
+        let s = 0; for (let i = 0; i < 12; i++) s += +x[i] * (i % 2 ? 3 : 1);
+        return (10 - s % 10) % 10 === +x[12] ? x : null;
+    }
+    if (x.length === 10 && /^\d{9}[\dX]$/.test(x)) {
+        let s = 0; for (let i = 0; i < 10; i++) s += (x[i] === 'X' ? 10 : +x[i]) * (10 - i);
+        if (s % 11) return null;
+        const b = '978' + x.slice(0, 9); let t = 0; for (let i = 0; i < 12; i++) t += +b[i] * (i % 2 ? 3 : 1);
+        return b + ((10 - t % 10) % 10);
+    }
+    return null;
+}
+function rapikanPengarang(list) {
+    const a = (list || []).map(v => String(v).trim()).filter(Boolean);
+    return a.length > 2 ? a[0] + ', dkk' : a.join(', ');
+}
+function tahunDari(t) { const m = String(t || '').match(/(19|20)\d{2}/); return m ? m[0] : ''; }
+
+async function ambilJson(url, ms = 9000) {
+    const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), ms);
+    try { const r = await fetch(url, { signal: ac.signal }); return r.ok ? await r.json() : null; }
+    catch (e) { return null; } finally { clearTimeout(tm); }
+}
+/** Cari data buku dari ISBN: Google Books, lalu Open Library */
+async function cariDataIsbn(isbn) {
+    const g = await ambilJson('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn);
+    const v = g && g.items && g.items[0] && g.items[0].volumeInfo;
+    if (v && v.title) return {
+        sumber: 'Google Books', isbn, judul: v.title + (v.subtitle ? ': ' + v.subtitle : ''),
+        pengarang: rapikanPengarang(v.authors), penerbit: v.publisher || '', tahunTerbit: tahunDari(v.publishedDate)
+    };
+    const o = await ambilJson('https://openlibrary.org/api/books?bibkeys=ISBN:' + isbn + '&format=json&jscmd=data');
+    const b = o && o['ISBN:' + isbn];
+    if (b && b.title) return {
+        sumber: 'Open Library', isbn, judul: b.title + (b.subtitle ? ': ' + b.subtitle : ''),
+        pengarang: rapikanPengarang((b.authors || []).map(a => a.name)), penerbit: ((b.publishers || [])[0] || {}).name || '', tahunTerbit: tahunDari(b.publish_date)
+    };
+    return null;
+}
+
+function scanStatus(t, jenis = '') { const el = $('#scan-status'); el.textContent = t; el.className = 'scan-status ' + jenis; }
+function scanLangkah(foto) {
+    $('#step-isbn').className = foto ? 'selesai' : 'aktif';
+    $('#step-foto').className = foto ? 'aktif' : '';
+    $('#scan-frame').classList.toggle('foto', foto);
+    $('#btn-scan-foto').classList.toggle('btn-primary', foto);
+    $('#btn-scan-foto').classList.toggle('btn-outline', !foto);
+}
+function berhentiKamera() {
+    clearInterval(SC.timer); SC.timer = null;
+    if (SC.stream) { SC.stream.getTracks().forEach(t => t.stop()); SC.stream = null; }
+}
+function tutupScan() { berhentiKamera(); $('#modal-scan').hidden = true; }
+
+async function bukaScan() {
+    Object.assign(SC, { isbn: '', sibuk: false, selesai: false });
+    $('#scan-gambar').hidden = true; $('#scan-isbn-ketik').value = '';
+    $('#scan-frame').classList.remove('ok');
+    scanLangkah(false);
+    $('#modal-scan').hidden = false;
+    scanStatus('Menyalakan kamera...');
+    try {
+        SC.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+        const v = $('#scan-video'); v.srcObject = SC.stream; await v.play().catch(() => {});
+        try { const t = SC.stream.getVideoTracks()[0], c = t.getCapabilities ? t.getCapabilities() : {}; if (c.focusMode && c.focusMode.includes('continuous')) t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) {}
+        scanStatus('Arahkan kamera ke barcode ISBN di sampul belakang buku.');
+        mulaiDeteksi();
+    } catch (e) {
+        scanStatus('Kamera tidak bisa dibuka. Ketik ISBN, atau tekan "Pilih Foto".', 'err');
+    }
+}
+
+function siapkanPembaca() {
+    if (SC.detector === null && 'BarcodeDetector' in window) {
+        try { SC.detector = new BarcodeDetector({ formats: ['ean_13'] }); } catch (e) { SC.detector = false; }
+    }
+    if (!SC.reader && window.ZXing) {
+        const r = new ZXing.MultiFormatReader(), h = new Map();
+        h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13]);
+        h.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        r.setHints(h); SC.reader = r;
+    }
+}
+/** Baca barcode EAN-13 dari gambar/video; kembalikan ISBN-13 atau null */
+async function bacaBarcode(sumber, w, h) {
+    siapkanPembaca();
+    if (SC.detector) {
+        try { const hasil = await SC.detector.detect(sumber); for (const b of hasil) { const i = normalIsbn(b.rawValue); if (i) return i; } } catch (e) {}
+    }
+    if (!SC.reader) return null;
+    const cv = $('#scan-canvas'), skala = Math.min(1, 1000 / w);
+    cv.width = Math.round(w * skala); cv.height = Math.round(h * skala);
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(sumber, 0, 0, cv.width, cv.height);
+    try {
+        const r = SC.reader.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(cv))));
+        return normalIsbn(r.getText());
+    } catch (e) { return null; }
+}
+function mulaiDeteksi() {
+    clearInterval(SC.timer);
+    let jalan = false;
+    SC.timer = setInterval(async () => {
+        const v = $('#scan-video');
+        if (jalan || SC.sibuk || SC.isbn || !v.videoWidth) return;
+        jalan = true;
+        const isbn = await bacaBarcode(v, v.videoWidth, v.videoHeight);
+        jalan = false;
+        if (isbn && !SC.isbn) prosesIsbn(isbn);
+    }, 300);
+}
+
+async function prosesIsbn(isbn) {
+    SC.isbn = isbn; SC.sibuk = true;
+    clearInterval(SC.timer);
+    $('#scan-frame').classList.add('ok');
+    try { navigator.vibrate && navigator.vibrate(80); } catch (e) {}
+    $('#scan-isbn-ketik').value = isbn;
+    const ada = S.buku.find(b => normalIsbn(b.isbn) === isbn);
+    if (!navigator.onLine) {
+        SC.sibuk = false;
+        if (ada) return selesaiIsi({ sumber: 'katalog perpustakaan', isbn, judul: ada.judul, pengarang: ada.pengarang, penerbit: ada.penerbit, tahunTerbit: ada.tahunTerbit, kategori: ada.kategori });
+        scanStatus(`ISBN ${isbn} terbaca, tapi sedang offline sehingga data tidak bisa dicari. ISBN tetap diisikan.`, 'err');
+        return selesaiIsi({ sumber: 'scan ISBN (offline)', isbn });
+    }
+    scanStatus(`ISBN ${isbn} terbaca. Mencari data buku...`);
+    const d = await cariDataIsbn(isbn);
+    SC.sibuk = false;
+    if (d) { if (ada && ada.kategori) d.kategori = ada.kategori; return selesaiIsi(d); }
+    if (ada) return selesaiIsi({ sumber: 'katalog perpustakaan', isbn, judul: ada.judul, pengarang: ada.pengarang, penerbit: ada.penerbit, tahunTerbit: ada.tahunTerbit, kategori: ada.kategori });
+    scanLangkah(true);
+    $('#scan-frame').classList.remove('ok');
+    scanStatus(`Data ISBN ${isbn} tidak ditemukan. Sekarang foto SAMPUL DEPAN buku, lalu tekan "Foto Sampul Depan".`, 'err');
+}
+
+/** Ambil gambar (dari video atau file), perkecil, lalu kirim ke AI lewat server */
+function gambarKeJpeg(sumber, w, h) {
+    const cv = document.createElement('canvas'), s = Math.min(1, 1024 / Math.max(w, h));
+    cv.width = Math.round(w * s); cv.height = Math.round(h * s);
+    cv.getContext('2d').drawImage(sumber, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', 0.82);
+}
+async function bacaSampulAI(dataUrl) {
+    if (!getPw()) { tutupScan(); bukaLogin('kelola'); return; }
+    if (!navigator.onLine) return scanStatus('Membaca sampul dengan AI butuh internet. Isi data secara manual, atau coba lagi saat online.', 'err');
+    SC.sibuk = true;
+    $('#scan-gambar').src = dataUrl; $('#scan-gambar').hidden = false;
+    berhentiKamera();
+    scanStatus('AI sedang membaca sampul buku... (5–20 detik)');
+    busy($('#btn-scan-foto'), true, 'Membaca...');
+    const res = await kirimRaw({ action: 'bacaSampul', gambar: dataUrl.split(',')[1], isbn: SC.isbn, ...kredensial() });
+    busy($('#btn-scan-foto'), false);
+    SC.sibuk = false;
+    if (res._network) return scanStatus('Gagal terhubung ke server. Periksa internet lalu coba lagi.', 'err');
+    if (pwSalah(res.message)) { tutupScan(); logout(true); bukaLogin('kelola'); return; }
+    if (res.status !== 'success' || !res.data) {
+        scanStatus(res.message || 'AI gagal membaca sampul.', 'err');
+        $('#scan-gambar').hidden = true; return bukaUlangKamera();
+    }
+    const d = res.data;
+    if (!d.judul) { scanStatus('Judul tidak terbaca. Coba foto lebih dekat dan terang, sampul memenuhi bingkai.', 'err'); $('#scan-gambar').hidden = true; return bukaUlangKamera(); }
+    selesaiIsi({ ...d, isbn: normalIsbn(d.isbn) || SC.isbn || d.isbn || '', sumber: 'foto sampul (AI)' });
+}
+async function bukaUlangKamera() {
+    try {
+        SC.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+        const v = $('#scan-video'); v.srcObject = SC.stream; await v.play().catch(() => {});
+        if (!SC.isbn) mulaiDeteksi();
+    } catch (e) {}
+}
+
+/** Isi form Tambah Buku, lalu tampilkan untuk diperiksa sebelum disimpan */
+function selesaiIsi(d) {
+    tutupScan();
+    go('kelola');
+    $$('#kelola-tabs .tab').find(t => t.dataset.tab === 'tab-tambah-buku').click();
+    $$('#tab-tambah-buku .auto-isi').forEach(el => el.classList.remove('auto-isi'));
+    const isi = (sel, v) => { const el = $(sel); if (el && v) { el.value = v; el.classList.add('auto-isi'); } };
+    isi('#buku-judul', d.judul); isi('#buku-pengarang', d.pengarang); isi('#buku-penerbit', d.penerbit);
+    isi('#buku-isbn', d.isbn); isi('#buku-tahun', d.tahunTerbit); isi('#buku-kategori', d.kategori);
+    $('#tab-tambah-buku details.more-fields').open = true;
+
+    // Usulan akhiran & nomor inventaris berikutnya
+    const sama = S.buku.filter(b => (d.isbn && normalIsbn(b.isbn) === d.isbn) || (d.judul && b.judul.toLowerCase().trim() === d.judul.toLowerCase().trim()));
+    const sfx = $('#buku-suffix');
+    if (!sfx.value.trim()) sfx.value = lsGet(SUFFIX_KEY, '') || '';
+    const akhiran = sfx.value.trim();
+    let usul = '';
+    if (akhiran) {
+        const nomor = S.buku.filter(b => b.noInv.endsWith(akhiran)).map(b => parseInt(b.noInv, 10)).filter(n => !isNaN(n));
+        const berikut = (nomor.length ? Math.max(...nomor) : 0) + 1;
+        usul = ` Nomor terakhir dengan akhiran <span class="mono">${esc(akhiran)}</span> adalah <b>${nomor.length ? berikut - 1 : '–'}</b>, jadi rentang bisa mulai dari <b>${String(berikut).padStart(2, '0')}</b>.`;
+    }
+    const info = $('#auto-isi-info');
+    info.className = 'alert ' + (d.judul ? 'alert-green' : 'alert-amber');
+    info.innerHTML = (d.judul
+        ? `<b><i class="fa-solid fa-circle-check"></i> Data terisi dari ${esc(d.sumber)}.</b> Periksa isian berwarna hijau dan ubah bila perlu.`
+        : `<b>Hanya ISBN yang terisi.</b> Lengkapi judul dan data lainnya secara manual.`) +
+        (sama.length ? `<br><i class="fa-solid fa-circle-info"></i> Judul ini sudah ada di katalog (<b>${sama.length}</b> eksemplar, contoh <span class="mono">${esc(sama[0].noInv)}</span>). Isi rentang lanjutan untuk menambah eksemplar.` : '') +
+        `<br>Langkah terakhir: isi <b>Rentang No. Inventaris</b> dan <b>Akhiran</b>, lalu tekan <b>Tambah Buku Massal</b>.` + usul;
+    info.hidden = false;
+    hintRange();
+    toast(d.judul ? 'Data buku terisi. Periksa dulu sebelum menyimpan.' : 'ISBN terisi.', 'ok', 3500);
+    setTimeout(() => { info.scrollIntoView({ behavior: 'smooth', block: 'start' }); $('#buku-range').focus({ preventScroll: true }); }, 150);
+}
+
+$('#btn-buka-scan').addEventListener('click', bukaScan);
+$('#btn-scan-tutup').addEventListener('click', tutupScan);
+$('#btn-isbn-cari').addEventListener('click', () => {
+    const i = normalIsbn($('#scan-isbn-ketik').value);
+    if (!i) return scanStatus('ISBN tidak valid. Periksa kembali 10 atau 13 digitnya.', 'err');
+    SC.isbn = ''; prosesIsbn(i);
+});
+$('#scan-isbn-ketik').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#btn-isbn-cari').click(); } });
+$('#btn-scan-foto').addEventListener('click', () => {
+    const v = $('#scan-video');
+    if (!SC.stream || !v.videoWidth) return $('#scan-file').click();
+    bacaSampulAI(gambarKeJpeg(v, v.videoWidth, v.videoHeight));
+});
+$('#btn-scan-galeri').addEventListener('click', () => $('#scan-file').click());
+$('#scan-file').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    const img = new Image(); img.src = URL.createObjectURL(f);
+    try { await img.decode(); } catch (er) { return scanStatus('Foto tidak bisa dibuka.', 'err'); }
+    if (!SC.isbn) {
+        scanStatus('Memeriksa barcode di foto...');
+        const i = await bacaBarcode(img, img.naturalWidth, img.naturalHeight);
+        if (i) { URL.revokeObjectURL(img.src); return prosesIsbn(i); }
+    }
+    const url = gambarKeJpeg(img, img.naturalWidth, img.naturalHeight);
+    URL.revokeObjectURL(img.src);
+    bacaSampulAI(url);
+});
+$('#modal-scan').addEventListener('click', e => { if (e.target.id === 'modal-scan') tutupScan(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') berhentiKamera(); });
 
 // Pengaturan denda
 $('#btn-simpan-set').addEventListener('click', async function () {

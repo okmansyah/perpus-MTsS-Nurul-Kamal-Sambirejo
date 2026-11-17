@@ -343,6 +343,11 @@
                 </div>
 
                 <div class="card tab-panel active" id="tab-tambah-buku">
+                    <div class="scan-cta">
+                        <div><b><i class="fa-solid fa-wand-magic-sparkles"></i> Isi otomatis dari buku</b><br><span class="muted">Scan barcode ISBN di sampul belakang. Kalau tidak ada, foto sampul depan untuk dibaca AI.</span></div>
+                        <button type="button" class="btn btn-primary" id="btn-buka-scan"><i class="fa-solid fa-camera"></i> Scan / Foto Buku</button>
+                    </div>
+                    <div class="alert alert-green" id="auto-isi-info" hidden></div>
                     <p class="muted">Tambahkan buku secara massal menggunakan rentang No. Inventaris.</p>
                     <div class="form-grid">
                         <div><label class="lbl" for="buku-range">Rentang No. Inventaris</label><input id="buku-range" class="input" placeholder="Contoh: 01-20"></div>
@@ -487,6 +492,34 @@
     </form>
 </div>
 
+<!-- ================= SCAN BUKU MODAL ================= -->
+<div class="modal" id="modal-scan" hidden>
+    <div class="modal-box wide scan-box">
+        <h2><i class="fa-solid fa-camera"></i> Isi Otomatis dari Buku</h2>
+        <ol class="scan-steps">
+            <li id="step-isbn" class="aktif">Scan barcode ISBN (sampul belakang)</li>
+            <li id="step-foto">Jika tidak ada: foto sampul depan (AI)</li>
+        </ol>
+        <div class="scan-view">
+            <video id="scan-video" playsinline muted autoplay></video>
+            <div class="scan-frame" id="scan-frame"></div>
+            <img id="scan-gambar" alt="" hidden>
+        </div>
+        <p class="scan-status" id="scan-status">Menyalakan kamera...</p>
+        <div class="scan-isbn">
+            <input id="scan-isbn-ketik" class="input" inputmode="numeric" placeholder="Atau ketik ISBN di sini" autocomplete="off">
+            <button type="button" class="btn btn-outline" id="btn-isbn-cari"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
+        </div>
+        <div class="btn-row wrap">
+            <button type="button" class="btn btn-ghost" id="btn-scan-tutup">Tutup</button>
+            <button type="button" class="btn btn-outline" id="btn-scan-galeri"><i class="fa-solid fa-image"></i> Pilih Foto</button>
+            <button type="button" class="btn btn-primary grow" id="btn-scan-foto"><i class="fa-solid fa-camera"></i> Foto Sampul Depan</button>
+        </div>
+        <input type="file" id="scan-file" accept="image/*" hidden>
+        <canvas id="scan-canvas" hidden></canvas>
+    </div>
+</div>
+
 <!-- ================= TTD MODAL ================= -->
 <div class="modal" id="modal-ttd" hidden>
     <form class="modal-box wide" id="form-ttd">
@@ -509,6 +542,7 @@
 <div class="toasts" id="toasts"></div>
 <div id="print-area"></div>
 
+<script src="vendor/zxing.min.js" defer></script>
 <script src="script.js"></script>
 </body>
 </html>

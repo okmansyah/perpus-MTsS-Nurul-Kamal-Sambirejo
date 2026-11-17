@@ -1,6 +1,6 @@
 {
- "versi": 3,
- "catatan": "Akun petugas, catatan & pembayaran denda, data katalog lengkap, waktu transaksi offline",
+ "versi": 4,
+ "catatan": "Isi otomatis buku: scan ISBN, foto sampul dibaca AI",
  "files": [
   "index.html",
   "logo.png",
@@ -20,6 +20,7 @@
   "vendor/font/pjs-600.woff2",
   "vendor/font/pjs-700.woff2",
   "vendor/font/pjs-800.woff2",
-  "vendor/qrcode.js"
+  "vendor/qrcode.js",
+  "vendor/zxing.min.js"
  ]
 }
