@@ -43,6 +43,7 @@
             <a href="#laporan" data-page="laporan" data-admin><i class="fa-solid fa-file-lines"></i> Laporan Bulanan</a>
             <a href="#kartu" data-page="kartu" data-admin><i class="fa-solid fa-id-card"></i> Kartu Anggota</a>
             <a href="#label" data-page="label" data-admin><i class="fa-solid fa-barcode"></i> Label Buku</a>
+            <a href="#opname" data-page="opname" data-admin><i class="fa-solid fa-clipboard-check"></i> Stock Opname</a>
 
             <p class="nav-label">Admin</p>
             <a href="#kelola" data-page="kelola" data-admin><i class="fa-solid fa-sliders"></i> Kelola Data</a>
@@ -331,6 +332,61 @@
                     <p class="table-foot" id="info-label"></p>
                 </div>
                 <div class="labels-grid" id="label-preview"></div>
+            </section>
+
+            <!-- ============ STOCK OPNAME ============ -->
+            <section class="page" id="page-opname">
+                <div class="card" id="op-mulai">
+                    <div class="card-head"><h3><i class="fa-solid fa-clipboard-check"></i> Sesi Stock Opname</h3></div>
+                    <p class="muted" id="op-sesi-info">Belum ada sesi. Tentukan cakupan buku yang akan dicek, lalu mulai.</p>
+                    <div class="form-grid">
+                        <div><label class="lbl" for="op-tahun">Tahun inventaris</label><select id="op-tahun" class="input"><option value="">Semua tahun</option></select></div>
+                        <div><label class="lbl" for="op-teks">Filter akhiran / judul <small>(opsional)</small></label><input id="op-teks" class="input" placeholder="Contoh: /VII/ atau Bahasa Indonesia"></div>
+                    </div>
+                    <p class="hint" id="op-target-hint"></p>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="btn-op-baru"><i class="fa-solid fa-play"></i> Mulai Sesi Baru</button>
+                        <button class="btn btn-danger btn-sm" id="btn-op-hapus" hidden><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
+                    </div>
+                </div>
+
+                <div id="op-aktif" hidden>
+                    <div class="stats stats-4">
+                        <div class="stat"><div class="stat-ico blue"><i class="fa-solid fa-bullseye"></i></div><div><span>Target Dicek</span><strong id="op-n-target">0</strong></div></div>
+                        <div class="stat"><div class="stat-ico green"><i class="fa-solid fa-circle-check"></i></div><div><span>Ditemukan</span><strong id="op-n-temu">0</strong></div></div>
+                        <div class="stat"><div class="stat-ico red"><i class="fa-solid fa-circle-question"></i></div><div><span>Belum Ditemukan</span><strong id="op-n-belum">0</strong></div></div>
+                        <div class="stat"><div class="stat-ico amber"><i class="fa-solid fa-book-open-reader"></i></div><div><span>Sedang Dipinjam</span><strong id="op-n-pinjam">0</strong></div></div>
+                    </div>
+                    <div class="card">
+                        <div class="op-progress"><div id="op-bar"></div></div>
+                        <p class="hint" id="op-persen"></p>
+                        <button class="btn btn-primary btn-lg w-100 btn-scan-besar" id="btn-op-kamera"><i class="fa-solid fa-camera"></i> Scan Label dengan Kamera</button>
+                        <label class="lbl" for="op-input">Atau ketik / scan dengan scanner USB, lalu Enter</label>
+                        <input id="op-input" class="input input-lg mono" placeholder="No. inventaris..." autocomplete="off">
+                        <div class="op-terakhir" id="op-terakhir"></div>
+                    </div>
+                    <div class="card">
+                        <div class="toolbar wrap">
+                            <select id="op-filter" class="input">
+                                <option value="belum">Belum ditemukan</option>
+                                <option value="pinjam">Sedang dipinjam (tidak di rak)</option>
+                                <option value="temu">Ditemukan</option>
+                                <option value="anomali">Tercatat dipinjam tapi ada di rak</option>
+                                <option value="asing">Kode tidak dikenal</option>
+                            </select>
+                            <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="op-cari" class="input" placeholder="Cari judul / no. inventaris..."></div>
+                            <button class="btn btn-outline" id="btn-op-cetak"><i class="fa-solid fa-print"></i> Cetak Berita Acara</button>
+                            <button class="btn btn-danger only-admin" id="btn-op-hilang"><i class="fa-solid fa-triangle-exclamation"></i> Tandai Belum Ditemukan sebagai Hilang</button>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>No. Inventaris</th><th>Judul</th><th>Status Katalog</th><th>Rak</th><th>Keterangan</th></tr></thead>
+                                <tbody id="tb-opname"></tbody>
+                            </table>
+                        </div>
+                        <p class="table-foot" id="op-info"></p>
+                    </div>
+                </div>
             </section>
 
             <!-- ============ KELOLA ============ -->

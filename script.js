@@ -22,7 +22,7 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
-const VERSI_WEB = 9;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const VERSI_WEB = 10;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
 const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
 const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
 const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
@@ -523,6 +523,7 @@ const PAGES = {
     laporan:   ['Laporan Bulanan', 'Laporan siap cetak dengan tanda tangan'],
     kartu:     ['Kartu Anggota', 'Cetak kartu anggota dengan QR code / barcode'],
     label:     ['Label Buku', 'Cetak label barcode untuk punggung / sampul buku'],
+    opname:    ['Stock Opname', 'Cek keberadaan buku di rak dengan scan label'],
     kelola:    ['Kelola Data', 'Tambah, ubah, dan hapus data buku, anggota, dan pengaturan']
 };
 function isAdminPage(p) { const a = $(`.nav a[data-page="${p}"]`); return a && a.hasAttribute('data-admin'); }
@@ -573,7 +574,7 @@ function renderPage(p) {
     ({
         dashboard: renderDashboard, katalog: renderKatalog, pinjam: previewPinjam, kembali: renderKembali,
         terlambat: () => { renderTerlambat(); renderDenda(); }, riwayat: renderRiwayat, anggota: renderAnggota, laporan: renderLaporan,
-        kartu: renderKartu, label: renderLabel, kelola: () => {}
+        kartu: renderKartu, label: renderLabel, opname: renderOpname, kelola: () => {}
     }[p] || (() => {}))();
 }
 
@@ -1578,6 +1579,12 @@ function bunyi(ok = true) {
 }
 function skStatus(t, jenis = '') { const el = $('#sk-status'); el.textContent = t; el.className = 'scan-status ' + jenis; }
 function skChips() {
+    if (SK.mode === 'opname') {
+        const r = ringkasOpname();
+        $('#sk-chips').className = 'sk-chips';
+        $('#sk-chips').innerHTML = `<div class="sk-chip ok">Ditemukan<b>${r.temu.length} dari ${r.target}</b></div><div class="sk-chip ${r.belum.length ? 'err' : 'ok'}">Belum ditemukan<b>${r.belum.length}</b></div>`;
+        return;
+    }
     const b = SK.buku, a = SK.anggota;
     const chipBuku = `<div class="sk-chip ${b ? (SK.mode === 'pinjam' && !isTersedia(b) ? 'err' : 'ok') : ''}">Buku${b ? `<b>${esc(b.judul)}</b><span class="mono">${esc(b.noInv)}</span>` : '<b>— belum —</b>'}</div>`;
     if (SK.mode === 'kembali') { $('#sk-chips').className = 'sk-chips satu'; $('#sk-chips').innerHTML = chipBuku; return; }
@@ -1622,7 +1629,7 @@ async function bukaScanSirkulasi(mode) {
         SK.buku = bukuByInv($('#pinjam-buku').value.trim()) || null;
         SK.anggota = cariAnggota($('#pinjam-anggota').value) || null;
     }
-    $('#sk-judul').innerHTML = mode === 'pinjam' ? '<i class="fa-solid fa-qrcode"></i> Scan Peminjaman' : '<i class="fa-solid fa-barcode"></i> Scan Pengembalian';
+    $('#sk-judul').innerHTML = mode === 'pinjam' ? '<i class="fa-solid fa-qrcode"></i> Scan Peminjaman' : mode === 'opname' ? '<i class="fa-solid fa-clipboard-check"></i> Scan Stock Opname' : '<i class="fa-solid fa-barcode"></i> Scan Pengembalian';
     $('#sk-lanjut-wrap').hidden = mode !== 'pinjam';
     $('#sk-lanjut').checked = !!lsGet(SK_LANJUT_KEY, false);
     $('#btn-sk-senter').hidden = true;
@@ -1637,7 +1644,7 @@ async function bukaScanSirkulasi(mode) {
             if (c.focusMode && c.focusMode.includes('continuous')) t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
             if (c.torch) $('#btn-sk-senter').hidden = false;
         } catch (e) {}
-        skStatus(mode === 'pinjam' ? 'Arahkan kamera ke kartu anggota atau label buku (urutan bebas).' : 'Arahkan kamera ke barcode label buku.');
+        skStatus(mode === 'pinjam' ? 'Arahkan kamera ke kartu anggota atau label buku (urutan bebas).' : mode === 'opname' ? 'Scan label buku satu per satu. Kamera tetap menyala sampai Anda tekan Selesai.' : 'Arahkan kamera ke barcode label buku.');
         let jalan = false;
         SK.timer = setInterval(async () => {
             const vv = $('#sk-video');
@@ -1659,6 +1666,14 @@ function skProses(kode) {
     const a = !b && SK.mode === 'pinjam' ? anggotaByNis(kode) : null;
     const frame = $('#sk-frame');
     const kedip = ok => { frame.classList.add(ok ? 'ok' : 'err'); setTimeout(() => frame.classList.remove('ok', 'err'), 600); };
+
+    if (SK.mode === 'opname') {
+        const r = opnameScan(kode);
+        bunyi(r.jenis !== 'err'); kedip(r.jenis !== 'err');
+        skStatus(r.pesan, r.jenis === 'ok' ? 'ok' : 'err');
+        skChips();
+        return;
+    }
 
     if (SK.mode === 'kembali') {
         if (!b) { bunyi(false); kedip(false); return skStatus(`Kode "${kode}" bukan nomor inventaris yang terdaftar.`, 'err'); }
@@ -1767,6 +1782,155 @@ $('#btn-wa-simpan').addEventListener('click', () => {
     if (currentPage() === 'terlambat') renderTerlambat();
 });
 $('#btn-wa-reset').addEventListener('click', () => { $('#wa-template').value = WA_BAWAAN; lsSet(WA_KEY, ''); toast('Pesan dikembalikan ke bawaan.', 'info'); });
+
+// ==========================================================
+// == STOCK OPNAME ==
+// Sesi disimpan di perangkat (bisa dilanjutkan & jalan offline).
+// ==========================================================
+const OPNAME_KEY = 'perpus_opname_v1';
+let OP = lsGet(OPNAME_KEY, null);
+function simpanOP() { lsSet(OPNAME_KEY, OP); }
+function cakupanOpname() {
+    const th = $('#op-tahun').value, t = $('#op-teks').value.trim().toLowerCase();
+    return S.buku.filter(b => (!th || tahunInventaris(b.noInv) === th) && (!t || (b.noInv + ' ' + b.judul).toLowerCase().includes(t)));
+}
+function ringkasOpname() {
+    const kosong = { target: 0, temu: [], belum: [], pinjam: [], anomali: [], asing: [] };
+    if (!OP) return kosong;
+    const r = { ...kosong, target: OP.target.length, temu: [], belum: [], pinjam: [], anomali: [], asing: Object.keys(OP.asing) };
+    OP.target.forEach(inv => {
+        const b = bukuByInv(inv) || { noInv: inv, judul: '(sudah dihapus dari katalog)', status: '-' };
+        const ada = !!OP.temu[inv];
+        if (ada) { r.temu.push(b); if (isDipinjam(b)) r.anomali.push(b); }
+        else if (isDipinjam(b)) r.pinjam.push(b);
+        else r.belum.push(b);
+    });
+    return r;
+}
+/** Proses satu kode hasil scan. Mengembalikan { jenis: ok|warn|err, pesan } */
+function opnameScan(kode) {
+    if (!OP) return { jenis: 'err', pesan: 'Mulai sesi stock opname terlebih dahulu.' };
+    kode = String(kode || '').trim();
+    if (!kode) return { jenis: 'err', pesan: '' };
+    const b = bukuByInv(kode);
+    let hasil;
+    if (!b) {
+        OP.asing[kode] = Date.now();
+        hasil = { jenis: 'err', pesan: `"${kode}" tidak ada di katalog. Dicatat sebagai kode tidak dikenal.` };
+    } else if (!OP.target.includes(b.noInv)) {
+        hasil = { jenis: 'warn', pesan: `${b.noInv} (${b.judul}) ada di katalog, tapi di luar cakupan sesi ini.` };
+    } else if (OP.temu[b.noInv]) {
+        hasil = { jenis: 'warn', pesan: `${b.noInv} sudah di-scan sebelumnya.` };
+    } else {
+        OP.temu[b.noInv] = Date.now();
+        hasil = isDipinjam(b)
+            ? { jenis: 'warn', pesan: `${b.noInv} ditemukan, padahal tercatat DIPINJAM. Periksa / proses pengembaliannya.` }
+            : { jenis: 'ok', pesan: `✓ ${b.noInv} · ${b.judul}` };
+    }
+    simpanOP();
+    tampilOpnameTerakhir(hasil);
+    if (currentPage() === 'opname') renderOpname();
+    return hasil;
+}
+function tampilOpnameTerakhir(h) { $('#op-terakhir').innerHTML = h && h.pesan ? `<span class="${h.jenis}">${esc(h.pesan)}</span>` : ''; }
+
+function renderOpname() {
+    // pilihan tahun & perkiraan target
+    const thn = [...new Set(S.buku.map(b => tahunInventaris(b.noInv)).filter(Boolean))].sort().reverse();
+    const sel = $('#op-tahun'), v = sel.value;
+    sel.innerHTML = '<option value="">Semua tahun</option>' + thn.map(t => `<option>${t}</option>`).join(''); sel.value = v;
+    $('#op-target-hint').textContent = `Cakupan saat ini: ${cakupanOpname().length} eksemplar.`;
+    $('#btn-op-hapus').hidden = !OP;
+    $('#op-aktif').hidden = !OP;
+    if (!OP) { $('#op-sesi-info').textContent = 'Belum ada sesi. Tentukan cakupan buku yang akan dicek, lalu mulai.'; return; }
+    $('#op-sesi-info').innerHTML = `Sesi aktif sejak <b>${esc(new Date(OP.mulai).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' }))}</b> oleh ${esc(OP.petugas || '-')} · cakupan: <b>${esc(OP.cakupanTeks)}</b>. Sesi tersimpan di perangkat ini dan bisa dilanjutkan kapan saja.`;
+    const r = ringkasOpname();
+    const dicek = r.target - r.pinjam.length;
+    $('#op-n-target').textContent = r.target;
+    $('#op-n-temu').textContent = r.temu.length;
+    $('#op-n-belum').textContent = r.belum.length;
+    $('#op-n-pinjam').textContent = r.pinjam.length;
+    const persen = dicek ? Math.round(r.temu.length / dicek * 100) : 0;
+    $('#op-bar').style.width = Math.min(100, persen) + '%';
+    $('#op-persen').textContent = `${persen}% dari ${dicek} buku yang seharusnya ada di rak sudah ditemukan.` + (r.anomali.length ? ` ${r.anomali.length} buku tercatat dipinjam tapi ada di rak.` : '') + (r.asing.length ? ` ${r.asing.length} kode tidak dikenal.` : '');
+
+    const f = $('#op-filter').value, q = $('#op-cari').value.toLowerCase().trim();
+    let baris;
+    if (f === 'asing') baris = r.asing.map(k => ({ noInv: k, judul: '–', status: 'Tidak ada di katalog', rak: '', ket: 'Label tidak dikenal' }));
+    else baris = (r[f] || []).map(b => ({ noInv: b.noInv, judul: b.judul, status: b.status, rak: b.rak || '', ket: f === 'temu' ? 'Di-scan ' + new Date(OP.temu[b.noInv]).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' }) : f === 'anomali' ? 'Proses pengembaliannya' : f === 'pinjam' ? 'Sedang dipinjam' : 'Belum di-scan' }));
+    if (q) baris = baris.filter(x => (x.noInv + ' ' + x.judul).toLowerCase().includes(q));
+    baris.sort((a, b) => a.noInv.localeCompare(b.noInv, undefined, { numeric: true }));
+    $('#tb-opname').innerHTML = baris.length ? baris.slice(0, 500).map(x => `<tr>
+        <td class="mono">${esc(x.noInv)}</td><td>${esc(x.judul)}</td>
+        <td><span class="badge ${/tersedia/i.test(x.status) ? 'b-green' : /dipinjam/i.test(x.status) ? 'b-amber' : 'b-gray'}">${esc(x.status)}</span></td>
+        <td>${esc(x.rak) || '<span class="muted">–</span>'}</td><td>${esc(x.ket)}</td></tr>`).join('')
+        : '<tr><td colspan="5" class="loading">Tidak ada data pada kelompok ini.</td></tr>';
+    $('#op-info').textContent = `${baris.length} baris` + (baris.length > 500 ? ' (ditampilkan 500 pertama)' : '') + '.';
+}
+
+$('#op-tahun').addEventListener('change', renderOpname);
+$('#op-teks').addEventListener('input', () => { $('#op-target-hint').textContent = `Cakupan saat ini: ${cakupanOpname().length} eksemplar.`; });
+$('#op-filter').addEventListener('change', renderOpname);
+$('#op-cari').addEventListener('input', renderOpname);
+$('#btn-op-baru').addEventListener('click', () => {
+    const daftar = cakupanOpname();
+    if (!daftar.length) return toast('Tidak ada buku pada cakupan ini.', 'err');
+    if (OP && !confirm('Sesi stock opname yang sedang berjalan akan diganti dengan sesi baru. Lanjutkan?')) return;
+    const th = $('#op-tahun').value, t = $('#op-teks').value.trim();
+    OP = { mulai: Date.now(), petugas: getAkun().nama, cakupanTeks: [th ? 'tahun ' + th : 'semua tahun', t ? `"${t}"` : ''].filter(Boolean).join(', ') + ` (${daftar.length} eksemplar)`, target: daftar.map(b => b.noInv), temu: {}, asing: {} };
+    simpanOP(); tampilOpnameTerakhir(null); renderOpname();
+    toast('Sesi stock opname dimulai. Scan label buku di rak.', 'ok');
+    $('#op-input').focus();
+});
+$('#btn-op-hapus').addEventListener('click', () => {
+    if (!confirm('Hapus sesi stock opname ini? Hasil scan di perangkat ini akan hilang (cetak berita acara dulu bila perlu).')) return;
+    OP = null; try { localStorage.removeItem(OPNAME_KEY); } catch (e) {}
+    renderOpname();
+});
+$('#op-input').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const v = e.target.value.trim(); e.target.value = '';
+    if (v) { const r = opnameScan(v); if (r.jenis === 'err') bunyi(false); }
+});
+$('#btn-op-kamera').addEventListener('click', () => bukaScanSirkulasi('opname'));
+$('#btn-op-cetak').addEventListener('click', () => {
+    if (!OP) return;
+    const r = ringkasOpname();
+    const tbl = (list, ket) => list.length ? `<table><thead><tr><th>No</th><th>No. Inventaris</th><th>Judul Buku</th><th>Keterangan</th></tr></thead><tbody>${list.map((b, i) => `<tr><td style="text-align:center">${i + 1}</td><td>${esc(b.noInv)}</td><td>${esc(b.judul)}</td><td>${esc(ket)}</td></tr>`).join('')}</tbody></table>` : '<p><i>Tidak ada.</i></p>';
+    const urut = l => [...l].sort((a, b) => a.noInv.localeCompare(b.noInv, undefined, { numeric: true }));
+    const html = `<div class="paper doc">${kopHTML()}
+        <div class="doc-title">Berita Acara Stock Opname Koleksi Perpustakaan</div>
+        <div class="doc-sub">Dilaksanakan ${tglPanjang(new Date(OP.mulai))} s.d. ${tglPanjang(new Date())} · Cakupan: ${esc(OP.cakupanTeks)}</div>
+        <table><tbody>
+            <tr><td>Jumlah eksemplar yang dicek</td><td style="text-align:right"><b>${r.target}</b></td></tr>
+            <tr><td>Ditemukan di rak</td><td style="text-align:right"><b>${r.temu.length}</b></td></tr>
+            <tr><td>Sedang dipinjam (tercatat di sirkulasi)</td><td style="text-align:right"><b>${r.pinjam.length}</b></td></tr>
+            <tr><td>Tidak ditemukan</td><td style="text-align:right"><b>${r.belum.length}</b></td></tr>
+            <tr><td>Tercatat dipinjam tetapi ada di rak</td><td style="text-align:right"><b>${r.anomali.length}</b></td></tr>
+            <tr><td>Label tidak dikenal</td><td style="text-align:right"><b>${r.asing.length}</b></td></tr>
+        </tbody></table>
+        <h4>A. Daftar buku tidak ditemukan</h4>${tbl(urut(r.belum), 'Tidak ditemukan di rak')}
+        ${r.anomali.length ? `<h4>B. Tercatat dipinjam tetapi ada di rak</h4>${tbl(urut(r.anomali), 'Perlu diproses pengembaliannya')}` : ''}
+        ${r.asing.length ? `<h4>${r.anomali.length ? 'C' : 'B'}. Label tidak dikenal</h4>${tbl(r.asing.map(k => ({ noInv: k, judul: '-' })), 'Tidak ada di katalog')}` : ''}
+        ${ttdHTML(new Date())}</div>`;
+    cetak(html);
+});
+$('#btn-op-hilang').addEventListener('click', async function () {
+    const r = ringkasOpname();
+    const daftar = r.belum.filter(b => bukuByInv(b.noInv) && isTersedia(b) && b.kondisi !== 'Hilang');
+    if (!daftar.length) return toast('Tidak ada buku yang perlu ditandai.', 'info');
+    if (!confirm(`Tandai ${daftar.length} buku yang belum ditemukan sebagai kondisi "Hilang"?\nStatus pinjamnya tidak berubah, hanya kolom Kondisi di katalog.`)) return;
+    busy(this, true, 'Menyimpan...');
+    let ok = 0;
+    for (const b of daftar) {
+        const res = await aksi({ action: 'updateBuku', buku: { noInventaris: b.noInv, judul: b.judul, pengarang: b.pengarang, penerbit: b.penerbit, kondisi: 'Hilang' } });
+        if (res.status !== 'error') ok++;
+    }
+    busy(this, false);
+    toast(`${ok} buku ditandai Hilang.`, 'ok');
+    renderOpname();
+});
 
 // Pengaturan denda
 $('#btn-simpan-set').addEventListener('click', async function () {

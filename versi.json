@@ -1,6 +1,6 @@
 {
- "versi": 9,
- "catatan": "No. HP anggota & pengingat keterlambatan lewat WhatsApp",
+ "versi": 10,
+ "catatan": "Stock opname: cek rak dengan scan label + berita acara",
  "files": [
   "index.html",
   "logo.png",

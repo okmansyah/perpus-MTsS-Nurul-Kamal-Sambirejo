@@ -416,3 +416,12 @@ body.is-utama .only-petugas { display: none !important; }
 .wa-mini { color: #15803d; text-decoration: none; white-space: nowrap; }
 .wa-mini i { color: #25d366; }
 #wa-template { font-family: inherit; line-height: 1.5; resize: vertical; }
+
+/* ===== v10: stock opname ===== */
+.stats-4 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.op-progress { height: 14px; border-radius: 99px; background: #eef2ef; overflow: hidden; }
+.op-progress > div { height: 100%; width: 0; background: linear-gradient(90deg, #16a34a, #0f6b45); transition: width .3s; }
+.op-terakhir { margin-top: 12px; min-height: 1.4em; font-size: 14px; }
+.op-terakhir .ok { color: #15803d; font-weight: 700; }
+.op-terakhir .warn { color: #b45309; font-weight: 700; }
+.op-terakhir .err { color: #b91c1c; font-weight: 700; }
