@@ -8,11 +8,6 @@
 // ==========================================================
 // == PENGATURAN UTAMA ==
 // ==========================================================
-const SHEET = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT5Drx7hO3X54afpQyQEj01DTXQLON2eAAG5OIBjNL24Ub_6pIJ6Sr43gjQKAkd_J3nrHfM1XrhNI-/pub?single=true&output=csv&gid=';
-const URL_BUKU     = SHEET + '0';
-const URL_ANGGOTA  = SHEET + '485044064';
-const URL_HISTORY  = SHEET + '658377134';
-const URL_SETTINGS = SHEET + '1547395606';
 const URL_WEBAPP   = 'https://script.google.com/macros/s/AKfycbyOMWss6R-8AwAQccwBwqG8MusRPYGVv7MOk-90Z658RJnd3Aukd8t2dQA3j167lzBo/exec';
 
 const SEKOLAH = {
@@ -27,7 +22,7 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
-const VERSI_WEB = 4;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const VERSI_WEB = 5;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
 const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
 const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
 const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
@@ -161,6 +156,14 @@ function setAdminUI() {
 }
 function logout(silent) {
     try { sessionStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(LAST_KEY); sessionStorage.removeItem(AKUN_KEY); } catch (e) {}
+    // Di browser umum (bukan APK), hapus data pribadi siswa dari perangkat saat keluar
+    if (!IN_APP && S.loaded) {
+        S.anggota = []; S.denda = []; S.dendaT = 0;
+        S.history.forEach(h => { h.nis = ''; h.nama = ''; h.petugas = ''; });
+        S.buku.forEach(b => { b.nis = ''; });
+        simpanCache(); try { localStorage.removeItem(DENDA_KEY); } catch (e) {}
+        renderSemua();
+    }
     setAdminUI();
     if (!silent) toast('Anda telah keluar.', 'info');
     const cur = currentPage();
@@ -211,7 +214,7 @@ $('#form-login').addEventListener('submit', async e => {
     toast((offlineLogin ? 'Masuk sebagai ' : 'Berhasil masuk sebagai ') + akun.nama + (offlineLogin ? ' (mode offline).' : '.'), 'ok');
     muatDenda();
     if (target) go(target);
-    if (!offlineLogin) sinkron();
+    if (!offlineLogin) sinkron({ muat: true });
 });
 $('#btn-login-batal').addEventListener('click', tutupLogin);
 $('#pw-eye').addEventListener('click', () => {
@@ -337,7 +340,7 @@ async function sinkron(opsi = {}) {
         if (menunggu.has(op.id)) hasilOp[op.id] = res; else if (res.status === 'success') latar++;
         if (res.status === 'success') {
             terkirim++;
-            // Simpan sebentar: CSV Google Sheet butuh beberapa menit untuk ikut berubah
+            // Simpan sebentar agar tetap tampil walau data server dimuat sebelum perubahan selesai ditulis
             const rc = lsGet(RECENT_KEY, []).filter(x => Date.now() - x.sentAt < 15 * 60000);
             rc.push({ op, sentAt: Date.now() }); lsSet(RECENT_KEY, rc);
         }
@@ -379,10 +382,24 @@ function renderSetelahUbah() { isiDatalist(); renderStats(); updateSyncUI(); }
 // ==========================================================
 // == MEMUAT DATA ==
 // ==========================================================
-async function ambilCSV(url) {
-    const res = await fetch(url + '&t=' + Date.now());
-    if (!res.ok) throw new Error('Status ' + res.status);
-    return parseCSV(await res.text()).slice(1);
+/**
+ * Ambil data dari server (Apps Script).
+ * - Sudah login: data lengkap (anggota, riwayat dengan nama siswa).
+ * - Belum login: data publik tanpa NIS/nama siswa (katalog & statistik).
+ */
+async function ambilDataServer() {
+    if (getPw()) {
+        const r = await kirimRaw({ action: 'ambilData', ...kredensial() });
+        if (r._network) throw new Error('offline');
+        if (r.status === 'success') return r;
+        if (pwSalah(r.message)) logout(true);
+        else throw new Error(r.message || 'Gagal mengambil data');
+    }
+    const res = await fetch(URL_WEBAPP + '?aksi=publik&t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    if (j.status !== 'success') throw new Error(j.message || 'Gagal mengambil data');
+    return j;
 }
 
 function simpanCache() {
@@ -408,11 +425,11 @@ function muatSemua(opsi = {}) {
 async function muatServer(opsi = {}) {
     const btn = $('#btn-refresh');
     btn.classList.add('spin');
-    const hasil = await Promise.allSettled([ambilCSV(URL_BUKU), ambilCSV(URL_ANGGOTA), ambilCSV(URL_HISTORY), ambilCSV(URL_SETTINGS)]);
+    let data = null;
+    try { data = await ambilDataServer(); } catch (e) { console.warn('Ambil data gagal:', e.message); }
     btn.classList.remove('spin');
-    const [rb, ra, rh, rs] = hasil;
 
-    if (hasil.some(h => h.status !== 'fulfilled')) {
+    if (!data) {
         // Offline / server tidak terjangkau: pakai salinan terakhir di perangkat
         S.online = false;
         if (!S.loaded) {
@@ -424,15 +441,16 @@ async function muatServer(opsi = {}) {
         return;
     }
 
-    S.buku = rb.value.map(k => ({
+    S.buku = (data.buku || []).map(k => ({
         noInv: k[0] || '', judul: k[1] || '', pengarang: k[2] || '', penerbit: k[3] || '',
         status: k[4] || '', nis: k[5] || '', tglPinjamRaw: k[6] || '', jatuhTempoRaw: k[7] || '', tglMasukRaw: k[8] || '',
         isbn: k[9] || '', kategori: k[10] || '', rak: k[11] || '', sumber: k[12] || '', harga: k[13] || '', kondisi: k[14] || '', tahunTerbit: k[15] || ''
     })).filter(b => b.noInv);
-    S.anggota = ra.value.map(k => ({ nis: k[0] || '', nama: k[1] || '', kelas: k[2] || '', status: k[3] || '' })).filter(a => a.nis || a.nama);
-    S.history = rh.value.map(k => ({ ts: k[0] || '', tgl: parseTanggal(k[0]), noInv: k[1] || '', judul: k[2] || '', nis: k[3] || '', nama: k[4] || '', aksi: k[5] || '', petugas: k[6] || '' }));
+    S.anggota = (data.anggota || []).map(k => ({ nis: k[0] || '', nama: k[1] || '', kelas: k[2] || '', status: k[3] || '' })).filter(a => a.nis || a.nama);
+    S.history = (data.history || []).map(k => ({ ts: k[0] || '', tgl: parseTanggal(k[0]), noInv: k[1] || '', judul: k[2] || '', nis: k[3] || '', nama: k[4] || '', aksi: k[5] || '', petugas: k[6] || '' }));
     S.history.sort((a, b) => (a.tgl || 0) - (b.tgl || 0));   // transaksi offline bisa masuk belakangan
-    rs.value.forEach(k => { if (k[0]) S.settings[k[0].trim()] = (k[1] || '').trim(); });
+    (data.settings || []).forEach(k => { if (k[0]) S.settings[String(k[0]).trim()] = String(k[1] || '').trim(); });
+    S.publik = !!data.publik;
 
     // Perubahan yang baru terkirim (CSV belum ikut berubah) dan yang belum terkirim
     // tetap diterapkan di atas data server

@@ -1,6 +1,6 @@
 {
- "versi": 4,
- "catatan": "Isi otomatis buku: scan ISBN, foto sampul dibaca AI",
+ "versi": 5,
+ "catatan": "Privasi: data siswa hanya lewat server dengan login",
  "files": [
   "index.html",
   "logo.png",
