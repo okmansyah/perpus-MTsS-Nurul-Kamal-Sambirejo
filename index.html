@@ -6,14 +6,12 @@
     <meta name="theme-color" content="#0f5132">
     <title>Perpustakaan MTsS Nurul Kamal Sambirejo</title>
     <link rel="icon" href="logo.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="vendor/fa/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="vendor/chart.umd.min.js"></script>
+    <script src="vendor/JsBarcode.all.min.js"></script>
+    <script src="vendor/qrcode.js"></script>
 </head>
 <body>
 
@@ -38,7 +36,7 @@
             <a href="#pinjam" data-page="pinjam" data-admin><i class="fa-solid fa-arrow-right-from-bracket"></i> Pinjam Buku</a>
             <a href="#kembali" data-page="kembali" data-admin><i class="fa-solid fa-arrow-right-to-bracket"></i> Kembalikan Buku</a>
             <a href="#terlambat" data-page="terlambat" data-admin><i class="fa-solid fa-clock"></i> Terlambat &amp; Denda <span class="nav-badge" id="badge-telat" hidden>0</span></a>
-            <a href="#riwayat" data-page="riwayat" data-admin><i class="fa-solid fa-clock-rotate-left"></i> Riwayat</a>
+            <a href="#riwayat" data-page="riwayat" data-admin><i class="fa-solid fa-clock-rotate-left"></i> Riwayat <span class="nav-badge nav-badge-amber" id="badge-antrean" hidden title="Menunggu sinkron">0</span></a>
 
             <p class="nav-label">Data &amp; Cetak</p>
             <a href="#anggota" data-page="anggota" data-admin><i class="fa-solid fa-users"></i> Data Anggota</a>
@@ -53,6 +51,7 @@
         <div class="sidebar-foot">
             <button class="btn btn-ghost-light w-100" id="btn-auth"><i class="fa-solid fa-lock"></i> <span>Login Admin</span></button>
             <small>Dikembangkan oleh Okmansyah</small>
+            <small id="info-versi"></small>
         </div>
     </aside>
     <div class="backdrop" id="backdrop"></div>
@@ -66,8 +65,11 @@
                 <p id="page-sub">Sistem Informasi Perpustakaan</p>
             </div>
             <div class="topbar-actions">
-                <span class="chip chip-admin" id="chip-admin" hidden><i class="fa-solid fa-user-shield"></i> Admin</span>
-                <button class="icon-btn" id="btn-refresh" title="Muat ulang data"><i class="fa-solid fa-rotate"></i></button>
+                <span class="chip chip-admin" id="chip-admin" hidden><i class="fa-solid fa-user-shield"></i> <span>Admin</span></span>
+                <button class="sync-chip" id="sync-chip" title="Status sinkronisasi — klik untuk sinkron sekarang">
+                    <i class="fa-solid fa-circle"></i> <span id="sync-text">Memuat...</span>
+                </button>
+                <button class="icon-btn" id="btn-refresh" title="Sinkron &amp; muat ulang data"><i class="fa-solid fa-rotate"></i></button>
             </div>
         </header>
 
@@ -122,8 +124,8 @@
                     </div>
                     <div class="table-wrap">
                         <table>
-                            <thead><tr><th>Judul Buku</th><th>Pengarang</th><th>Penerbit</th><th class="t-center">Total</th><th class="t-center">Tersedia</th></tr></thead>
-                            <tbody id="tb-katalog"><tr><td colspan="5" class="loading">Memuat data...</td></tr></tbody>
+                            <thead><tr><th>Judul Buku</th><th>Pengarang</th><th>Penerbit</th><th>Rak</th><th class="t-center">Total</th><th class="t-center">Tersedia</th></tr></thead>
+                            <tbody id="tb-katalog"><tr><td colspan="6" class="loading">Memuat data...</td></tr></tbody>
                         </table>
                     </div>
                     <p class="table-foot" id="info-katalog"></p>
@@ -168,6 +170,7 @@
                         <input id="kembali-buku" class="input" list="dl-buku-dipinjam" placeholder="Ketik atau scan no. inventaris..." autocomplete="off">
                         <datalist id="dl-buku-dipinjam"></datalist>
                         <div class="preview" id="kembali-preview" hidden></div>
+                        <label class="check" id="kembali-bayar-wrap" hidden><input type="checkbox" id="kembali-bayar"> Denda langsung dibayar tunai saat ini</label>
                         <button class="btn btn-warning btn-lg w-100" id="btn-kembali"><i class="fa-solid fa-rotate-left"></i> Proses Pengembalian</button>
                         <div class="result-box" id="kembali-hasil" hidden></div>
                     </div>
@@ -202,6 +205,33 @@
                         </table>
                     </div>
                     <p class="table-foot">Denda dihitung otomatis: hari terlambat × tarif denda per hari (dari Pengaturan). Angka final tetap dihitung server saat buku dikembalikan.</p>
+                </div>
+                <div class="card">
+                    <div class="toolbar wrap">
+                        <h3>Catatan Denda</h3>
+                        <div class="field-inline">
+                            <label for="denda-filter">Status</label>
+                            <select id="denda-filter" class="input">
+                                <option value="belum lunas">Belum lunas</option>
+                                <option value="lunas">Lunas</option>
+                                <option value="">Semua</option>
+                            </select>
+                        </div>
+                        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="denda-cari" class="input" placeholder="Cari nama, NIS, judul..."></div>
+                        <button class="btn btn-outline" id="btn-muat-denda"><i class="fa-solid fa-rotate"></i> Muat Ulang</button>
+                    </div>
+                    <div class="stats stats-3 mini">
+                        <div class="stat"><div class="stat-ico red"><i class="fa-solid fa-hand-holding-dollar"></i></div><div><span>Belum Dibayar</span><strong id="dn-belum">Rp 0</strong></div></div>
+                        <div class="stat"><div class="stat-ico green"><i class="fa-solid fa-circle-check"></i></div><div><span>Sudah Dibayar</span><strong id="dn-lunas">Rp 0</strong></div></div>
+                        <div class="stat"><div class="stat-ico blue"><i class="fa-solid fa-users"></i></div><div><span>Siswa Menunggak</span><strong id="dn-siswa">0</strong></div></div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Tgl Kembali</th><th>Peminjam</th><th>Buku</th><th class="t-center">Telat</th><th class="t-right">Denda</th><th>Status</th><th></th></tr></thead>
+                            <tbody id="tb-denda"><tr><td colspan="7" class="loading">Memuat...</td></tr></tbody>
+                        </table>
+                    </div>
+                    <p class="table-foot" id="info-denda-list">Denda tercatat otomatis saat buku yang terlambat dikembalikan. Pembayaran yang dicatat saat offline akan dikirim ke server ketika online.</p>
                 </div>
             </section>
 
@@ -308,7 +338,8 @@
                     <button class="tab" data-tab="tab-edit-buku"><i class="fa-solid fa-pen"></i> Edit Buku</button>
                     <button class="tab" data-tab="tab-tambah-anggota"><i class="fa-solid fa-user-plus"></i> Tambah Anggota</button>
                     <button class="tab" data-tab="tab-edit-anggota"><i class="fa-solid fa-user-pen"></i> Edit Anggota</button>
-                    <button class="tab" data-tab="tab-denda"><i class="fa-solid fa-gear"></i> Pinjam &amp; Denda</button>
+                    <button class="tab only-admin" data-tab="tab-denda"><i class="fa-solid fa-gear"></i> Pinjam &amp; Denda</button>
+                    <button class="tab" data-tab="tab-petugas"><i class="fa-solid fa-user-shield"></i> Petugas</button>
                 </div>
 
                 <div class="card tab-panel active" id="tab-tambah-buku">
@@ -320,6 +351,18 @@
                         <div><label class="lbl" for="buku-pengarang">Pengarang</label><input id="buku-pengarang" class="input" placeholder="Contoh: Budi, dkk"></div>
                         <div><label class="lbl" for="buku-penerbit">Penerbit</label><input id="buku-penerbit" class="input" placeholder="Contoh: Erlangga"></div>
                     </div>
+                    <details class="more-fields">
+                        <summary><i class="fa-solid fa-list"></i> Data katalog lengkap (opsional)</summary>
+                        <div class="form-grid">
+                            <div><label class="lbl" for="buku-isbn">ISBN</label><input id="buku-isbn" class="input" placeholder="978-602-..."></div>
+                            <div><label class="lbl" for="buku-kategori">Kategori / No. DDC</label><input id="buku-kategori" class="input" list="dl-ddc" placeholder="Contoh: 400 Bahasa"></div>
+                            <div><label class="lbl" for="buku-rak">Rak</label><input id="buku-rak" class="input" placeholder="Contoh: Rak A-2"></div>
+                            <div><label class="lbl" for="buku-sumber">Sumber</label><input id="buku-sumber" class="input" list="dl-sumber" placeholder="BOS, hibah, beli..."></div>
+                            <div><label class="lbl" for="buku-harga">Harga (Rp)</label><input id="buku-harga" class="input" inputmode="numeric" placeholder="Contoh: 45000"></div>
+                            <div><label class="lbl" for="buku-kondisi">Kondisi</label><select id="buku-kondisi" class="input"><option value="">–</option><option>Baik</option><option>Rusak ringan</option><option>Rusak berat</option><option>Hilang</option></select></div>
+                            <div><label class="lbl" for="buku-tahun">Tahun Terbit</label><input id="buku-tahun" class="input" inputmode="numeric" maxlength="4" placeholder="Contoh: 2021"></div>
+                        </div>
+                    </details>
                     <p class="hint" id="buku-range-hint"></p>
                     <button class="btn btn-primary" id="btn-tambah-buku"><i class="fa-solid fa-floppy-disk"></i> Tambah Buku Massal</button>
                 </div>
@@ -333,10 +376,22 @@
                         <div><label class="lbl" for="edit-buku-pengarang">Pengarang</label><input id="edit-buku-pengarang" class="input"></div>
                         <div><label class="lbl" for="edit-buku-penerbit">Penerbit</label><input id="edit-buku-penerbit" class="input"></div>
                     </div>
+                    <details class="more-fields">
+                        <summary><i class="fa-solid fa-list"></i> Data katalog lengkap (opsional)</summary>
+                        <div class="form-grid">
+                            <div><label class="lbl" for="edit-buku-isbn">ISBN</label><input id="edit-buku-isbn" class="input" placeholder="978-602-..."></div>
+                            <div><label class="lbl" for="edit-buku-kategori">Kategori / No. DDC</label><input id="edit-buku-kategori" class="input" list="dl-ddc" placeholder="Contoh: 400 Bahasa"></div>
+                            <div><label class="lbl" for="edit-buku-rak">Rak</label><input id="edit-buku-rak" class="input" placeholder="Contoh: Rak A-2"></div>
+                            <div><label class="lbl" for="edit-buku-sumber">Sumber</label><input id="edit-buku-sumber" class="input" list="dl-sumber" placeholder="BOS, hibah, beli..."></div>
+                            <div><label class="lbl" for="edit-buku-harga">Harga (Rp)</label><input id="edit-buku-harga" class="input" inputmode="numeric" placeholder="Contoh: 45000"></div>
+                            <div><label class="lbl" for="edit-buku-kondisi">Kondisi</label><select id="edit-buku-kondisi" class="input"><option value="">–</option><option>Baik</option><option>Rusak ringan</option><option>Rusak berat</option><option>Hilang</option></select></div>
+                            <div><label class="lbl" for="edit-buku-tahun">Tahun Terbit</label><input id="edit-buku-tahun" class="input" inputmode="numeric" maxlength="4" placeholder="Contoh: 2021"></div>
+                        </div>
+                    </details>
                     <p class="hint" id="edit-buku-hint"></p>
                     <div class="btn-row">
                         <button class="btn btn-success" id="btn-update-buku"><i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan</button>
-                        <button class="btn btn-danger" id="btn-hapus-buku"><i class="fa-solid fa-trash"></i> Hapus Buku</button>
+                        <button class="btn btn-danger only-admin" id="btn-hapus-buku"><i class="fa-solid fa-trash"></i> Hapus Buku</button>
                     </div>
                 </div>
 
@@ -361,7 +416,7 @@
                     <p class="hint" id="edit-anggota-hint"></p>
                     <div class="btn-row">
                         <button class="btn btn-success" id="btn-update-anggota"><i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan</button>
-                        <button class="btn btn-danger" id="btn-hapus-anggota"><i class="fa-solid fa-trash"></i> Hapus Anggota</button>
+                        <button class="btn btn-danger only-admin" id="btn-hapus-anggota"><i class="fa-solid fa-trash"></i> Hapus Anggota</button>
                     </div>
                 </div>
 
@@ -372,6 +427,41 @@
                     </div>
                     <button class="btn btn-success" id="btn-simpan-set"><i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan</button>
                 </div>
+
+                <div class="tab-panel" id="tab-petugas">
+                    <div class="card only-admin">
+                        <div class="card-head"><h3><i class="fa-solid fa-users-gear"></i> Akun Petugas</h3><button class="btn btn-outline btn-sm" id="btn-muat-petugas"><i class="fa-solid fa-rotate"></i> Muat</button></div>
+                        <p class="muted">Setiap petugas login dengan username sendiri, dan namanya tercatat di riwayat dan denda. Petugas bisa melayani pinjam, kembali, denda, serta menambah atau mengubah data. Menghapus data, mengubah pengaturan, dan mengelola petugas hanya bisa dilakukan admin. Butuh internet.</p>
+                        <div class="table-wrap compact">
+                            <table>
+                                <thead><tr><th>Username</th><th>Nama</th><th>Peran</th><th>Dibuat</th><th></th></tr></thead>
+                                <tbody id="tb-petugas"><tr><td colspan="5" class="loading">Klik "Muat" untuk menampilkan.</td></tr></tbody>
+                            </table>
+                        </div>
+                        <h4 class="sub-head">Tambah petugas / reset password</h4>
+                        <div class="form-grid">
+                            <div><label class="lbl" for="ptg-user">Username</label><input id="ptg-user" class="input" placeholder="huruf kecil, contoh: widia" autocomplete="off" autocapitalize="none"></div>
+                            <div><label class="lbl" for="ptg-nama">Nama</label><input id="ptg-nama" class="input" placeholder="Contoh: Widia Nengsih, S.Pd"></div>
+                            <div><label class="lbl" for="ptg-pass">Password (min. 6 karakter)</label><input id="ptg-pass" type="password" class="input" autocomplete="new-password"></div>
+                            <div><label class="lbl" for="ptg-peran">Peran</label><select id="ptg-peran" class="input"><option value="petugas">Petugas</option><option value="admin">Admin</option></select></div>
+                        </div>
+                        <p class="hint">Jika username sudah ada, nama, peran, dan password-nya akan diganti.</p>
+                        <button class="btn btn-primary" id="btn-tambah-petugas"><i class="fa-solid fa-user-plus"></i> Simpan Petugas</button>
+                    </div>
+                    <div class="card only-petugas">
+                        <div class="card-head"><h3><i class="fa-solid fa-key"></i> Ganti Password Saya</h3></div>
+                        <div class="form-grid">
+                            <div><label class="lbl" for="pw-baru">Password baru (min. 6 karakter)</label><input id="pw-baru" type="password" class="input" autocomplete="new-password"></div>
+                            <div><label class="lbl" for="pw-baru2">Ulangi password baru</label><input id="pw-baru2" type="password" class="input" autocomplete="new-password"></div>
+                        </div>
+                        <button class="btn btn-primary" id="btn-ganti-pw"><i class="fa-solid fa-floppy-disk"></i> Ganti Password</button>
+                    </div>
+                    <div class="card only-utama">
+                        <p class="muted" style="margin:0"><i class="fa-solid fa-circle-info"></i> Password admin utama diganti di Apps Script: Setelan Project → Properti skrip → <b>ADMIN_PASSWORD</b>.</p>
+                    </div>
+                </div>
+                <datalist id="dl-ddc"><option value="000 Karya Umum"><option value="100 Filsafat & Psikologi"><option value="200 Agama"><option value="2X0 Agama Islam"><option value="300 Ilmu Sosial"><option value="400 Bahasa"><option value="500 Ilmu Murni / Sains"><option value="600 Ilmu Terapan / Teknologi"><option value="700 Seni & Olahraga"><option value="800 Kesusastraan"><option value="900 Sejarah & Geografi"></datalist>
+                <datalist id="dl-sumber"><option value="Dana BOS"><option value="Bantuan Pemerintah"><option value="Hibah / Sumbangan"><option value="Pembelian Madrasah"></datalist>
             </section>
 
         </main>
@@ -382,10 +472,11 @@
 <div class="modal" id="modal-login" hidden>
     <form class="modal-box" id="form-login" autocomplete="off">
         <img src="logo.png" alt="" class="modal-logo">
-        <h2>Login Admin</h2>
-        <p class="muted">Masuk sekali untuk mengelola sirkulasi, data, dan cetak. Sesi berakhir otomatis setelah 30 menit tidak aktif atau saat browser ditutup.</p>
+        <h2>Login Petugas</h2>
+        <p class="muted">Masuk sekali untuk mengelola sirkulasi, data, dan cetak. Admin utama cukup mengisi password. Sesi berakhir otomatis setelah 30 menit tidak aktif atau saat browser ditutup.</p>
+        <input type="text" id="login-user" class="input input-lg" placeholder="Username (kosongkan untuk admin utama)" autocomplete="off" autocapitalize="none" spellcheck="false" style="margin-bottom:10px">
         <div class="pw-wrap">
-            <input type="password" id="login-pass" class="input input-lg" placeholder="Password admin" autocomplete="new-password" required>
+            <input type="password" id="login-pass" class="input input-lg" placeholder="Password" autocomplete="new-password" required>
             <button type="button" class="pw-eye" id="pw-eye" aria-label="Tampilkan password"><i class="fa-solid fa-eye"></i></button>
         </div>
         <p class="form-error" id="login-error"></p>

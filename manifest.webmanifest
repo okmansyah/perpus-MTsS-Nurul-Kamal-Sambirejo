@@ -1,0 +1,16 @@
+{
+ "name": "Perpustakaan MTsS Nurul Kamal",
+ "short_name": "Perpus NK",
+ "start_url": "./index.html",
+ "display": "standalone",
+ "background_color": "#f3f6f4",
+ "theme_color": "#0f6b45",
+ "icons": [
+  {
+   "src": "logo.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  }
+ ]
+}

@@ -1,6 +1,12 @@
 /* =========================================================
    Perpustakaan Digital MTsS Nurul Kamal Sambirejo
    ========================================================= */
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url('vendor/font/pjs-400.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 500; font-display: swap; src: url('vendor/font/pjs-500.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 600; font-display: swap; src: url('vendor/font/pjs-600.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url('vendor/font/pjs-700.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 800; font-display: swap; src: url('vendor/font/pjs-800.woff2') format('woff2'); }
+
 :root {
     --primary: #0f6b45;
     --primary-600: #0b5a39;
@@ -234,6 +240,20 @@ td.loading { text-align: center; color: var(--muted); padding: 30px; }
 .toast.info { border-color: var(--blue); } .toast.info i { color: var(--blue); }
 @keyframes slide { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
 
+/* Sinkron */
+.sync-chip { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 99px; border: 1.5px solid var(--border); background: #fff; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.sync-chip i { font-size: 8px; }
+.sync-chip.online { color: #166534; border-color: #bbf7d0; background: #f0fdf4; }
+.sync-chip.offline { color: #9a3412; border-color: #fed7aa; background: #fff7ed; }
+.sync-chip.pending { color: #92400e; border-color: #fde68a; background: #fffbeb; }
+.sync-chip.syncing i { animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.nav-badge-amber { background: var(--amber); }
+.badge-pending { background: #fef3c7; color: #92400e; font-size: 10.5px; padding: 1px 7px; border-radius: 99px; font-weight: 700; margin-left: 6px; }
+.toast .t-act { margin-top: 8px; }
+.toast .t-act button { font: inherit; font-weight: 700; font-size: 12.5px; border: 0; background: var(--primary); color: #fff; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+body.in-app .sidebar { padding-top: env(safe-area-inset-top); }
+
 /* ================= LAPORAN (preview & print) ================= */
 .paper { background: #fff; border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 6px; padding: 18mm 16mm; max-width: 210mm; margin: 0 auto; color: #000; font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
 .kop { display: flex; align-items: center; gap: 16px; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 14px; }
@@ -325,6 +345,26 @@ td.loading { text-align: center; color: var(--muted); padding: 30px; }
     .form-grid .span-2 { grid-column: auto; }
     .toolbar { flex-wrap: wrap; }
     .toolbar > select.input { flex: 1; }
-    .paper { padding: 8mm 6mm; font-size: 10.5pt; overflow-x: auto; }
+    #laporan-preview { width: 210mm; zoom: .44; }
     .chip-admin span { display: none; }
+    .sync-chip { padding: 6px 10px; }
+    .sync-chip #sync-text { max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
 }
+
+/* ===== v3: petugas, denda, katalog lengkap ===== */
+body:not(.is-utama) .only-utama,
+body:not(.is-superadmin) .only-admin,
+body.is-utama .only-petugas { display: none !important; }
+.check { display: flex; align-items: center; gap: 10px; margin: 12px 0; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; font-weight: 600; background: #fffbeb; }
+.check input { width: 18px; height: 18px; accent-color: #0f6b45; }
+.more-fields { margin: 14px 0 6px; border: 1px dashed var(--border); border-radius: 12px; padding: 4px 14px; background: #fafcfb; }
+.more-fields summary { cursor: pointer; padding: 10px 0; font-weight: 700; color: var(--primary, #0f6b45); }
+.more-fields[open] summary { margin-bottom: 4px; }
+.more-fields .form-grid { margin-bottom: 12px; }
+.stats.mini { margin: 4px 0 14px; }
+.stats.mini .stat { padding: 12px 14px; box-shadow: none; border: 1px solid var(--border); }
+.sub-head { margin: 18px 0 8px; font-size: 14px; }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn-xs { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+.tab-panel > .card + .card { margin-top: 16px; }
+.chip-admin small { font-weight: 600; opacity: .75; margin-left: 4px; }

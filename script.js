@@ -27,13 +27,20 @@ const TTD_DEFAULT = {
     tempat: 'Sambirejo'
 };
 const IDLE_MENIT = 30;
+const VERSI_WEB = 3;                       // naikkan setiap ada pembaruan (samakan dengan versi.json)
+const IN_APP = !!(window.AndroidApp);      // berjalan di dalam APK Android
+const CACHE_KEY = 'perpus_cache_v1';       // salinan data terakhir (untuk offline)
+const OUTBOX_KEY = 'perpus_outbox_v1';     // antrean perubahan yang belum terkirim
+const PWHASH_KEY = 'perpus_pw_hash';       // sidik password (untuk login saat offline)
+const DENDA_KEY = 'perpus_denda_v1';       // salinan catatan denda terakhir
+const FIELD_EKSTRA = ['isbn', 'kategori', 'rak', 'sumber', 'harga', 'kondisi', 'tahunTerbit'];
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const BLN3 = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
 
 // ==========================================================
 // == STATE ==
 // ==========================================================
-const S = { buku: [], anggota: [], history: [], settings: { LamaPinjamHari: 7, DendaPerHari: 1000 }, loaded: false };
+const S = { buku: [], anggota: [], history: [], denda: [], dendaT: 0, settings: { LamaPinjamHari: 7, DendaPerHari: 1000 }, loaded: false, online: navigator.onLine, lastSync: 0, syncing: false };
 let charts = {};
 let pendingPage = null;
 
@@ -85,13 +92,26 @@ function tglJam(d) { return d ? d.toLocaleDateString('id-ID', { day: '2-digit', 
 function awalHari(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function selisihHari(a, b) { return Math.round((awalHari(a) - awalHari(b)) / 86400000); }
 
-function toast(msg, type = 'info', ms = 4500) {
+function toast(msg, type = 'info', ms = 4500, aksiLabel, aksiFn) {
     const ico = { ok: 'fa-circle-check', err: 'fa-circle-exclamation', info: 'fa-circle-info' }[type] || 'fa-circle-info';
     const el = document.createElement('div');
     el.className = 'toast ' + type;
-    el.innerHTML = `<i class="fa-solid ${ico}"></i><div>${esc(msg)}</div>`;
+    el.innerHTML = `<i class="fa-solid ${ico}"></i><div>${esc(msg)}${aksiLabel ? `<div class="t-act"><button>${esc(aksiLabel)}</button></div>` : ''}</div>`;
+    if (aksiLabel) $('button', el).addEventListener('click', () => { el.remove(); aksiFn && aksiFn(); });
     $('#toasts').appendChild(el);
-    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, ms);
+    if (ms > 0) setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, ms);
+}
+async function sha256(t) {
+    try {
+        const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('perpus-nk:' + t));
+        return [...new Uint8Array(h)].map(x => x.toString(16).padStart(2, '0')).join('');
+    } catch (e) { return null; }
+}
+function lsGet(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { console.warn('Penyimpanan lokal gagal', e); } }
+function tglSheet(d, jam) {
+    const p = n => String(n).padStart(2, '0');
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}` + (jam ? ` ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}` : '');
 }
 function busy(btn, on, text) {
     if (!btn) return;
@@ -104,7 +124,21 @@ function busy(btn, on, text) {
 // Password tidak pernah disimpan di kode. Dicek oleh server
 // (Apps Script) dan hanya disimpan di sessionStorage selama sesi.
 // ==========================================================
-const AUTH_KEY = 'perpus_admin_pw', LAST_KEY = 'perpus_admin_last';
+const AUTH_KEY = 'perpus_admin_pw', LAST_KEY = 'perpus_admin_last', AKUN_KEY = 'perpus_akun';
+/** Akun yang sedang login: { user: '' (admin utama) / username petugas, nama, peran: 'admin' | 'petugas' } */
+function getAkun() {
+    try { const a = JSON.parse(sessionStorage.getItem(AKUN_KEY) || 'null'); if (a) return a; } catch (e) {}
+    return { user: '', nama: 'Admin', peran: 'admin' };
+}
+function isSuperAdmin() { return isAdmin() && getAkun().peran === 'admin'; }
+/** Data login yang ikut setiap permintaan ke server */
+function kredensial() { const a = getAkun(); const d = { password: getPw() }; if (a.user) d.username = a.user; return d; }
+/** Sidik password offline per akun */
+function hashTersimpan() {
+    const v = lsGet(PWHASH_KEY, null);
+    if (typeof v === 'string') return { '': { h: v, nama: 'Admin', peran: 'admin' } };
+    return v || {};
+}
 function getPw() {
     try {
         const pw = sessionStorage.getItem(AUTH_KEY);
@@ -117,14 +151,18 @@ function isAdmin() { return !!getPw(); }
 function touch() { try { if (sessionStorage.getItem(AUTH_KEY)) sessionStorage.setItem(LAST_KEY, Date.now()); } catch (e) {} }
 function setAdminUI() {
     const on = isAdmin();
+    const akun = getAkun();
     document.body.classList.toggle('is-admin', on);
+    document.body.classList.toggle('is-superadmin', on && akun.peran === 'admin');
+    document.body.classList.toggle('is-utama', on && !akun.user);
     $('#chip-admin').hidden = !on;
-    $('#btn-auth').innerHTML = on ? '<i class="fa-solid fa-right-from-bracket"></i> <span>Keluar Admin</span>' : '<i class="fa-solid fa-lock"></i> <span>Login Admin</span>';
+    $('#chip-admin span').innerHTML = on ? esc(akun.nama || akun.user || 'Admin') + (akun.peran === 'admin' ? '' : ' <small>petugas</small>') : 'Admin';
+    $('#btn-auth').innerHTML = on ? '<i class="fa-solid fa-right-from-bracket"></i> <span>Keluar</span>' : '<i class="fa-solid fa-lock"></i> <span>Login Petugas</span>';
 }
 function logout(silent) {
-    try { sessionStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(LAST_KEY); } catch (e) {}
+    try { sessionStorage.removeItem(AUTH_KEY); sessionStorage.removeItem(LAST_KEY); sessionStorage.removeItem(AKUN_KEY); } catch (e) {}
     setAdminUI();
-    if (!silent) toast('Anda telah keluar dari mode admin.', 'info');
+    if (!silent) toast('Anda telah keluar.', 'info');
     const cur = currentPage();
     if (isAdminPage(cur)) go('dashboard');
 }
@@ -133,7 +171,7 @@ function bukaLogin(targetPage) {
     $('#login-error').textContent = '';
     $('#login-pass').value = '';
     $('#modal-login').hidden = false;
-    setTimeout(() => $('#login-pass').focus(), 50);
+    setTimeout(() => ($('#login-user').value ? $('#login-pass') : $('#login-user')).focus(), 50);
 }
 function tutupLogin() { $('#modal-login').hidden = true; pendingPage = null; }
 function pwSalah(msg) { return /password|sandi/i.test(msg || '') && /salah|invalid|wrong|tidak valid/i.test(msg || ''); }
@@ -141,20 +179,39 @@ function pwSalah(msg) { return /password|sandi/i.test(msg || '') && /salah|inval
 $('#form-login').addEventListener('submit', async e => {
     e.preventDefault();
     const pw = $('#login-pass').value.trim();
+    const user = $('#login-user').value.trim().toLowerCase();
     if (!pw) return;
     const btn = $('#btn-login');
     busy(btn, true, 'Memeriksa...');
     $('#login-error').textContent = '';
-    const res = await kirimRaw({ action: 'cekLogin', password: pw });
+    const kirim = { action: 'login', password: pw }; if (user) kirim.username = user;
+    const res = await kirimRaw(kirim);
+    const hash = await sha256(user + '|' + pw);
     busy(btn, false);
-    if (res._network) { $('#login-error').textContent = 'Tidak bisa menghubungi server. Periksa koneksi internet.'; return; }
-    if (pwSalah(res.message)) { $('#login-error').textContent = 'Password salah. Coba lagi.'; $('#login-pass').select(); return; }
-    try { sessionStorage.setItem(AUTH_KEY, pw); sessionStorage.setItem(LAST_KEY, Date.now()); } catch (er) {}
+    let offlineLogin = false, akun;
+    const daftarHash = hashTersimpan();
+    if (res._network) {
+        // Tidak ada internet: cocokkan dengan sidik password dari login online terakhir akun ini
+        const t = daftarHash[user];
+        const hashLama = user ? null : await sha256(pw);   // sidik versi 2 (khusus admin utama)
+        if (!t) { $('#login-error').textContent = 'Sedang offline. Login pertama kali untuk akun ini harus saat online.'; return; }
+        if (!hash || (hash !== t.h && hashLama !== t.h)) { $('#login-error').textContent = 'Password salah (dicek offline). Coba lagi.'; $('#login-pass').select(); return; }
+        akun = { user, nama: t.nama || user || 'Admin', peran: t.peran || 'petugas' };
+        offlineLogin = true;
+    } else {
+        if (pwSalah(res.message)) { $('#login-error').textContent = user ? 'Username atau password salah.' : 'Password salah. Coba lagi.'; $('#login-pass').select(); return; }
+        if (res.status !== 'success' && !/tidak dikenal/i.test(res.message || '')) { $('#login-error').textContent = res.message || 'Gagal login.'; return; }
+        akun = { user, nama: res.nama || (user || 'Admin'), peran: res.peran || (user ? 'petugas' : 'admin') };
+        if (hash) { daftarHash[user] = { h: hash, nama: akun.nama, peran: akun.peran }; lsSet(PWHASH_KEY, daftarHash); }
+    }
+    try { sessionStorage.setItem(AUTH_KEY, pw); sessionStorage.setItem(LAST_KEY, Date.now()); sessionStorage.setItem(AKUN_KEY, JSON.stringify(akun)); } catch (er) {}
     const target = pendingPage;
     tutupLogin();
     setAdminUI();
-    toast('Berhasil masuk sebagai admin.', 'ok');
+    toast((offlineLogin ? 'Masuk sebagai ' : 'Berhasil masuk sebagai ') + akun.nama + (offlineLogin ? ' (mode offline).' : '.'), 'ok');
+    muatDenda();
     if (target) go(target);
+    if (!offlineLogin) sinkron();
 });
 $('#btn-login-batal').addEventListener('click', tutupLogin);
 $('#pw-eye').addEventListener('click', () => {
@@ -163,7 +220,7 @@ $('#pw-eye').addEventListener('click', () => {
 });
 $('#btn-auth').addEventListener('click', () => isAdmin() ? logout() : bukaLogin(null));
 ['click', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, touch, { passive: true }));
-setInterval(() => { if (sessionStorage.getItem(AUTH_KEY) && !getPw()) toast('Sesi admin berakhir karena tidak aktif.', 'info'); }, 60000);
+setInterval(() => { if (sessionStorage.getItem(AUTH_KEY) && !getPw()) toast('Sesi login berakhir karena tidak aktif.', 'info'); }, 60000);
 
 // ==========================================================
 // == BACKEND (Apps Script) ==
@@ -178,17 +235,146 @@ async function kirimRaw(data) {
         return { status: 'error', _network: true, message: 'Gagal terhubung ke server. Periksa koneksi internet atau deployment Apps Script.' };
     }
 }
-async function kirim(data) {
-    const pw = getPw();
-    if (!pw) { bukaLogin(currentPage()); return { status: 'error', message: 'Silakan login admin terlebih dahulu.' }; }
-    const res = await kirimRaw({ ...data, password: pw });
-    if (pwSalah(res.message)) {
-        logout(true);
-        bukaLogin(currentPage());
-        $('#login-error').textContent = 'Password admin telah berubah. Silakan login ulang.';
-    }
-    return res;
+// ==========================================================
+// == ANTREAN OFFLINE & SINKRONISASI ==
+// Setiap perubahan dicatat dulu di antrean (outbox) dan langsung
+// diterapkan ke data lokal. Antrean dikirim ke server saat online.
+// ==========================================================
+function outbox() { return lsGet(OUTBOX_KEY, []); }
+function simpanOutbox(list) { lsSet(OUTBOX_KEY, list); }
+const hasilOp = {}, menunggu = new Set();
+
+/** Terapkan satu perubahan ke data lokal (optimistis). */
+const RECENT_KEY = 'perpus_terkirim_v1';
+function adaRiwayat(inv, aksi, w) {
+    return S.history.some(h => h.noInv === inv && h.aksi.toLowerCase().startsWith(aksi) && h.tgl && Math.abs(h.tgl - w) < 20 * 60000);
 }
+function terapkanOp(op, pending = true) {
+    const d = op.data, w = new Date(op.waktu);
+    const b = d.noInventaris ? bukuByInv(d.noInventaris) : null;
+    switch (d.action) {
+        case 'pinjamBuku': {
+            if (!b || (isDipinjam(b) && (!b.nis || b.nis === d.nis))) return;
+            const a = anggotaByNis(d.nis) || {};
+            const jt = new Date(w); jt.setDate(jt.getDate() + lamaPinjam());
+            Object.assign(b, { status: 'Dipinjam', nis: d.nis, tglPinjamRaw: tglSheet(w, true), jatuhTempoRaw: tglSheet(jt) });
+            if (!adaRiwayat(b.noInv, 'dipinjam', w)) S.history.push({ ts: tglSheet(w, true), tgl: w, noInv: b.noInv, judul: b.judul, nis: d.nis, nama: a.nama || '', aksi: 'Dipinjam', pending });
+            break;
+        }
+        case 'kembalikanBuku': {
+            if (!b || !isDipinjam(b)) return;
+            const info = pinjamanAktif().find(p => p.buku.noInv === b.noInv);
+            if (!adaRiwayat(b.noInv, 'dikembalikan', w)) S.history.push({ ts: tglSheet(w, true), tgl: w, noInv: b.noInv, judul: b.judul, nis: info ? info.nis : b.nis, nama: info ? info.nama : '', aksi: 'Dikembalikan', pending });
+            Object.assign(b, { status: 'Tersedia', nis: '', tglPinjamRaw: '', jatuhTempoRaw: '' });
+            break;
+        }
+        case 'tambahBuku': {
+            const m = (d.buku.range || '').match(/^(\d+)\s*-\s*(\d+)$/);
+            if (!m) return;
+            const pad = m[1].length, a1 = Math.min(+m[1], +m[2]), a2 = Math.max(+m[1], +m[2]);
+            for (let i = a1; i <= a2; i++) {
+                const inv = String(i).padStart(pad, '0') + d.buku.suffix;
+                if (!bukuByInv(inv)) { const nb = { noInv: inv, judul: d.buku.judul, pengarang: d.buku.pengarang, penerbit: d.buku.penerbit, status: 'Tersedia', nis: '', tglPinjamRaw: '', jatuhTempoRaw: '', tglMasukRaw: tglSheet(w), pending: true }; FIELD_EKSTRA.forEach(f => nb[f] = d.buku[f] || ''); S.buku.push(nb); }
+            }
+            break;
+        }
+        case 'updateBuku': {
+            const x = bukuByInv(d.buku.noInventaris);
+            if (x) { Object.assign(x, { judul: d.buku.judul, pengarang: d.buku.pengarang, penerbit: d.buku.penerbit }); FIELD_EKSTRA.forEach(f => { if (d.buku[f] !== undefined) x[f] = d.buku[f]; }); }
+            break;
+        }
+        case 'bayarDenda': {
+            S.denda.forEach(x => {
+                const cocok = d.idDenda ? x.idDenda === d.idDenda : x.nis === d.nis;
+                if (cocok && !/^lunas$/i.test(x.status)) Object.assign(x, { status: 'Lunas', tglBayar: new Date(w).toISOString(), diterimaOleh: getAkun().nama, pending });
+            });
+            break;
+        }
+        case 'hapusBuku': S.buku = S.buku.filter(x => x.noInv !== d.noInventaris); break;
+        case 'tambahAnggota': if (!anggotaByNis(d.anggota.nis)) S.anggota.push({ ...d.anggota, pending: true }); break;
+        case 'updateAnggota': { const x = anggotaByNis(d.anggota.nis); if (x) Object.assign(x, d.anggota); break; }
+        case 'hapusAnggota': S.anggota = S.anggota.filter(x => x.nis !== d.nis); break;
+        case 'simpanPengaturan': S.settings.LamaPinjamHari = d.settings.lamaPinjam; S.settings.DendaPerHari = d.settings.denda; break;
+    }
+}
+
+/** Jalankan perubahan: simpan ke antrean, terapkan lokal, lalu coba kirim. */
+async function aksi(data) {
+    if (!getPw()) { bukaLogin(currentPage()); return { status: 'error', message: 'Silakan login terlebih dahulu.' }; }
+    const op = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), waktu: Date.now(), data, akun: getAkun().user };
+    const list = outbox(); list.push(op); simpanOutbox(list);
+    menunggu.add(op.id);
+    terapkanOp(op);
+    simpanCache();
+    renderSetelahUbah();
+    await sinkron();
+    menunggu.delete(op.id);
+    if (hasilOp[op.id]) { const r = hasilOp[op.id]; delete hasilOp[op.id]; return r; }
+    return { status: 'pending', message: 'Tersimpan di HP. Akan dikirim otomatis saat online.' };
+}
+
+/** Kirim seluruh antrean ke server secara berurutan. */
+async function sinkron(opsi = {}) {
+    if (S.syncing) return;
+    let list = outbox();
+    if (!list.length) { if (opsi.muat) { await muatSemua(); muatDenda(); } return; }
+    const pw = getPw();
+    if (!pw) { updateSyncUI(); if (opsi.manual) { toast(`${list.length} perubahan menunggu. Login untuk mengirimnya.`, 'info'); bukaLogin(null); } return; }
+    S.syncing = true; updateSyncUI();
+    let terkirim = 0, latar = 0, gagal = 0, offline = false;
+    while (list.length) {
+        const op = list[0];
+        // waktu = saat transaksi terjadi di perangkat; idTransaksi = mencegah tercatat dua kali
+        const res = await kirimRaw({ ...op.data, ...kredensial(), waktu: op.waktu, idTransaksi: op.id });
+        if (res._network) { offline = true; break; }
+        if (pwSalah(res.message)) {
+            S.syncing = false;
+            logout(true); bukaLogin(currentPage());
+            $('#login-error').textContent = 'Password telah berubah. Silakan login ulang untuk mengirim antrean.';
+            updateSyncUI(); return;
+        }
+        list.shift(); simpanOutbox(list);
+        if (menunggu.has(op.id)) hasilOp[op.id] = res; else if (res.status === 'success') latar++;
+        if (res.status === 'success') {
+            terkirim++;
+            // Simpan sebentar: CSV Google Sheet butuh beberapa menit untuk ikut berubah
+            const rc = lsGet(RECENT_KEY, []).filter(x => Date.now() - x.sentAt < 15 * 60000);
+            rc.push({ op, sentAt: Date.now() }); lsSet(RECENT_KEY, rc);
+        }
+        else { gagal++; toast(`Gagal disinkron (${op.data.action}): ${res.message || 'ditolak server'}`, 'err', 9000); }
+    }
+    S.syncing = false;
+    S.online = !offline;
+    updateSyncUI();
+    if (latar) toast(`${latar} perubahan dari mode offline berhasil dikirim ke server.`, 'ok', 4000);
+    if (terkirim || gagal || opsi.muat) await muatSemua({ diam: true });
+    if (terkirim || opsi.muat) muatDenda();
+}
+
+function updateSyncUI() {
+    const n = outbox().length;
+    const chip = $('#sync-chip'), txt = $('#sync-text');
+    chip.className = 'sync-chip ' + (S.syncing ? 'syncing pending' : !S.online ? 'offline' : n ? 'pending' : 'online');
+    const jam = S.lastSync ? new Date(S.lastSync).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+    txt.textContent = S.syncing ? 'Menyinkron...' : !S.online ? (n ? `Offline · ${n} antre` : 'Offline') : n ? `${n} menunggu` : (jam ? `Online · ${jam}` : 'Online');
+    chip.title = (S.online ? 'Online' : 'Offline — perubahan disimpan di perangkat') + (n ? ` · ${n} perubahan menunggu sinkron` : '') + (S.lastSync ? ` · data terakhir diperbarui ${new Date(S.lastSync).toLocaleString('id-ID')}` : '') + ' — klik untuk sinkron sekarang';
+    const bd = $('#badge-antrean'); bd.textContent = n; bd.hidden = n === 0;
+}
+$('#sync-chip').addEventListener('click', () => sinkron({ manual: true, muat: true }));
+window.addEventListener('online', () => { S.online = true; updateSyncUI(); sinkron({ muat: true }); });
+window.addEventListener('offline', () => { S.online = false; updateSyncUI(); });
+setInterval(() => { if (outbox().length && navigator.onLine) sinkron(); }, 60000);
+setInterval(() => { if (navigator.onLine && !S.syncing && document.visibilityState === 'visible') muatSemua({ diam: true }); }, 5 * 60000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && navigator.onLine) sinkron({ muat: true }); });
+
+/** Pesan hasil aksi untuk ditampilkan ke pengguna. */
+function laporHasil(res, pesanOk) {
+    if (res.status === 'success') toast(res.message || pesanOk || 'Berhasil.', 'ok', 5000);
+    else if (res.status === 'pending') toast((pesanOk ? pesanOk + ' ' : '') + 'Mode offline: tersimpan di perangkat, akan dikirim otomatis saat online.', 'info', 6000);
+    else toast(res.message || 'Gagal memproses.', 'err', 7000);
+    return res.status !== 'error';
+}
+function renderSetelahUbah() { isiDatalist(); renderStats(); updateSyncUI(); }
 
 // ==========================================================
 // == MEMUAT DATA ==
@@ -199,33 +385,66 @@ async function ambilCSV(url) {
     return parseCSV(await res.text()).slice(1);
 }
 
-async function muatSemua() {
+function simpanCache() {
+    lsSet(CACHE_KEY, {
+        t: S.lastSync, buku: S.buku, anggota: S.anggota, settings: S.settings,
+        history: S.history.map(h => ({ ...h, tgl: h.tgl ? h.tgl.getTime() : null }))
+    });
+}
+function muatCache() {
+    const c = lsGet(CACHE_KEY, null);
+    if (!c) return false;
+    S.buku = c.buku || []; S.anggota = c.anggota || []; S.settings = { ...S.settings, ...(c.settings || {}) };
+    S.history = (c.history || []).map(h => ({ ...h, tgl: h.tgl ? new Date(h.tgl) : null }));
+    S.lastSync = c.t || 0;
+    return true;
+}
+
+let muatBerjalan = null;
+function muatSemua(opsi = {}) {
+    if (!muatBerjalan) muatBerjalan = muatServer(opsi).finally(() => { muatBerjalan = null; });
+    return muatBerjalan;
+}
+async function muatServer(opsi = {}) {
     const btn = $('#btn-refresh');
     btn.classList.add('spin');
     const hasil = await Promise.allSettled([ambilCSV(URL_BUKU), ambilCSV(URL_ANGGOTA), ambilCSV(URL_HISTORY), ambilCSV(URL_SETTINGS)]);
     btn.classList.remove('spin');
     const [rb, ra, rh, rs] = hasil;
 
-    if (rb.status === 'fulfilled') {
-        S.buku = rb.value.map(k => ({
-            noInv: k[0] || '', judul: k[1] || '', pengarang: k[2] || '', penerbit: k[3] || '',
-            status: k[4] || '', nis: k[5] || '', tglPinjamRaw: k[6] || '', jatuhTempoRaw: k[7] || '', tglMasukRaw: k[8] || ''
-        })).filter(b => b.noInv);
-    } else toast('Gagal memuat data buku: ' + rb.reason.message, 'err');
-
-    if (ra.status === 'fulfilled') {
-        S.anggota = ra.value.map(k => ({ nis: k[0] || '', nama: k[1] || '', kelas: k[2] || '', status: k[3] || '' })).filter(a => a.nis || a.nama);
-    } else toast('Gagal memuat data anggota.', 'err');
-
-    if (rh.status === 'fulfilled') {
-        S.history = rh.value.map(k => ({ ts: k[0] || '', tgl: parseTanggal(k[0]), noInv: k[1] || '', judul: k[2] || '', nis: k[3] || '', nama: k[4] || '', aksi: k[5] || '' }));
-    } else toast('Gagal memuat riwayat.', 'err');
-
-    if (rs.status === 'fulfilled') {
-        rs.value.forEach(k => { if (k[0]) S.settings[k[0].trim()] = (k[1] || '').trim(); });
+    if (hasil.some(h => h.status !== 'fulfilled')) {
+        // Offline / server tidak terjangkau: pakai salinan terakhir di perangkat
+        S.online = false;
+        if (!S.loaded) {
+            if (muatCache()) { if (!opsi.diam) toast('Mode offline: memakai data tersimpan di perangkat.', 'info', 5000); }
+            else toast('Tidak ada koneksi dan belum ada data tersimpan. Buka aplikasi sekali saat online.', 'err', 0);
+        }
+        S.loaded = true;
+        renderSemua();
+        return;
     }
 
+    S.buku = rb.value.map(k => ({
+        noInv: k[0] || '', judul: k[1] || '', pengarang: k[2] || '', penerbit: k[3] || '',
+        status: k[4] || '', nis: k[5] || '', tglPinjamRaw: k[6] || '', jatuhTempoRaw: k[7] || '', tglMasukRaw: k[8] || '',
+        isbn: k[9] || '', kategori: k[10] || '', rak: k[11] || '', sumber: k[12] || '', harga: k[13] || '', kondisi: k[14] || '', tahunTerbit: k[15] || ''
+    })).filter(b => b.noInv);
+    S.anggota = ra.value.map(k => ({ nis: k[0] || '', nama: k[1] || '', kelas: k[2] || '', status: k[3] || '' })).filter(a => a.nis || a.nama);
+    S.history = rh.value.map(k => ({ ts: k[0] || '', tgl: parseTanggal(k[0]), noInv: k[1] || '', judul: k[2] || '', nis: k[3] || '', nama: k[4] || '', aksi: k[5] || '', petugas: k[6] || '' }));
+    S.history.sort((a, b) => (a.tgl || 0) - (b.tgl || 0));   // transaksi offline bisa masuk belakangan
+    rs.value.forEach(k => { if (k[0]) S.settings[k[0].trim()] = (k[1] || '').trim(); });
+
+    // Perubahan yang baru terkirim (CSV belum ikut berubah) dan yang belum terkirim
+    // tetap diterapkan di atas data server
+    const rc = lsGet(RECENT_KEY, []).filter(x => Date.now() - x.sentAt < 15 * 60000);
+    lsSet(RECENT_KEY, rc);
+    rc.forEach(x => terapkanOp(x.op, false));
+    outbox().forEach(op => terapkanOp(op, true));
+
+    S.online = true;
+    S.lastSync = Date.now();
     S.loaded = true;
+    simpanCache();
     renderSemua();
 }
 
@@ -258,9 +477,11 @@ function ringkasKoleksi(list = S.buku) {
     const map = new Map();
     list.forEach(b => {
         const key = (b.judul + '|' + b.pengarang).toLowerCase();
-        if (!map.has(key)) map.set(key, { judul: b.judul, pengarang: b.pengarang, penerbit: b.penerbit, total: 0, tersedia: 0 });
+        if (!map.has(key)) map.set(key, { judul: b.judul, pengarang: b.pengarang, penerbit: b.penerbit, rak: b.rak || '', isbn: b.isbn || '', total: 0, tersedia: 0 });
         const r = map.get(key); r.total++; if (isTersedia(b)) r.tersedia++;
         if (!r.penerbit && b.penerbit) r.penerbit = b.penerbit;
+        if (!r.rak && b.rak) r.rak = b.rak;
+        if (!r.isbn && b.isbn) r.isbn = b.isbn;
     });
     return [...map.values()].sort((a, b) => a.judul.localeCompare(b.judul, 'id'));
 }
@@ -310,7 +531,10 @@ window.addEventListener('hashchange', () => tampilkan(currentPage()));
 $$('.nav a').forEach(a => a.addEventListener('click', e => { e.preventDefault(); go(a.dataset.page); }));
 $('#btn-menu').addEventListener('click', () => document.body.classList.toggle('nav-open'));
 $('#backdrop').addEventListener('click', () => document.body.classList.remove('nav-open'));
-$('#btn-refresh').addEventListener('click', () => muatSemua().then(() => toast('Data diperbarui.', 'ok', 2000)));
+$('#btn-refresh').addEventListener('click', async () => {
+    await sinkron({ manual: true, muat: true });
+    toast(S.online ? 'Data diperbarui dari server.' : 'Masih offline — menampilkan data tersimpan.', S.online ? 'ok' : 'info', 2500);
+});
 $$('.modal [data-close]').forEach(b => b.addEventListener('click', () => b.closest('.modal').hidden = true));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('.modal').forEach(m => { if (!m.hidden) { m.hidden = true; pendingPage = null; } }); });
 
@@ -318,6 +542,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('.modal')
 // == RENDER ==
 // ==========================================================
 function renderSemua() {
+    updateSyncUI();
     isiDatalist();
     renderStats();
     $('#info-lama').textContent = lamaPinjam();
@@ -329,7 +554,7 @@ function renderSemua() {
 function renderPage(p) {
     ({
         dashboard: renderDashboard, katalog: renderKatalog, pinjam: previewPinjam, kembali: renderKembali,
-        terlambat: renderTerlambat, riwayat: renderRiwayat, anggota: renderAnggota, laporan: renderLaporan,
+        terlambat: () => { renderTerlambat(); renderDenda(); }, riwayat: renderRiwayat, anggota: renderAnggota, laporan: renderLaporan,
         kartu: renderKartu, label: renderLabel, kelola: () => {}
     }[p] || (() => {}))();
 }
@@ -424,7 +649,7 @@ function renderKatalog() {
     const q = $('#cari-buku').value.toLowerCase().trim();
     const f = $('#filter-stok').value;
     let list = ringkasKoleksi();
-    if (q) list = list.filter(r => (r.judul + ' ' + r.pengarang + ' ' + r.penerbit).toLowerCase().includes(q));
+    if (q) list = list.filter(r => (r.judul + ' ' + r.pengarang + ' ' + r.penerbit + ' ' + r.rak + ' ' + r.isbn).toLowerCase().includes(q));
     if (f === 'ada') list = list.filter(r => r.tersedia > 0);
     if (f === 'habis') list = list.filter(r => r.tersedia === 0);
     $('#tb-katalog').innerHTML = list.length ? list.map(r => `
@@ -432,9 +657,10 @@ function renderKatalog() {
             <td><b>${esc(r.judul)}</b></td>
             <td>${esc(r.pengarang)}</td>
             <td>${esc(r.penerbit) || '<span class="muted">–</span>'}</td>
+            <td>${esc(r.rak) || '<span class="muted">–</span>'}</td>
             <td class="t-center">${r.total}</td>
             <td class="t-center"><span class="badge ${r.tersedia > 0 ? 'b-green' : 'b-red'}">${r.tersedia}</span></td>
-        </tr>`).join('') : '<tr><td colspan="5" class="loading">Tidak ada buku yang cocok.</td></tr>';
+        </tr>`).join('') : '<tr><td colspan="6" class="loading">Tidak ada buku yang cocok.</td></tr>';
     $('#info-katalog').textContent = `${list.length} judul ditampilkan · ${S.buku.length} eksemplar total`;
 }
 $('#cari-buku').addEventListener('input', renderKatalog);
@@ -479,15 +705,12 @@ $('#btn-pinjam').addEventListener('click', async function () {
     if (!isTersedia(b)) return toast('Buku ini tidak berstatus Tersedia.', 'err');
     if (!a) return toast('Peminjam tidak ditemukan. Pilih dari daftar (ketik nama atau NIS).', 'err');
     busy(this, true);
-    const res = await kirim({ action: 'pinjamBuku', noInventaris: b.noInv, nis: a.nis });
+    const jt = new Date(); jt.setDate(jt.getDate() + lamaPinjam());
+    const res = await aksi({ action: 'pinjamBuku', noInventaris: b.noInv, nis: a.nis });
     busy(this, false);
-    if (res.status !== 'success') return toast(res.message || 'Gagal memproses.', 'err', 7000);
-    const now = new Date(), jt = new Date(); jt.setDate(jt.getDate() + lamaPinjam());
-    Object.assign(b, { status: 'Dipinjam', nis: a.nis, tglPinjamRaw: tglJam(now).replace(',', ''), jatuhTempoRaw: `${jt.getDate()}/${jt.getMonth() + 1}/${jt.getFullYear()}` });
-    S.history.push({ ts: 'Baru saja', tgl: now, noInv: b.noInv, judul: b.judul, nis: a.nis, nama: a.nama, aksi: 'Dipinjam' });
-    toast(`${res.message || 'Berhasil.'} Jatuh tempo ${tglPanjang(jt)}.`, 'ok', 6000);
+    if (!laporHasil(res, `Dipinjam ${a.nama}, jatuh tempo ${tglPanjang(jt)}.`)) return;
     $('#pinjam-buku').value = ''; $('#pinjam-anggota').value = '';
-    isiDatalist(); renderStats(); previewPinjam();
+    previewPinjam();
     $('#pinjam-buku').focus();
 });
 
@@ -509,7 +732,7 @@ function previewKembali() {
     const inv = $('#kembali-buku').value.trim();
     const x = pinjamanAktif().find(p => p.buku.noInv === inv);
     const pv = $('#kembali-preview');
-    if (!x) { pv.hidden = true; return; }
+    if (!x) { pv.hidden = true; $('#kembali-bayar-wrap').hidden = true; return; }
     pv.classList.toggle('warn', x.telat > 0);
     pv.innerHTML = `<div class="pv-title"><i class="fa-solid fa-book"></i> ${esc(x.buku.judul)}</div>
         <div class="pv-meta">${esc(x.buku.noInv)}</div>
@@ -517,6 +740,7 @@ function previewKembali() {
         <div class="pv-meta">Dipinjam: ${tglPendek(x.tglPinjam)} · Jatuh tempo: <b>${tglPendek(x.jatuhTempo)}</b></div>
         ${x.telat > 0 ? `<div style="margin-top:6px;color:#b91c1c"><b>Terlambat ${x.telat} hari · perkiraan denda ${rupiah(x.denda)}</b></div>` : '<div style="margin-top:6px;color:#166534"><b>Tidak terlambat</b></div>'}`;
     pv.hidden = false;
+    $('#kembali-bayar-wrap').hidden = !(x.telat > 0);
 }
 $('#kembali-buku').addEventListener('input', () => { $('#kembali-hasil').hidden = true; previewKembali(); });
 $('#btn-kembali').addEventListener('click', async function () {
@@ -526,19 +750,22 @@ $('#btn-kembali').addEventListener('click', async function () {
     if (!isDipinjam(b)) return toast('Buku ini tidak sedang dipinjam.', 'err');
     const info = pinjamanAktif().find(p => p.buku.noInv === inv);
     busy(this, true, 'Memproses... (menghitung denda)');
-    const res = await kirim({ action: 'kembalikanBuku', noInventaris: inv });
+    const dibayar = !!(info && info.telat > 0 && $('#kembali-bayar').checked);
+    const res = await aksi({ action: 'kembalikanBuku', noInventaris: inv, dendaDibayar: dibayar });
     busy(this, false);
-    if (res.status !== 'success') return toast(res.message || 'Gagal memproses.', 'err', 7000);
-    const denda = Number(res.denda) || 0;
+    if (!laporHasil(res, 'Pengembalian dicatat.')) return;
+    const denda = res.status === 'success' ? (Number(res.denda) || 0) : (info ? info.denda : 0);
+    const ket = res.status === 'success' ? '' : '<br><small>(perkiraan — mode offline, akan disinkron)</small>';
     const box = $('#kembali-hasil');
-    box.className = 'result-box ' + (denda > 0 ? 'denda' : 'ok');
-    box.innerHTML = denda > 0 ? `Buku dikembalikan. Denda yang harus dibayar:<strong style="color:#b91c1c">${rupiah(denda)}</strong>` : `Buku dikembalikan tepat waktu.<strong style="color:#166534">Tanpa denda</strong>`;
+    box.className = 'result-box ' + (denda > 0 && !dibayar ? 'denda' : 'ok');
+    box.innerHTML = denda > 0
+        ? (dibayar ? `Buku dikembalikan. Denda sudah dibayar:<strong style="color:#166534">${rupiah(denda)}</strong>${ket}`
+                   : `Buku dikembalikan. Denda yang harus dibayar:<strong style="color:#b91c1c">${rupiah(denda)}</strong><small>Tercatat sebagai <b>belum lunas</b> di halaman Terlambat &amp; Denda.</small>${ket}`)
+        : `Buku dikembalikan tepat waktu.<strong style="color:#166534">Tanpa denda</strong>${ket}`;
     box.hidden = false;
-    S.history.push({ ts: 'Baru saja', tgl: new Date(), noInv: inv, judul: b.judul, nis: info ? info.nis : b.nis, nama: info ? info.nama : '', aksi: 'Dikembalikan' });
-    Object.assign(b, { status: 'Tersedia', nis: '', tglPinjamRaw: '', jatuhTempoRaw: '' });
-    toast(res.message || 'Pengembalian berhasil.', 'ok');
-    $('#kembali-buku').value = '';
-    isiDatalist(); renderStats(); renderKembali();
+    $('#kembali-buku').value = ''; $('#kembali-bayar').checked = false;
+    if (res.status === 'success' && denda > 0) muatDenda();
+    renderKembali();
 });
 
 // ---------- TERLAMBAT ----------
@@ -586,7 +813,7 @@ function renderRiwayat() {
             <td>${esc(h.judul)}</td>
             <td class="mono">${esc(h.nis)}</td>
             <td>${esc(h.nama || (anggotaByNis(h.nis) || {}).nama || '')}</td>
-            <td><span class="badge ${/dipinjam/i.test(h.aksi) ? 'b-amber' : 'b-green'}">${esc(h.aksi)}</span></td>
+            <td><span class="badge ${/dipinjam/i.test(h.aksi) ? 'b-amber' : 'b-green'}"${h.petugas ? ` title="Petugas: ${esc(h.petugas)}"` : ''}>${esc(h.aksi)}</span>${h.pending ? '<span class="badge-pending" title="Belum terkirim ke server">menunggu sinkron</span>' : ''}</td>
         </tr>`).join('') : '<tr><td colspan="6" class="loading">Belum ada riwayat.</td></tr>';
     $('#info-riwayat').textContent = `Menampilkan ${tampil.length} dari ${list.length} transaksi (terbaru di atas).`;
 }
@@ -643,7 +870,10 @@ function cetak(html) {
     const area = $('#print-area');
     area.innerHTML = html;
     const imgs = $$('img', area).filter(i => !i.complete);
-    const go = () => setTimeout(() => window.print(), 150);
+    const go = () => setTimeout(() => {
+        if (IN_APP && window.AndroidApp.print) window.AndroidApp.print(document.title);   // cetak / simpan PDF di HP
+        else window.print();
+    }, 300);
     if (!imgs.length) go(); else { let n = imgs.length; imgs.forEach(i => { i.onload = i.onerror = () => { if (--n === 0) go(); }; }); }
 }
 window.addEventListener('afterprint', () => { $('#print-area').innerHTML = ''; });
@@ -843,16 +1073,14 @@ function hintRange() {
 $('#buku-range').addEventListener('input', hintRange);
 $('#buku-suffix').addEventListener('input', hintRange);
 $('#btn-tambah-buku').addEventListener('click', async function () {
-    const buku = { range: $('#buku-range').value.trim(), suffix: $('#buku-suffix').value.trim(), judul: $('#buku-judul').value.trim(), pengarang: $('#buku-pengarang').value.trim(), penerbit: $('#buku-penerbit').value.trim() };
+    const buku = { range: $('#buku-range').value.trim(), suffix: $('#buku-suffix').value.trim(), judul: $('#buku-judul').value.trim(), pengarang: $('#buku-pengarang').value.trim(), penerbit: $('#buku-penerbit').value.trim(), ...bacaEkstra('buku-') };
     if (!buku.range || !buku.suffix || !buku.judul) return toast('Rentang, akhiran, dan judul wajib diisi.', 'err');
     busy(this, true, 'Menyimpan...');
-    const res = await kirim({ action: 'tambahBuku', buku });
+    const res = await aksi({ action: 'tambahBuku', buku });
     busy(this, false);
-    toast(res.message || (res.status === 'success' ? 'Berhasil.' : 'Gagal.'), res.status === 'success' ? 'ok' : 'err', 6000);
-    if (res.status === 'success') {
-        ['#buku-range', '#buku-judul', '#buku-pengarang', '#buku-penerbit'].forEach(s => $(s).value = '');
+    if (laporHasil(res, 'Buku ditambahkan.')) {
+        ['#buku-range', '#buku-judul', '#buku-pengarang', '#buku-penerbit', '#buku-isbn', '#buku-harga', '#buku-tahun'].forEach(s => $(s).value = '');
         hintRange();
-        setTimeout(muatSemua, 1500);
     }
 });
 
@@ -863,6 +1091,7 @@ function isiEditBuku() {
     $('#edit-buku-judul').value = b ? b.judul : '';
     $('#edit-buku-pengarang').value = b ? b.pengarang : '';
     $('#edit-buku-penerbit').value = b ? b.penerbit : '';
+    isiEkstra('edit-buku-', b);
     const locked = b && isDipinjam(b);
     $('#btn-update-buku').disabled = !b || locked;
     $('#btn-hapus-buku').disabled = !b || locked;
@@ -871,23 +1100,21 @@ function isiEditBuku() {
 $('#edit-buku-pilih').addEventListener('input', isiEditBuku);
 $('#btn-update-buku').addEventListener('click', async function () {
     const inv = $('#edit-buku-pilih').value.trim();
-    const buku = { noInventaris: inv, judul: $('#edit-buku-judul').value.trim(), pengarang: $('#edit-buku-pengarang').value.trim(), penerbit: $('#edit-buku-penerbit').value.trim() };
+    const buku = { noInventaris: inv, judul: $('#edit-buku-judul').value.trim(), pengarang: $('#edit-buku-pengarang').value.trim(), penerbit: $('#edit-buku-penerbit').value.trim(), ...bacaEkstra('edit-buku-') };
     if (!bukuByInv(inv) || !buku.judul) return toast('Pilih buku dan isi judul.', 'err');
     busy(this, true, 'Menyimpan...');
-    const res = await kirim({ action: 'updateBuku', buku });
+    const res = await aksi({ action: 'updateBuku', buku });
     busy(this, false);
-    toast(res.message || '', res.status === 'success' ? 'ok' : 'err');
-    if (res.status === 'success') { Object.assign(bukuByInv(inv), { judul: buku.judul, pengarang: buku.pengarang, penerbit: buku.penerbit }); isiDatalist(); }
+    laporHasil(res, 'Data buku diperbarui.');
 });
 $('#btn-hapus-buku').addEventListener('click', async function () {
     const inv = $('#edit-buku-pilih').value.trim();
     if (!bukuByInv(inv)) return toast('Pilih buku terlebih dahulu.', 'err');
     if (!confirm(`Hapus buku dengan No. Inventaris ${inv}?\nTindakan ini tidak bisa dibatalkan.`)) return;
     busy(this, true, 'Menghapus...');
-    const res = await kirim({ action: 'hapusBuku', noInventaris: inv });
+    const res = await aksi({ action: 'hapusBuku', noInventaris: inv });
     busy(this, false);
-    toast(res.message || '', res.status === 'success' ? 'ok' : 'err');
-    if (res.status === 'success') { S.buku = S.buku.filter(b => b.noInv !== inv); $('#edit-buku-pilih').value = ''; isiEditBuku(); isiDatalist(); renderStats(); }
+    if (laporHasil(res, 'Buku dihapus.')) { $('#edit-buku-pilih').value = ''; isiEditBuku(); }
 });
 
 // Tambah anggota
@@ -896,13 +1123,10 @@ $('#btn-tambah-anggota').addEventListener('click', async function () {
     if (!anggota.nis || !anggota.nama) return toast('NIS dan nama wajib diisi.', 'err');
     if (anggotaByNis(anggota.nis)) return toast('NIS ini sudah terdaftar.', 'err');
     busy(this, true, 'Menyimpan...');
-    const res = await kirim({ action: 'tambahAnggota', anggota });
+    const res = await aksi({ action: 'tambahAnggota', anggota });
     busy(this, false);
-    toast(res.message || '', res.status === 'success' ? 'ok' : 'err');
-    if (res.status === 'success') {
-        S.anggota.push(anggota);
+    if (laporHasil(res, 'Anggota ditambahkan.')) {
         ['#anggota-nis', '#anggota-nama'].forEach(s => $(s).value = '');
-        isiDatalist(); renderStats();
         $('#anggota-nis').focus();
     }
 });
@@ -923,10 +1147,9 @@ $('#btn-update-anggota').addEventListener('click', async function () {
     if (!a) return toast('Pilih anggota terlebih dahulu.', 'err');
     const anggota = { nis: a.nis, nama: $('#edit-anggota-nama').value.trim(), kelas: $('#edit-anggota-kelas').value.trim(), status: $('#edit-anggota-status').value.trim() };
     busy(this, true, 'Menyimpan...');
-    const res = await kirim({ action: 'updateAnggota', anggota });
+    const res = await aksi({ action: 'updateAnggota', anggota });
     busy(this, false);
-    toast(res.message || '', res.status === 'success' ? 'ok' : 'err');
-    if (res.status === 'success') { Object.assign(a, anggota); isiDatalist(); }
+    laporHasil(res, 'Data anggota diperbarui.');
 });
 $('#btn-hapus-anggota').addEventListener('click', async function () {
     const a = cariAnggota($('#edit-anggota-pilih').value);
@@ -934,29 +1157,163 @@ $('#btn-hapus-anggota').addEventListener('click', async function () {
     if (pinjamanAktif().some(x => x.nis === a.nis)) return toast('Anggota ini masih meminjam buku. Kembalikan dulu sebelum menghapus.', 'err');
     if (!confirm(`Hapus anggota ${a.nama} (NIS ${a.nis})?\nTindakan ini tidak bisa dibatalkan.`)) return;
     busy(this, true, 'Menghapus...');
-    const res = await kirim({ action: 'hapusAnggota', nis: a.nis });
+    const res = await aksi({ action: 'hapusAnggota', nis: a.nis });
     busy(this, false);
-    toast(res.message || '', res.status === 'success' ? 'ok' : 'err');
-    if (res.status === 'success') { S.anggota = S.anggota.filter(x => x.nis !== a.nis); $('#edit-anggota-pilih').value = ''; isiEditAnggota(); isiDatalist(); renderStats(); }
+    if (laporHasil(res, 'Anggota dihapus.')) { $('#edit-anggota-pilih').value = ''; isiEditAnggota(); }
 });
+
+// Kolom katalog tambahan (ISBN, DDC, rak, dll.)
+const ID_EKSTRA = { isbn: 'isbn', kategori: 'kategori', rak: 'rak', sumber: 'sumber', harga: 'harga', kondisi: 'kondisi', tahunTerbit: 'tahun' };
+function bacaEkstra(prefix) {
+    const o = {};
+    FIELD_EKSTRA.forEach(f => { const el = $('#' + prefix + ID_EKSTRA[f]); if (el) o[f] = el.value.trim(); });
+    if (o.harga) o.harga = o.harga.replace(/[^0-9]/g, '');
+    return o;
+}
+function isiEkstra(prefix, b) { FIELD_EKSTRA.forEach(f => { const el = $('#' + prefix + ID_EKSTRA[f]); if (el) el.value = b ? (b[f] || '') : ''; }); }
+
+// ---------- CATATAN DENDA ----------
+let dendaBerjalan = false;
+async function muatDenda(opsi = {}) {
+    if (!isAdmin() || !navigator.onLine || dendaBerjalan) { if (opsi.manual && !navigator.onLine) toast('Sedang offline — menampilkan catatan denda tersimpan.', 'info'); return; }
+    dendaBerjalan = true;
+    const res = await kirimRaw({ action: 'daftarDenda', ...kredensial() });
+    dendaBerjalan = false;
+    if (res._network) { if (opsi.manual) toast('Tidak bisa terhubung ke server.', 'err'); return; }
+    if (res.status !== 'success') { if (opsi.manual) toast(res.message || 'Gagal memuat denda.', 'err'); return; }
+    S.denda = res.data || []; S.dendaT = Date.now();
+    // pembayaran yang belum terkirim tetap terlihat lunas
+    outbox().filter(op => op.data.action === 'bayarDenda').forEach(op => terapkanOp(op, true));
+    lsSet(DENDA_KEY, { t: S.dendaT, data: S.denda });
+    if (currentPage() === 'terlambat') renderDenda();
+}
+function renderDenda() {
+    if (!S.denda.length && !S.dendaT) { const c = lsGet(DENDA_KEY, null); if (c) { S.denda = c.data || []; S.dendaT = c.t || 0; } }
+    const f = $('#denda-filter').value, q = $('#denda-cari').value.toLowerCase().trim();
+    const belum = S.denda.filter(x => !/^lunas$/i.test(x.status));
+    $('#dn-belum').textContent = rupiah(belum.reduce((s, x) => s + (Number(x.denda) || 0), 0));
+    $('#dn-lunas').textContent = rupiah(S.denda.filter(x => /^lunas$/i.test(x.status)).reduce((s, x) => s + (Number(x.denda) || 0), 0));
+    $('#dn-siswa').textContent = new Set(belum.map(x => String(x.nis))).size;
+    let list = [...S.denda].reverse();
+    if (f) list = list.filter(x => (x.status || '').toLowerCase() === f);
+    if (q) list = list.filter(x => [x.nama, x.nis, x.judul, x.noInventaris, x.idDenda].join(' ').toLowerCase().includes(q));
+    const tg = v => { const d = v ? new Date(v) : null; return d && !isNaN(d) ? tglPendek(d) : '–'; };
+    $('#tb-denda').innerHTML = list.length ? list.map(x => {
+        const lunas = /^lunas$/i.test(x.status);
+        const a = anggotaByNis(String(x.nis));
+        return `<tr>
+            <td>${tg(x.waktuKembali)}<br><span class="muted mono" style="font-size:11px">${esc(x.idDenda)}</span></td>
+            <td><b>${esc(x.nama || (a && a.nama) || '')}</b><br><span class="muted mono">${esc(x.nis)}</span>${a && a.kelas ? ` <span class="muted">· ${esc(a.kelas)}</span>` : ''}</td>
+            <td>${esc(x.judul)}<br><span class="muted mono">${esc(x.noInventaris)}</span></td>
+            <td class="t-center">${esc(x.hariTerlambat)} hr</td>
+            <td class="t-right"><b>${rupiah(x.denda)}</b></td>
+            <td>${lunas ? `<span class="badge b-green">Lunas</span><br><span class="muted" style="font-size:11px">${tg(x.tglBayar)}${x.diterimaOleh ? ' · ' + esc(x.diterimaOleh) : ''}</span>` : '<span class="badge b-red">Belum lunas</span>'}${x.pending ? '<span class="badge-pending">menunggu sinkron</span>' : ''}</td>
+            <td class="t-right">${lunas ? '' : `<button class="btn btn-success btn-xs" data-bayar="${esc(x.idDenda)}"><i class="fa-solid fa-money-bill"></i> Bayar</button>`}</td>
+        </tr>`; }).join('')
+        : `<tr><td colspan="7" class="loading">${!isAdmin() ? 'Login untuk melihat catatan denda.' : S.dendaT ? 'Tidak ada catatan denda yang cocok.' : 'Belum dimuat — butuh internet. Klik "Muat Ulang".'}</td></tr>`;
+    $$('#tb-denda [data-bayar]').forEach(b => b.addEventListener('click', () => bayar(b, { idDenda: b.dataset.bayar })));
+    $('#info-denda-list').textContent = (S.dendaT ? `Diperbarui ${new Date(S.dendaT).toLocaleString('id-ID')}. ` : '') + 'Denda tercatat otomatis saat buku terlambat dikembalikan. Pembayaran saat offline dikirim ke server ketika online.';
+}
+async function bayar(btn, target) {
+    const x = S.denda.find(d => d.idDenda === target.idDenda);
+    if (!x) return;
+    if (!confirm(`Catat pembayaran denda ${rupiah(x.denda)} dari ${x.nama || x.nis}?`)) return;
+    busy(btn, true, '');
+    const res = await aksi({ action: 'bayarDenda', ...target });
+    busy(btn, false);
+    laporHasil(res, 'Pembayaran denda dicatat.');
+    renderDenda();
+}
+$('#denda-filter').addEventListener('change', renderDenda);
+$('#denda-cari').addEventListener('input', renderDenda);
+$('#btn-muat-denda').addEventListener('click', async function () { busy(this, true, 'Memuat...'); await muatDenda({ manual: true }); busy(this, false); renderDenda(); });
+
+// ---------- PETUGAS ----------
+async function kirimAkun(data) {
+    if (!getPw()) { bukaLogin(currentPage()); return { status: 'error', message: 'Silakan login terlebih dahulu.' }; }
+    const res = await kirimRaw({ ...data, ...kredensial() });
+    if (res._network) return { status: 'error', message: 'Butuh koneksi internet untuk mengelola akun.' };
+    return res;
+}
+async function muatPetugas() {
+    const tb = $('#tb-petugas');
+    tb.innerHTML = '<tr><td colspan="5" class="loading">Memuat...</td></tr>';
+    const res = await kirimAkun({ action: 'daftarPetugas' });
+    if (res.status !== 'success') { tb.innerHTML = `<tr><td colspan="5" class="loading">${esc(res.message || 'Gagal memuat.')}</td></tr>`; return; }
+    const list = res.data || [];
+    tb.innerHTML = list.length ? list.map(p => `<tr>
+        <td class="mono"><b>${esc(p.username)}</b></td><td>${esc(p.nama)}</td>
+        <td><span class="badge ${p.peran === 'admin' ? 'b-amber' : 'b-gray'}">${esc(p.peran)}</span></td>
+        <td>${p.dibuat ? tglPendek(new Date(p.dibuat)) : '–'}</td>
+        <td class="t-right"><button class="btn btn-danger btn-xs" data-hapus-ptg="${esc(p.username)}"><i class="fa-solid fa-trash"></i></button></td>
+    </tr>`).join('') : '<tr><td colspan="5" class="loading">Belum ada akun petugas. Tambahkan di bawah.</td></tr>';
+    $$('#tb-petugas [data-hapus-ptg]').forEach(b => b.addEventListener('click', async () => {
+        const u = b.dataset.hapusPtg;
+        if (!confirm(`Hapus akun petugas "${u}"? Petugas ini tidak bisa login lagi.`)) return;
+        busy(b, true, '');
+        const r = await kirimAkun({ action: 'hapusPetugas', username_hapus: u });
+        busy(b, false);
+        if (laporHasil(r)) muatPetugas();
+    }));
+}
+$('#btn-muat-petugas').addEventListener('click', muatPetugas);
+$('#btn-tambah-petugas').addEventListener('click', async function () {
+    const petugas = { username: $('#ptg-user').value.trim().toLowerCase(), nama: $('#ptg-nama').value.trim(), password: $('#ptg-pass').value, peran: $('#ptg-peran').value };
+    if (!/^[a-z0-9._]{3,20}$/.test(petugas.username)) return toast('Username 3–20 karakter: huruf kecil, angka, titik, atau garis bawah.', 'err');
+    if (petugas.password.length < 6) return toast('Password minimal 6 karakter.', 'err');
+    busy(this, true, 'Menyimpan...');
+    const res = await kirimAkun({ action: 'tambahPetugas', petugas });
+    busy(this, false);
+    if (laporHasil(res)) { ['#ptg-user', '#ptg-nama', '#ptg-pass'].forEach(s => $(s).value = ''); muatPetugas(); }
+});
+$('#btn-ganti-pw').addEventListener('click', async function () {
+    const a = $('#pw-baru').value, b = $('#pw-baru2').value;
+    if (a.length < 6) return toast('Password baru minimal 6 karakter.', 'err');
+    if (a !== b) return toast('Ulangi password tidak sama.', 'err');
+    if (outbox().length) return toast('Masih ada perubahan menunggu sinkron. Sinkronkan dulu sebelum mengganti password.', 'err');
+    busy(this, true, 'Menyimpan...');
+    const res = await kirimAkun({ action: 'gantiPassword', passwordBaru: a });
+    busy(this, false);
+    if (!laporHasil(res)) return;
+    const akun = getAkun();
+    try { sessionStorage.setItem(AUTH_KEY, a); } catch (e) {}
+    const h = await sha256(akun.user + '|' + a), daftar = hashTersimpan();
+    if (h) { daftar[akun.user] = { h, nama: akun.nama, peran: akun.peran }; lsSet(PWHASH_KEY, daftar); }
+    $('#pw-baru').value = ''; $('#pw-baru2').value = '';
+});
+$$('#kelola-tabs .tab').forEach(t => t.addEventListener('click', () => { if (t.dataset.tab === 'tab-petugas' && isSuperAdmin()) muatPetugas(); }));
 
 // Pengaturan denda
 $('#btn-simpan-set').addEventListener('click', async function () {
     const lama = $('#set-hari').value.trim(), denda = $('#set-denda').value.trim();
     if (!lama || denda === '') return toast('Isi lama pinjam dan denda.', 'err');
     busy(this, true, 'Menyimpan...');
-    const res = await kirim({ action: 'simpanPengaturan', settings: { lamaPinjam: lama, denda } });
+    const res = await aksi({ action: 'simpanPengaturan', settings: { lamaPinjam: lama, denda } });
     busy(this, false);
-    toast(res.message || '', res.status === 'success' ? 'ok' : 'err');
-    if (res.status === 'success') { S.settings.LamaPinjamHari = lama; S.settings.DendaPerHari = denda; renderSemua(); }
+    if (laporHasil(res, 'Pengaturan disimpan.')) renderSemua();
 });
 
 // ==========================================================
 // == MULAI ==
 // ==========================================================
+// Tampilkan data tersimpan dulu (cepat & bisa offline), lalu sinkron dengan server
+if (IN_APP) document.body.classList.add('in-app');
+$('#info-versi').textContent = 'Versi web ' + VERSI_WEB + (IN_APP && window.AndroidApp.versiApk ? ' · APK ' + window.AndroidApp.versiApk() : '');
 setAdminUI();
 isiEditBuku(); isiEditAnggota();
+if (muatCache()) { S.loaded = true; S.online = navigator.onLine; }
 tampilkan(currentPage());
-muatSemua();
+if (S.loaded) renderSemua();
+updateSyncUI();
+sinkron({ muat: true });
+
+// Dipanggil APK saat pembaruan tampilan/fitur dari GitHub sudah terunduh
+window.onPembaruanSiap = function (v) {
+    toast('Pembaruan aplikasi (versi ' + v + ') sudah diunduh.', 'ok', 0, 'Muat ulang sekarang', () => location.reload());
+};
+// Website biasa: pasang service worker agar bisa dibuka offline & dipasang di layar utama
+if (!IN_APP && 'serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 
 })();

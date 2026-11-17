@@ -1,0 +1,25 @@
+{
+ "versi": 3,
+ "catatan": "Akun petugas, catatan & pembayaran denda, data katalog lengkap, waktu transaksi offline",
+ "files": [
+  "index.html",
+  "logo.png",
+  "manifest.webmanifest",
+  "script.js",
+  "style.css",
+  "sw.js",
+  "vendor/JsBarcode.all.min.js",
+  "vendor/chart.umd.min.js",
+  "vendor/fa/css/all.min.css",
+  "vendor/fa/webfonts/fa-brands-400.woff2",
+  "vendor/fa/webfonts/fa-regular-400.woff2",
+  "vendor/fa/webfonts/fa-solid-900.woff2",
+  "vendor/fa/webfonts/fa-v4compatibility.woff2",
+  "vendor/font/pjs-400.woff2",
+  "vendor/font/pjs-500.woff2",
+  "vendor/font/pjs-600.woff2",
+  "vendor/font/pjs-700.woff2",
+  "vendor/font/pjs-800.woff2",
+  "vendor/qrcode.js"
+ ]
+}
